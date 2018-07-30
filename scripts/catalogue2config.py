@@ -108,9 +108,9 @@ class json_configuration:
         except:
             raise
         else:
-            init_str = "\ninstrument:{}".format(instrument)
-            init_str += '\nobservation_loop:['
-            init_str += "\n\tLST:0-23"
+            init_str = "\n\"instrument\":\"{}\",".format(instrument)
+            init_str += '\n\"observation_loop\":[{'
+            init_str += "\n\t\"LST\":\"0-23\","
             fout.write('{'+init_str)
             fout.close()
         target_list = ''
@@ -118,17 +118,17 @@ class json_configuration:
         for target in self.target_list:
             if 'target' in target:
                 # find and list source targets
-                target_list += '\n\t\ttarget:{}'.format(target)
+                target_list += '\n\t\t\"{}\",'.format(target)
             elif ('flux' in target) or ('bp' in target) or ('pol' in target):
                 # find and list calibrator targets
-                calibrator_list += '\n\t\ttarget:{}'.format(target)
+                calibrator_list += '\n\t\t\"{}\",'.format(target)
             else:
                 # gain and delay calibrators are associated with sources
-                target_list += '\n\t\ttarget:{}'.format(target)
+                target_list += '\n\t\t\"{}\",'.format(target)
         fout = open(outfile, 'a')
-        fout.write('\n\ttarget_list:[{}\n\t]'.format(target_list))
-        fout.write('\n\tcalibration_standards:[{}\n\t]'.format(calibrator_list))
-        fout.write('\n]\n}')
+        fout.write('\n\t\"target_list\":[{}\n\t],'.format(target_list[:-1]))
+        fout.write('\n\t\"calibration_standards\":[{}\n\t]'.format(calibrator_list[:-1]))
+        fout.write('\n}]\n}')
         fout.close()
 
 if __name__ == '__main__':
