@@ -1,7 +1,7 @@
 # Take a catalogue file and construct
+import argparse
 import os
 import sys
-import argparse
 
 
 ## parsing command line options and return arguments
