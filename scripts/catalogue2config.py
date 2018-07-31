@@ -86,7 +86,7 @@ class unpack_catalogue:
                     duration = target_duration
                 target_item = 'name={}, radec={}, tags={}, duration={}'.format(
                         name.strip(),
-                        ','.join([ra.strip(), dec.strip()]),
+                        ' '.join([ra.strip(), dec.strip()]),
                         tags,
                         duration,
                         )
