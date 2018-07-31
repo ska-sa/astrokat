@@ -47,7 +47,7 @@ def cli(prog):
     if args.outfile is None:
         args.outfile = os.path.join(
                 os.path.dirname(args.infile),
-                os.path.splitext(os.path.basename(args.infile))[0]+'.json')
+                os.path.splitext(os.path.basename(args.infile))[0]+'.yaml')
     return args
 
 
@@ -98,37 +98,36 @@ class unpack_catalogue:
 ## Create a default observation config file
 #  Assume the format of a target in the list:
 #  'name=<name>, radec=<HH:MM:SS.f>,<DD:MM:SS.f>, tags=<tags>, duration=<sec>'
-class json_configuration:
+class yaml_configuration:
     def __init__(self, target_list):
         self.target_list = target_list
 
-    def write_json(self, instrument=None, outfile='obs_config.json'):
+    def write_yaml(self, instrument=None, outfile='obs_config.yaml'):
         try:
             fout = open(outfile, 'w')
         except:
             raise
         else:
-            init_str = "\n\"instrument\":\"{}\",".format(instrument)
-            init_str += '\n\"observation_loop\":[{'
-            init_str += "\n\t\"LST\":\"0-23\","
-            fout.write('{'+init_str)
+            init_str = 'instrument: {}\n'.format(instrument)
+            init_str += 'observation_loop:\n'
+            init_str += "  - LST: 0-23\n"
+            fout.write(init_str)
             fout.close()
         target_list = ''
         calibrator_list = ''
         for target in self.target_list:
             if 'target' in target:
                 # find and list source targets
-                target_list += '\n\t\t\"{}\",'.format(target)
+                target_list += '      - {}\n'.format(target)
             elif ('flux' in target) or ('bp' in target) or ('pol' in target):
                 # find and list calibrator targets
-                calibrator_list += '\n\t\t\"{}\",'.format(target)
+                calibrator_list += '      - {}\n'.format(target)
             else:
                 # gain and delay calibrators are associated with sources
-                target_list += '\n\t\t\"{}\",'.format(target)
+                target_list += '      - {}\n'.format(target)
         fout = open(outfile, 'a')
-        fout.write('\n\t\"target_list\":[{}\n\t],'.format(target_list[:-1]))
-        fout.write('\n\t\"calibration_standards\":[{}\n\t]'.format(calibrator_list[:-1]))
-        fout.write('\n}]\n}')
+        fout.write('    target_list:\n{}'.format(target_list))
+        fout.write('    calibration_standards:\n{}'.format(calibrator_list))
         fout.close()
 
 if __name__ == '__main__':
@@ -136,7 +135,7 @@ if __name__ == '__main__':
     catalogue = unpack_catalogue(args.infile).read_catalogue(
             target_duration=args.target_duration,
             cal_duration=args.cal_duration)
-    json_configuration(catalogue).write_json(
+    yaml_configuration(catalogue).write_yaml(
             instrument=args.instrument,
             outfile=args.outfile)
 

@@ -1,12 +1,15 @@
 ## Utility test script to verify json configuration files after edit and before observation planning
-import json
+from pprint import pprint
 import sys
-from collections import OrderedDict
+import yaml
 
-def main(json_config):
-    with open(json_config, 'r') as observation_prms:
-        data = json.load(observation_prms, object_pairs_hook=OrderedDict)
-    print json.dumps(data, indent=2)
+def main(yaml_config):
+    with open(yaml_config, 'r') as stream:
+        try:
+            data = yaml.safe_load(stream)
+        except:
+            raise
+    pprint(data)
 
 if __name__ == '__main__':
     main(sys.argv[-1])
