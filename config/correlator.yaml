@@ -1,0 +1,17 @@
+##Non-standard lower level options to change telescope defaults
+# Updating system level options for digitisers
+Dengine:
+  # Updating system level options for correlator
+
+# FX correlator: setting FFT options
+Fengine:
+  requant_gain: 999
+  fft_shift: 111
+
+# FX correlator: setting cross-multiplication options
+Xengine:
+
+# FXB correlator: if beamformer active
+Bengine:
+
+
