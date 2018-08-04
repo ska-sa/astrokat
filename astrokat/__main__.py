@@ -1,5 +1,12 @@
 import argparse
-from katcorelib.observe import (standard_script_options)
+live_system = True
+try:
+    from katcorelib.observe import (standard_script_options)
+except ImportError:
+    live_system = False
+    pass
+except:
+    raise
 
 
 # Add options for doing a beamformer observation
@@ -35,20 +42,21 @@ def image_options(parser):
     group.add_argument('-b',
                        '--bpcal-duration',
                        type=float,
-                       default=300,  # sec
-                       help='Minimum duration to track bandpass calibrator [sec], '
-                            '(default=%(default)s)')
+                       # default=300,  # sec
+                       # help='Minimum duration to track bandpass calibrator [sec], '
+                       #      '(default=%(default)s)')
+                       help='Minimum duration to track bandpass calibrator [sec]')
     group.add_argument('-g',
                        '--gaincal-duration',
                        type=float,
-                       default=60,  # sec
-                       help='Minimum duration to track gain calibrator [sec], '
-                            '(default=%(default)s)')
+                       # default=60,  # sec
+                       # help='Minimum duration to track gain calibrator [sec], '
+                       #      '(default=%(default)s)')
+                       help='Minimum duration to track gain calibrator [sec]')
     group.add_argument('-i',
                        '--bpcal-interval',
                        type=float,
-                       help='Minimum interval between bandpass calibrator visits, in seconds '
-                            '(default is to observe as listed in order)')
+                       help='Minimum interval between bandpass calibrators [sec]')
     return parser
 
 
@@ -60,7 +68,7 @@ def session_options(parser,
     parser_ = standard_script_options('','')
     # fudge parser_ class from OptionParser to Group
     group = parser.add_argument_group(
-	title="Standard MeerKAT Options",
+        title="Standard MeerKAT Options",
         description="Default observation script options")
     for opt in parser_.option_list:
         # Disregarding options we don't want in the group
@@ -98,21 +106,55 @@ def cli(prog,
     if parser is None:
         # Set up standard script options
         version = "%s 0.1" % prog
-        usage = "%s [options] -o <user> -t <sec> --target <target> / --catalogue <CSVfile> [<'target/catalogue'> ...]" % prog
-        description = "Track one or more sources for a specified time." \
-                      " At least one target must be specified." \
-                      " Also note the **required** options."
+        # TODO: more complex usage string in separate function
+        usage = "%s [options] -o <user> -t <sec>" \
+                " --target <target> / --catalogue <CSVfile> / --profile <YAMLfile>" \
+                " [<'target/catalogue/profile'> ...]" % prog
+        description = "Sources are specified either as a list of targets," \
+                " or a catalogue or targets, or as part of an observation profile." \
+                " Track one or more sources for a specified time." \
+                " At least one target must be specified." \
+                " Also note the **required** options."
         parser = argparse.ArgumentParser(usage=usage,
                                          description=description)
 
     # Standard track experiment options
     parser.add_argument('--version',
                         action='version', version=version)
-    parser.add_argument('-t',
-                        '--target-duration',
-                        type=float,
-                        required=True,
-                        help='Minimum duration to track target [sec] (**required**)')
+    description = "Targets are required per observation."\
+            " These can be specified in one of 3 ways,"\
+            " using a list of targets in the instruction set,"\
+            " or by listing targets in a catalogue,"\
+            " or as part of a profile describing a more complex observation configuration."
+    group = parser.add_argument_group(title="Target Specification options",
+                                      description=description)
+    ex_group = group.add_mutually_exclusive_group(required=True)
+    ex_group.add_argument('--target',
+                          default=[],
+                          type=str,
+                          action='append',
+                          nargs='+',
+                          help="Target argument via name 'Cygnus A', or "\
+                               "description \'(azel, 20, 30)\', "\
+                               "\'(radec, 0, -90)\', \'(lb, 359.9443, 0.0461)\'"\
+                               "(**required**)")
+    ex_group.add_argument('--catalogue',
+                          default=[],
+                          type=str,
+                          action='append',
+                          nargs='+',
+                          help='List of target coordinates in catalogue file,'\
+                               ' sources.csv (**required**)')
+    ex_group.add_argument('--profile',
+                          default=[],
+                          type=str,
+                          help='Observation profile represented in the configuration file,'\
+                               ' obs_config.yaml (**required**)')
+    group.add_argument('-t',
+                       '--target-duration',
+                       type=float,
+                       required=True,
+                       help='Minimum duration to track target [sec]')
     parser.add_argument('--drift-scan',
                         action='store_true',
                         help='Perform drift scan across the targets instead of standard track')
@@ -129,22 +171,10 @@ def cli(prog,
                              'cycle' to set the pattern so loop through the antennas in some fashion, \
                              'm0xx' to set the pattern to a single selected antenna.")
 ## Need to add a intertrack noise fire as session provides
-    parser.add_argument('--target',
-                        default=[],
-                        type=str,
-                        action='append',
-                        nargs='+',
-                        help='Target argument via name (\'Cygnus A\'), or '\
-                             'description (\'azel, 20, 30\') (**required**)')
-    parser.add_argument('--catalogue',
-                        default=[],
-                        type=str,
-                        action='append',
-                        nargs='+',
-                        help='List of target coordinates in catalogue file, sources.csv (**required**)')
 
     # Add standard observation script options from sessions
-    parser = session_options(parser, x_short_opts=x_short_opts, x_long_opts=x_long_opts)
+    if live_system:
+        parser = session_options(parser, x_short_opts=x_short_opts, x_long_opts=x_long_opts)
     # Add options for doing an imaging observation
     parser = image_options(parser)
     # Add options for doing a beamformer observation
@@ -164,5 +194,7 @@ def cli(prog,
     return parser.parse_known_args()
 
 
+if __name__ == '__main__':
+    cli()
+
 # -fin-
-    
