@@ -33,6 +33,10 @@ def cli(prog):
         default='bc856M4k',
         help='Observation instrument configuration (default = %(default)s)')
     parser.add_argument(
+        '--lst',
+        type=str,
+        help='Observation LST range (ex. 0-23 for anytime)')
+    parser.add_argument(
         '--target-duration',
         type=int,
         default=300,
@@ -42,6 +46,11 @@ def cli(prog):
         type=int,
         default=60,
         help='Default target track duration [sec] (default = %(default)ss)')
+
+    group = parser.add_argument_group(title="debug and verification tools")
+    group.add_argument('--debug',
+                       action='store_true',
+                       help='Display verbose output for easy debugging')
 
     args = parser.parse_args()
     if args.outfile is None:
@@ -55,8 +64,9 @@ def cli(prog):
 #  No header lines are allowed, only target information
 #  Input format: name, tags, ra, dec
 class unpack_catalogue:
-    def __init__(self, filename):
+    def __init__(self, filename, debug=False):
         self.infile = filename
+        self.debug = debug
 
     # cleanup catalogue tags and construct expected tag format
     def tidy_tags(self, tags):
@@ -79,7 +89,13 @@ class unpack_catalogue:
             raise
         else:
             for line in fin.readlines():
-                [name, tags, ra, dec] = line.strip().split(',')
+                try:
+                    [name, tags, ra, dec] = line.strip().split(',')
+                except ValueError:
+                    if self.debug: print 'Could not unpack line:{}'.format(line)
+                    continue
+                except:
+                    raise
                 tags = self.tidy_tags(tags.strip())
                 duration = cal_duration
                 if 'target' in tags:
@@ -91,6 +107,7 @@ class unpack_catalogue:
                         duration,
                         )
                 target_list.append(target_item)
+        finally:
             fin.close()
         return target_list
 
@@ -102,7 +119,10 @@ class yaml_configuration:
     def __init__(self, target_list):
         self.target_list = target_list
 
-    def write_yaml(self, instrument=None, outfile='obs_config.yaml'):
+    def write_yaml(self,
+            instrument=None,
+            lst = None,
+            outfile='obs_config.yaml'):
         try:
             fout = open(outfile, 'w')
         except:
@@ -110,7 +130,13 @@ class yaml_configuration:
         else:
             init_str = 'instrument: {}\n'.format(instrument)
             init_str += 'observation_loop:\n'
-            init_str += "  - LST: 0-23\n"
+            if lst is not None:
+                init_str += "  - LST: {}\n".format(lst)
+            else:
+                from astrokat import utility
+                init_str += "  - LST: {}-{}\n".format(
+                        utility.LST().start_obs(self.target_list),
+                        utility.LST().end_obs(self.target_list))
             fout.write(init_str)
             fout.close()
         target_list = ''
@@ -132,11 +158,13 @@ class yaml_configuration:
 
 if __name__ == '__main__':
     args = cli(sys.argv[0])
-    catalogue = unpack_catalogue(args.infile).read_catalogue(
+    cat_obj = unpack_catalogue(args.infile, debug=args.debug)
+    catalogue = cat_obj.read_catalogue(
             target_duration=args.target_duration,
             cal_duration=args.cal_duration)
     yaml_configuration(catalogue).write_yaml(
             instrument=args.instrument,
+            lst=args.lst,
             outfile=args.outfile)
 
 # -fin-
