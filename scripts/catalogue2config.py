@@ -2,6 +2,7 @@
 import argparse
 import os
 import sys
+from astrokat import observatory
 
 
 ## parsing command line options and return arguments
@@ -70,18 +71,17 @@ class unpack_catalogue:
 
     # cleanup catalogue tags and construct expected tag format
     def tidy_tags(self, tags):
-        # remove radec catalogue tag
         tags = tags.split()
-        if 'radec' in tags: tags.remove('radec')
         # add target tag if not a calibrator
         if not any('cal' in tag for tag in tags):
-            tags.append('target')
+            if not 'target' in tags:
+                tags.append('target')
         return ' '.join(tags)
 
     # unpack all targets from catalogue files into list
     def read_catalogue(self,
-            target_duration=300,
-            cal_duration=60):
+            target_duration='',
+            cal_duration=''):
         target_list = []
         try:
             fin = open(self.infile, 'r')
@@ -98,10 +98,16 @@ class unpack_catalogue:
                     raise
                 tags = self.tidy_tags(tags.strip())
                 duration = cal_duration
+                prefix = 'radec'
                 if 'target' in tags:
                     duration = target_duration
-                target_item = 'name={}, radec={}, tags={}, duration={}'.format(
+                    if tags.startswith('azel'):
+                        prefix = 'azel'
+                    elif tags.startswith('gal'):
+                        prefix = 'gal'
+                target_item = 'name={}, {}={}, tags={}, duration={}'.format(
                         name.strip(),
+                        prefix,
                         ' '.join([ra.strip(), dec.strip()]),
                         tags,
                         duration,
@@ -133,23 +139,19 @@ class yaml_configuration:
             if lst is not None:
                 init_str += "  - LST: {}\n".format(lst)
             else:
-                from astrokat import utility
                 init_str += "  - LST: {}-{}\n".format(
-                        utility.LST().start_obs(self.target_list),
-                        utility.LST().end_obs(self.target_list))
+                        observatory.LST().start_obs(self.target_list),
+                        observatory.LST().end_obs(self.target_list))
             fout.write(init_str)
             fout.close()
         target_list = ''
         calibrator_list = ''
         for target in self.target_list:
-            if 'target' in target:
-                # find and list source targets
-                target_list += '      - {}\n'.format(target)
-            elif ('flux' in target) or ('bp' in target) or ('pol' in target):
+            if 'cal' in target:
                 # find and list calibrator targets
                 calibrator_list += '      - {}\n'.format(target)
             else:
-                # gain and delay calibrators are associated with sources
+                # find and list source targets
                 target_list += '      - {}\n'.format(target)
         fout = open(outfile, 'a')
         fout.write('    target_list:\n{}'.format(target_list))
