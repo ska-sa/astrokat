@@ -1,0 +1,8 @@
+instrument: c856M4k
+observation_loop:
+  - LST: 0-23
+    target_list:
+      - name=, radec=0 -90, tags=radec target, duration=10
+      - name=, azel=10 50, tags=azel target, duration=10
+      - name=, gal=-10 40, tags=gal target, duration=10
+    calibration_standards:
