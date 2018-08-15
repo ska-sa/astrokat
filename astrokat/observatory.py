@@ -2,18 +2,18 @@ import ephem
 import numpy
 import katpoint
 
-ref_location = 'ref, -30:42:47.4, 21:26:38.0, 1060.0, 0.0, , , 1.15'
 
 # Basic LST calculations using ephem
 class LST:
-    def __init__(self,
-            latitude=None,
-            longitude=None,
-            elevation=None):
+    def __init__(self, ref_location=None):
+        self.ref_location = 'ref, -30:42:47.4, 21:26:38.0, 1060.0, 0.0, , , 1.15'
+        if ref_location is not None:
+            self.ref_location = ref_location
         self.observer = self.observer()
+
     # default reference MeerKAT location
     def observer(self):
-        observer = katpoint.Antenna(ref_location).observer
+        observer = katpoint.Antenna(self.ref_location).observer
         observer.horizon = numpy.deg2rad(20.)
         observer.date = ephem.now()
         return observer
@@ -25,7 +25,8 @@ class LST:
 
     def unpack_target(self, target_item):
         # input string format: name=, radec=, tags=, duration=
-        [name, coords, tags, duration] = [item.strip() for item in target_item.split(',')]
+        target_items = [item.strip() for item in target_item.split(',')]
+        [name, coords] = target_items[:2]
         target_item = '{},{},{},{}'.format(
                 name.split('=')[1].strip() if len(name.split('=')[1].strip()) > 1 else 'target',
                 coords.split('=')[0].strip(),
@@ -75,7 +76,7 @@ class LST:
 # def collect_targets(kat, args):
 #     from_names = from_strings = from_catalogues = num_catalogues = 0
 #     catalogue = katpoint.Catalogue()
-#     catalogue.antenna = katpoint.Antenna(ref_location)
+#     catalogue.antenna = katpoint.Antenna(self.ref_location)
 #     for arg in args:
 #         try:
 #             # First assume the string is a catalogue file name
