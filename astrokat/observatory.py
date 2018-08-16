@@ -5,6 +5,9 @@ import katpoint
 from simulate import user_logger
 from utility import katpoint_target
 
+from datetime import datetime, timedelta
+import time
+
 # default reference position for MKAT array
 ref_location = 'ref, -30:42:47.4, 21:26:38.0, 1060.0, 0.0, , , 1.15'
 
@@ -28,7 +31,7 @@ class Observatory:
         observer.date = ephem.now()
         return observer
 
-    def target(self, target):
+    def set_target(self, target):
         target = katpoint.Target(target)
         target.body.compute(self.observer)
         return target
@@ -36,7 +39,27 @@ class Observatory:
 ##TODO: look at this again with comparison to the utility.katpoint_target function
     def get_target(self, target_item):
         target_item = katpoint_target(target_item)
-        return self.target(target_item)
+        return self.set_target(target_item)
+
+
+    def lst2utc(self, req_lst, date=None):
+        def get_lst_range(date):
+            time_range = katpoint.Timestamp(time.mktime(date.timetuple())).secs + numpy.arange(0, 24.*3600., 60)
+            lst_range = katpoint.rad2deg(target.antenna.local_sidereal_time(time_range)) / 15
+            return time_range, lst_range
+
+        req_lst = float(req_lst)
+        cat = katpoint.Catalogue(add_specials=True)
+        cat.antenna = self.mkat
+        target = cat['Zenith']
+        if date is None:  # find the best UTC for today
+            [time_range, lst_range] = get_lst_range(datetime.now())
+            dh = req_lst - lst_range[0]
+            date = datetime.now()+timedelta(hours=dh)
+        [time_range, lst_range] = get_lst_range(date)
+        lst_idx = numpy.abs(lst_range-req_lst).argmin()
+        return datetime.utcfromtimestamp(time_range[lst_idx+1])
+
 
     def unpack_target(self, target_item):
         target_dict = {}
