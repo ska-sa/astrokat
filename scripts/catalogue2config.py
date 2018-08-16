@@ -2,7 +2,7 @@
 import argparse
 import os
 import sys
-from astrokat import observatory
+from astrokat import Observatory
 
 
 ## TODO: need to move to utility
@@ -172,8 +172,8 @@ class build_observation:
                 }
         if lst is None:
             lst = '{}-{}'.format(
-                    observatory.LST().start_obs(self.target_list),
-                    observatory.LST().end_obs(self.target_list))
+                    Observatory().start_obs(self.target_list),
+                    Observatory().end_obs(self.target_list))
         target_list = []
         calibrator_list = []
         for target in self.target_list:

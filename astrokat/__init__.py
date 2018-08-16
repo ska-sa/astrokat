@@ -8,8 +8,9 @@ from .utility import (  # noqa
     NoTargetsUpError,
     NotAllTargetsUpError,
     read_yaml,
+    katpoint_target,
     )
 from .observatory import (  # noqa
-    LST,
-    # collect_targets,
+    Observatory,
+    collect_targets,
     )

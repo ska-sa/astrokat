@@ -7,7 +7,7 @@ import numpy
 
 from datetime import datetime
 
-from astrokat import observatory
+from astrokat import Observatory
 
 
 import matplotlib.pyplot as pyplot
@@ -62,7 +62,7 @@ def cli(prog):
 
 def LST2UTC(req_lst, date):
     cat = katpoint.Catalogue(add_specials=True)
-    cat.antenna = katpoint.Antenna(observatory.LST().ref_location)
+    cat.antenna = katpoint.Antenna(Observatory().location)
     target = cat['Zenith']
     date = datetime.strptime(date, '%Y-%m-%d %H:%M')
     time_range = katpoint.Timestamp(time.mktime(date.timetuple())).secs + numpy.arange(0, 24.*3600., 60)
@@ -73,7 +73,7 @@ def LST2UTC(req_lst, date):
 
 def source_elevation(catalogue):
     cat = katpoint.Catalogue(file(catalogue))
-    cat.antenna = katpoint.Antenna(observatory.LST().ref_location)
+    cat.antenna = katpoint.Antenna(Observatory().location)
     target = cat.targets[0]
     time_range = katpoint.Timestamp().secs + numpy.arange(0, 24. * 60. * 60., 360.)
     lst_range = katpoint.rad2deg(target.antenna.local_sidereal_time(time_range)) / 15
@@ -124,7 +124,7 @@ def source_elevation(catalogue):
 
 
 def main(args):
-    observer = observatory.LST().observer
+    observer = Observatory().observer
 
     if args.utc and not args.lst:
         utc_datetime = datetime.strptime(args.utc, '%Y-%m-%d %H:%M')
