@@ -9,6 +9,7 @@ from .utility import (  # noqa
     NotAllTargetsUpError,
     read_yaml,
     katpoint_target,
+    lst2utc,
     )
 from .observatory import (  # noqa
     Observatory,

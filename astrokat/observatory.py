@@ -2,11 +2,8 @@ import ephem
 import numpy
 import katpoint
 
-from simulate import user_logger
-from utility import katpoint_target
-
-from datetime import datetime, timedelta
-import time
+from simulate import user_logger, setobserver
+from utility import katpoint_target, lst2utc
 
 # default reference position for MKAT array
 ref_location = 'ref, -30:42:47.4, 21:26:38.0, 1060.0, 0.0, , , 1.15'
@@ -40,25 +37,6 @@ class Observatory:
     def get_target(self, target_item):
         target_item = katpoint_target(target_item)
         return self.set_target(target_item)
-
-
-    def lst2utc(self, req_lst, date=None):
-        def get_lst_range(date):
-            time_range = katpoint.Timestamp(time.mktime(date.timetuple())).secs + numpy.arange(0, 24.*3600., 60)
-            lst_range = katpoint.rad2deg(target.antenna.local_sidereal_time(time_range)) / 15
-            return time_range, lst_range
-
-        req_lst = float(req_lst)
-        cat = katpoint.Catalogue(add_specials=True)
-        cat.antenna = self.mkat
-        target = cat['Zenith']
-        if date is None:  # find the best UTC for today
-            [time_range, lst_range] = get_lst_range(datetime.now())
-            dh = req_lst - lst_range[0]
-            date = datetime.now()+timedelta(hours=dh)
-        [time_range, lst_range] = get_lst_range(date)
-        lst_idx = numpy.abs(lst_range-req_lst).argmin()
-        return datetime.utcfromtimestamp(time_range[lst_idx+1])
 
 
     def unpack_target(self, target_item):
@@ -110,6 +88,10 @@ def collect_targets(kat, args):
     from_names = from_strings = from_catalogues = num_catalogues = 0
     catalogue = katpoint.Catalogue()
     catalogue.antenna = katpoint.Antenna(ref_location)
+    catalogue.antenna.observer.date = lst2utc(kat._lst)
+
+    setobserver(catalogue.antenna.observer)
+
     for arg in args:
         try:
             # First assume the string is a catalogue file name

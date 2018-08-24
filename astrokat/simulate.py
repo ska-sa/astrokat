@@ -6,12 +6,25 @@ import logging
 import sys
 
 from collections import namedtuple
+from datetime import datetime, timedelta
+
+global simobserver
+simobserver = ephem.Observer()
+
+def setobserver(update):
+    global simobserver
+    simobserver = update
+
+def sim_time(record, datefmt=None):
+    now = simobserver.date.datetime()
+    return now.strftime('%Y-%m-%d %H:%M:%SZ')
 
 # Fake user logger prints out to screen
 user_logger = logging.getLogger(__name__)
 out_hdlr = logging.StreamHandler(sys.stdout)
-# TODO: add timestamp input for LST playback
-out_hdlr.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
+formatter = logging.Formatter('%(asctime)s - %(message)s')
+formatter.formatTime = sim_time
+out_hdlr.setFormatter(formatter)
 out_hdlr.setLevel(logging.INFO)
 user_logger.addHandler(out_hdlr)
 user_logger.setLevel(logging.INFO)
@@ -21,7 +34,10 @@ user_logger.setLevel(logging.INFO)
 class verify_and_connect:
     def __init__(self, dummy):
         kwargs = vars(dummy)
+        self._lst = kwargs['profile']['observation_loop'][0]['LST'].split('-')[0].strip()
         self._ants = kwargs['noise_pattern'] if 'noise_pattern' in kwargs else []
+        self._session_cnt = 0
+        self.dry_run = True
     def __enter__(self):
         return self
     def __getattr__(self, key):
@@ -38,7 +54,9 @@ class verify_and_connect:
 # Fake observation session
 class start_session:
     def __init__(self, dummy_kat, **kwargs):
-        pass
+        self.kwargs = kwargs
+        self.track_ = False
+        self.kat = dummy_kat
     def __enter__(self):
         return self
     def __getattr__(self, key):
@@ -54,6 +72,15 @@ class start_session:
         yield self
         raise StopIteration
     def __exit__(self, type, value, traceback):
-        pass
+        if self.track_:
+            self.kat._session_cnt += 1
+        if self.kat._session_cnt < len(self.kwargs['profile']['observation_loop']):
+            self.kat._lst = self.kwargs['profile']['observation_loop'][self.kat._session_cnt]['LST'].split('-')[0].strip()
+    def track(self, target, duration=0):
+        self.track_ = True
+        now = simobserver.date.datetime()
+        then = now + timedelta(seconds=duration)
+        simobserver.date = ephem.Date(then)
+        return self.track_
 
 # -fin-
