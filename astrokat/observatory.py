@@ -2,6 +2,7 @@ import ephem
 import numpy
 import katpoint
 
+from datetime import datetime
 from simulate import user_logger, setobserver
 from utility import katpoint_target, lst2utc
 
@@ -46,6 +47,13 @@ class Observatory:
             target_dict[item_[0].strip()] = item_[1].strip()
         return target_dict
 
+    def lst2hours(self, ephem_lst):
+        time_ = datetime.strptime('{}'.format(ephem_lst), '%H:%M:%S.%f').time()
+        time_ = time_.hour + \
+                (time_.minute/60.) + \
+                (time_.second+time_.microsecond/1e6)/3600.
+        return '%.3f' % time_
+
     def start_obs(self, target_list):
         start_lst = []
         for target in target_list:
@@ -53,16 +61,14 @@ class Observatory:
             try:
                 rise_time = self.observer.next_rising(target_)
             except ephem.AlwaysUpError:
-                start_lst.append(0)
+                start_lst.append(ephem.hours('0:0:01.0'))
             except AttributeError:
-                start_lst.append(0)
+                start_lst.append(ephem.hours('0:0:01.0'))
             else:
                 self.observer.date = rise_time
                 start_lst.append(self.observer.sidereal_time())
         start_lst = start_lst[numpy.asarray(start_lst, dtype=float).argmin()]
-        if start_lst > 0:
-            start_lst = str(start_lst).split(':')[0]
-        return start_lst
+        return self.lst2hours(start_lst)
 
     def end_obs(self, target_list):
         end_lst = []
@@ -72,16 +78,14 @@ class Observatory:
                 rise_time = self.observer.next_rising(target_)
                 set_time = self.observer.next_setting(target_, start=rise_time)
             except ephem.AlwaysUpError:
-                end_lst.append(23)
+                end_lst.append(ephem.hours('23:59:59.0'))
             except AttributeError:
-                end_lst.append(23)
+                end_lst.append(ephem.hours('23:59:59.0'))
             else:
                 self.observer.date = set_time
                 end_lst.append(self.observer.sidereal_time())
         end_lst = end_lst[numpy.asarray(end_lst, dtype=float).argmax()]
-        if end_lst < 23:
-            end_lst = str(end_lst).split(':')[0]
-        return end_lst
+        return self.lst2hours(end_lst)
 
 # Collecting targets into katpoint catalogue
 def collect_targets(kat, args):
