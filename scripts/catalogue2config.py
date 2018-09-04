@@ -39,15 +39,30 @@ def cli(prog):
         type=str,
         help='Filename for output observation layout file (default outputs to screen)')
 
-    description = "Instrument setup requirements.\nAccept defaults if unsure."
+    description = "Instrument setup requirements.\n" \
+            "Leave options out if unsure, system will default to available setup at execution."
     group = parser.add_argument_group(title="Observation Instrument Setup",
                                       description=description)
     group.add_argument(
         '--instrument',
         type=str,
-        default='bc856M4k',
-        help='Observation instrument configuration (%(default)s default)')
-    # need to add noise diode to this section as well
+        help='Observation instrument configuration')
+    group.add_argument(
+        '--dumprate',
+        type=int,
+        help='Averaging time per dump [sec]')
+    group.add_argument('--noise-source',
+                       type=float,
+                       nargs=2,
+                       help="Initiate a noise diode pattern on all antennas, "
+                            "<cycle_length_sec> <on_fraction>")
+    group.add_argument('--noise-pattern',
+                       type=str,
+                       default='all',
+                       help="How to apply the noise diode pattern: \
+                            'all' to set the pattern to all dishes simultaneously (default), \
+                            'cycle' to set the pattern so loop through the antennas in some fashion, \
+                            'm0xx' to set the pattern to a single selected antenna.")
 
     description = "Track a target for imaging or spectral line observations, visit " \
                   "bandpass and gain calibrators along the way. The calibrators " \
@@ -65,6 +80,12 @@ def cli(prog):
         type=float,
         default=300,  # sec
         help='Default target track duration [sec] (default = %(default)ss)')
+    group.add_argument(
+        '--drift-scan',
+        action='store_true',
+        help='Perform drift scan across the targets instead of standard track')
+
+    group = parser.add_argument_group(title="Calibrator Observation Strategy")
     group.add_argument(
         '--bpcal-duration',
         type=float,
@@ -166,15 +187,33 @@ class build_observation:
 
     def configure(self,
             instrument=None,
-            lst = None):
-        obs_plan = {
-                'instrument': instrument,
-                'observation_loop': [],
-                }
+            dumprate=None,
+            noisediode=None,
+            lst=None,
+            driftscan=None,
+            ):
+        obs_plan = {}
+        # subarray specific setup options
+        if instrument is not None:
+            obs_plan['instrument'] = instrument
+        if dumprate is not None:
+            obs_plan['dumprate'] = dumprate
+        if noisediode is not None:
+            obs_plan['noise_diode'] = {'cycle_len': noisediode[0],
+                                       'on_fraction': noisediode[1],
+                                       'pattern': noisediode[2]}
+        # observational setup
+        obs_type = 'observation_loop'
+        if driftscan:
+            obs_type = 'drift_scans'
+        obs_plan[obs_type] = []
+        start_lst = Observatory().start_obs(self.target_list)
+        end_lst = Observatory().end_obs(self.target_list)
+        if start_lst > end_lst:  # targets cover 24 hrs
+            start_lst = 0.0
+            end_lst = 23.9
         if lst is None:
-            lst = '{}-{}'.format(
-                    Observatory().start_obs(self.target_list),
-                    Observatory().end_obs(self.target_list))
+            lst = '{}-{}'.format(start_lst, end_lst)
         target_list = []
         calibrator_list = []
         for target in self.target_list:
@@ -184,11 +223,13 @@ class build_observation:
             else:
                 # find and list source targets
                 target_list.append(target)
-        obs_plan['observation_loop'] = [{
+        obs_loop = {
                 'lst': lst,
                 'target_list': target_list,
-                'calibration_standards': calibrator_list,
-                }]
+                }
+        if obs_type == 'observation_loop':
+            obs_loop['calibration_standards'] = calibrator_list
+        obs_plan[obs_type] = [obs_loop]
         self.configuration = obs_plan
         return obs_plan
 
@@ -200,23 +241,42 @@ class build_observation:
             self.configuration = configuration
         if self.configuration is None:
             raise RuntimeError('No observation configuration to output')
-        obs_loop = self.configuration['observation_loop'][0]
+        init_str = ''
+        if 'instrument' in self.configuration.keys():
+            init_str += 'instrument: {}\n'.format(
+                    self.configuration['instrument'])
+        if 'dumprate' in self.configuration.keys():
+            init_str += 'dumprate: {}\n'.format(
+                    self.configuration['dumprate'])
+        if 'noise_diode' in self.configuration.keys():
+            init_str += 'noise_diode:\n'
+            init_str += "  cycle_len: {}\n".format(self.configuration['noise_diode']['cycle_len'])
+            init_str += "  on_fraction: {}\n".format(self.configuration['noise_diode']['on_fraction'])
+            init_str += "  pattern: {}\n".format(self.configuration['noise_diode']['pattern'])
 
-        init_str = 'instrument: {}\n'.format(
-                self.configuration['instrument'])
-        init_str += 'observation_loop:\n'
+        obs_type = 'observation_loop'
+        if 'drift_scans' in self.configuration.keys():
+            obs_type = 'drift_scans'
+        obs_loop = self.configuration[obs_type][0]
+        init_str += '{}:\n'.format(obs_type)
         init_str += "  - LST: {}\n".format(obs_loop['lst'])
+
         target_list = ''
         for target in obs_loop['target_list']:
             target_list += '      - {}\n'.format(target)
-        calibrator_list = ''
-        for target in obs_loop['calibration_standards']:
-            calibrator_list += '      - {}\n'.format(target)
+        try:
+            calibrator_list = ''
+            for target in obs_loop['calibration_standards']:
+                calibrator_list += '      - {}\n'.format(target)
+        except KeyError:
+            pass  # option not available in this observation type
 
         with smart_open(outfile) as fout:
             fout.write(init_str)
-            fout.write('    target_list:\n{}'.format(target_list))
-            fout.write('    calibration_standards:\n{}'.format(calibrator_list))
+            if len(target_list) > 0:
+                fout.write('    target_list:\n{}'.format(target_list))
+            if len(calibrator_list) > 0:
+                fout.write('    calibration_standards:\n{}'.format(calibrator_list))
 
 if __name__ == '__main__':
     args = cli(sys.argv[0])
@@ -229,9 +289,15 @@ if __name__ == '__main__':
             bpcal_interval=args.bpcal_interval,
             )
     obs_plan = build_observation(catalogue)
+    noise_diode = None
+    if args.noise_source is not None:
+        noise_diode = args.noise_source + [args.noise_pattern]
     obs_plan.configure(
             instrument=args.instrument,
-            lst=args.lst)
+            dumprate=args.dumprate,
+            noisediode=noise_diode,
+            lst=args.lst,
+            driftscan=args.drift_scan)
     obs_plan.write_yaml(outfile=args.obsfile)
 
 # -fin-
