@@ -113,7 +113,7 @@ class unpack_catalogue:
             ):
         target_list = []
         with open(self.infile, 'r') as fin:
-            for line in fin.readlines():
+            for idx, line in enumerate(fin.readlines()):
                 try:
                     [name, tags, ra, dec] = line.strip().split(',')
                 except ValueError:
@@ -127,7 +127,8 @@ class unpack_catalogue:
                     prefix = 'gal'
                 else:
                     prefix = 'radec'
-
+                if len(name) < 1:
+                    name = 'target{}_{}'.format(idx, prefix)
                 target_items = [
                         name.strip(),
                         prefix,
