@@ -84,22 +84,7 @@ def cli(prog,
                         type=str,
                         help='Observation profile represented in the configuration file,'\
                              ' obs_config.yaml (**required**)')
-    parser.add_argument('--drift-scan',
-                        action='store_true',
-                        help='Perform drift scan across the targets instead of standard track')
-    parser.add_argument('--noise-source',
-                        type=float,
-                        nargs=2,
-                        help="Initiate a noise diode pattern on all antennas, "
-                             "<cycle_length_sec> <on_fraction>")
-    parser.add_argument('--noise-pattern',
-                        type=str,
-                        default='all',
-                        help="How to apply the noise diode pattern: \
-                             'all' to set the pattern to all dishes simultaneously (default), \
-                             'cycle' to set the pattern so loop through the antennas in some fashion, \
-                             'm0xx' to set the pattern to a single selected antenna.")
-## Need to add a intertrack noise fire as session provides
+    ## TODO: Need to add a intertrack noise fire as session provides
 
     # Add standard observation script options from sessions
     parser = session_options(parser, x_short_opts=x_short_opts, x_long_opts=x_long_opts)
