@@ -64,8 +64,12 @@ class verify_and_connect:
         _sensors = {}
         if 'product' in kwargs['profile']['instrument'].keys():
             _sensors['sub_product'] = Fakr(kwargs['profile']['instrument']['product'])
+        else:
+            _sensors['sub_product'] = Fakr('c856M4k')
         if 'dumprate' in kwargs['profile']['instrument'].keys():
             _sensors['sub_dump_rate'] = Fakr(1./float(kwargs['profile']['instrument']['dumprate']))
+        else:
+            _sensors['sub_dump_rate'] = Fakr(0.125)
         # print _sensors
         return _sensors
 
