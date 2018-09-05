@@ -1,6 +1,7 @@
-instrument: bc856M4k
+instrument:
+  product: bc856M4
 observation_loop:
-  - LST: 11-23
+  - LST: 11.140-23.248
     target_list:
       - name=T3R04C06, radec=+17:22:27.46877 -38:12:09.4023, tags=target, duration=180.0
       - name=T4R00C02, radec=+17:11:22.47016 -37:51:51.0758, tags=target, duration=180.0

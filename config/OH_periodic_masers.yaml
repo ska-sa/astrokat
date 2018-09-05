@@ -1,4 +1,5 @@
-instrument: c856M32k
+instrument:
+  product: c856M32k
 observation_loop:
   - LST: 10-12
     target_list:

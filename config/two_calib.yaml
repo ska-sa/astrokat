@@ -1,9 +1,10 @@
-instrument: c856M4k
-dumprate: 4
+instrument:
+  product: c856M4k
+  dumprate: 4
 noise_diode:
-  cycle_len: 4.0
-  on_fraction: -1.0
   pattern: all
+  on_fraction: -1.0
+  cycle_len: 0.01
 observation_loop:
   - LST: 0.0-23.9
     calibration_standards:
