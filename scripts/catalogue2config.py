@@ -44,25 +44,27 @@ def cli(prog):
     group = parser.add_argument_group(title="Observation Instrument Setup",
                                       description=description)
     group.add_argument(
-        '--instrument',
+        '--product',
         type=str,
-        help='Observation instrument configuration')
+        help='Observation instrument product configuration')
     group.add_argument(
         '--dumprate',
         type=int,
         help='Averaging time per dump [sec]')
-    group.add_argument('--noise-source',
-                       type=float,
-                       nargs=2,
-                       help="Initiate a noise diode pattern on all antennas, "
-                            "<cycle_length_sec> <on_fraction>")
-    group.add_argument('--noise-pattern',
-                       type=str,
-                       default='all',
-                       help="How to apply the noise diode pattern: \
-                            'all' to set the pattern to all dishes simultaneously (default), \
-                            'cycle' to set the pattern so loop through the antennas in some fashion, \
-                            'm0xx' to set the pattern to a single selected antenna.")
+    group.add_argument(
+        '--noise-source',
+        type=float,
+        nargs=2,
+        help="Initiate a noise diode pattern on all antennas, "
+             "<cycle_length_sec> <on_fraction>")
+    group.add_argument(
+        '--noise-pattern',
+        type=str,
+        default='all',
+        help="How to apply the noise diode pattern: \
+             'all' to set the pattern to all dishes simultaneously (default), \
+             'cycle' to set the pattern so loop through the antennas in some fashion, \
+             'm0xx' to set the pattern to a single selected antenna.")
 
     description = "Track a target for imaging or spectral line observations, visit " \
                   "bandpass and gain calibrators along the way. The calibrators " \
@@ -186,22 +188,18 @@ class build_observation:
         self.configuration = None
 
     def configure(self,
-            instrument=None,
-            dumprate=None,
-            noisediode=None,
+            instrument={},
+            noisediode={},
             lst=None,
-            driftscan=None,
+            driftscan=False,
             ):
         obs_plan = {}
         # subarray specific setup options
-        if instrument is not None:
+        if len(instrument) > 0:
             obs_plan['instrument'] = instrument
-        if dumprate is not None:
-            obs_plan['dumprate'] = dumprate
-        if noisediode is not None:
-            obs_plan['noise_diode'] = {'cycle_len': noisediode[0],
-                                       'on_fraction': noisediode[1],
-                                       'pattern': noisediode[2]}
+        # noise diode setup
+        if len(noisediode) > 0:
+            obs_plan['noise_diode'] = noisediode
         # observational setup
         obs_type = 'observation_loop'
         if driftscan:
@@ -209,7 +207,10 @@ class build_observation:
         obs_plan[obs_type] = []
         start_lst = Observatory().start_obs(self.target_list)
         end_lst = Observatory().end_obs(self.target_list)
-        if start_lst > end_lst:  # targets cover 24 hrs
+        # rounding errors can cause 24 LST, which will lead to an inf loop
+        if float(end_lst) >= 24.0:
+            end_lst = 23.9
+        if (float(end_lst)-float(start_lst))< 0.:  # targets cover 24 hrs
             start_lst = 0.0
             end_lst = 23.9
         if lst is None:
@@ -243,16 +244,17 @@ class build_observation:
             raise RuntimeError('No observation configuration to output')
         init_str = ''
         if 'instrument' in self.configuration.keys():
-            init_str += 'instrument: {}\n'.format(
-                    self.configuration['instrument'])
-        if 'dumprate' in self.configuration.keys():
-            init_str += 'dumprate: {}\n'.format(
-                    self.configuration['dumprate'])
+            init_str += 'instrument:\n'
+            instrument = self.configuration['instrument']
+            for key in instrument.keys():
+                if instrument[key] is not None:
+                    init_str += "  {}: {}\n".format(key, instrument[key])
         if 'noise_diode' in self.configuration.keys():
             init_str += 'noise_diode:\n'
-            init_str += "  cycle_len: {}\n".format(self.configuration['noise_diode']['cycle_len'])
-            init_str += "  on_fraction: {}\n".format(self.configuration['noise_diode']['on_fraction'])
-            init_str += "  pattern: {}\n".format(self.configuration['noise_diode']['pattern'])
+            noise_diode= self.configuration['noise_diode']
+            for key in noise_diode.keys():
+                if noise_diode[key] is not None:
+                    init_str += "  {}: {}\n".format(key, noise_diode[key])
 
         obs_type = 'observation_loop'
         if 'drift_scans' in self.configuration.keys():
@@ -280,6 +282,7 @@ class build_observation:
 
 if __name__ == '__main__':
     args = cli(sys.argv[0])
+    # read targets from catalogue file
     cat_obj = unpack_catalogue(args.catalogue)
     catalogue = cat_obj.read_catalogue(
             target_duration=args.target_duration,
@@ -289,12 +292,20 @@ if __name__ == '__main__':
             bpcal_interval=args.bpcal_interval,
             )
     obs_plan = build_observation(catalogue)
-    noise_diode = None
+    # read instrument requirements if provided
+    instrument = {}
+    instrument['product'] = args.product
+    instrument['dumprate'] = args.dumprate
+    # add noise diode usage
+    noise_diode = {}
     if args.noise_source is not None:
-        noise_diode = args.noise_source + [args.noise_pattern]
+        noise_diode = {'cycle_len': args.noise_source[0],
+                       'on_fraction': args.noise_source[1],
+                       'pattern': args.noise_pattern}
+    ## ? add correlator setup??
+    # create observation configuration file
     obs_plan.configure(
-            instrument=args.instrument,
-            dumprate=args.dumprate,
+            instrument=instrument,
             noisediode=noise_diode,
             lst=args.lst,
             driftscan=args.drift_scan)
