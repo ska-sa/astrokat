@@ -36,6 +36,25 @@ except ImportError:
 import katpoint
 
 
+# switch noise-source pattern off
+def nd_on(kat, logging=True):
+    if logging: user_logger.info('Switch noise-diode on')
+    kat.ants.req.dig_noise_source('now', 1)
+
+# switch noise-source pattern off
+def nd_off(kat, logging=True):
+    if logging: user_logger.info('Switch noise-diode off')
+    kat.ants.req.dig_noise_source('now', 0)
+
+# fire noisediode before track
+def nd_fire(kat, nd_setup):
+    cycle_length = nd_setup['cycle_len']
+    user_logger.info('Firing noise diode for {}s before track on target'.format(cycle_length))
+    nd_on(kat, logging=False)
+    # TODO: add some overwrite func that will update the time for sims
+    time.sleep(float(cycle_length))
+    nd_off(kat, logging=False)
+
 def set_nd_pattern(kat, nd_pattern, cycle_length, on_fraction):
     sub_ants = [ant.name for ant in kat.ants]
     if nd_pattern == 'all':
@@ -140,6 +159,7 @@ def observe_target(
         duration = duration_
     user_logger.info('Tracking target {} for {} sec'.format(
         target_.name, duration))
+    # quit()
     # TODO: add some delay for slew time
     session.label('track')
     if session.track(target, duration=duration):
@@ -170,23 +190,56 @@ class telescope:
             self.xeng=correlator_config['Xengine']
             self.beng=correlator_config['Bengine']
 
+    def subarray_setup(self, kat, instrument):
+        sub_product = kat.sensor.get('sub_product').get_value()
+        sub_dump_rate = kat.sensor.get('sub_dump_rate').get_value()
+        if 'product' in instrument.keys():
+            # verify user specified product
+            # print instrument['product'], sub_product
+            if instrument['product'] not in sub_product:
+                msg = 'Product {} needed for observation. \
+Current subarray product is {}. \
+Exiting'.format(instrument['product'], sub_product)
+                raise RuntimeError(msg)
+        if 'dumprate' in instrument.keys():
+            # verify user specified dump_rate
+            dump_rate = 1./float(instrument['dumprate'])
+            if abs(dump_rate - sub_dump_rate) > 0:
+                msg = 'Observation requires dump rate {} Hz. \
+Current subarray dump rate {} Hz. \
+Exiting'.format(dump_rate, sub_dump_rate)
+                raise RuntimeError(msg)
+
+
+    def noise_diode(self, kat, nd_setup):
+        cycle_length = nd_setup['cycle_len']
+        on_fraction = nd_setup['on_fraction']
+        noise_pattern = nd_setup['pattern']
+        if on_fraction > 0:
+            msg = 'Set noise source behaviour to {} sec period with {} on fraction and apply pattern to {}'.format(
+                    cycle_length,
+                    on_fraction,
+                    noise_pattern)
+            user_logger.info(msg)
+            set_nd_pattern(kat, noise_pattern, cycle_length, on_fraction)
+        else:
+            nd_off(kat)
+
+
     def __enter__(self):
         ## System setup before observation
         with verify_and_connect(self.opts) as kat:
+            # verify subarray setup correct for observation before doing any work
+            if 'instrument' in self.opts.profile.keys():
+                self.subarray_setup(kat, self.opts.profile['instrument'])
+
             # Set up noise diode if requested
-            if self.opts.noise_source is not None:
-                msg = 'Set noise source behaviour to {} sec period with {} on fraction and apply pattern to {}'.format(
-                        self.opts.noise_source[0],
-                        self.opts.noise_source[1],
-                        self.opts.noise_pattern)
-                user_logger.info(msg)
-                cycle_length, on_fraction = self.opts.noise_source
-                set_nd_pattern(kat, self.opts.noise_pattern, cycle_length, on_fraction)
-            # Ensure default setup before starting observation
+            if 'noise_diode' in self.opts.profile.keys():
+                self.noise_diode(kat, self.opts.profile['noise_diode'])
             else:
+            # Ensure default setup before starting observation
                 # switch noise-source pattern off (known setup starting observation)
-                user_logger.info('Initialising with noise-diode off')
-                kat.ants.req.dig_noise_source('now', 0)
+                nd_off(kat)
 
             with start_session(kat, **vars(self.opts)) as session:
                 # Update correlator settings
@@ -204,37 +257,39 @@ class telescope:
         print 'TODO: Restore defaults'
         with verify_and_connect(self.opts) as kat:
             # switch noise-source pattern off (ensure this after each observation)
-            user_logger.info('Ensuring noise-diode off')
-            kat.ants.req.dig_noise_source('now', 0)
+            nd_off(kat)
 
 
-def run_observation(opts):
+def run_observation(opts, system):
+
+    print opts.profile.keys()
+    obs_type_key = 'observation_loop'
+    # quit()
+
+    # noise-source on, activated when needed
+    if 'noise_diode' in opts.profile.keys():
+        nd_setup = opts.profile['noise_diode']
+    else:
+        nd_setup = None
 
     # Check options and build KAT configuration,
     # connecting to proxies and devices
     with verify_and_connect(opts) as kat:
 
-        # TODO: verify instrument setup, etc
-        # TODO: on dev system get sensor with instrument and compare
-        print opts.profile['instrument']
-        # TODO: noise diode settings
-
-        # Each observation loop contains a number of observation cycles over
-        # LST ranges
+        # Each observation loop contains a number of observation cycles over LST ranges
         for observation_cycle in opts.profile['observation_loop']:
 
-            print
-
             # Unpack all target information
-            target_list = read_targets(observation_cycle['target_list'])
-            the_targets = target_list['target'].tolist()
-            calibrators = []
-            if observation_cycle['calibration_standards'] is not None:
-                calibrators = read_targets(observation_cycle['calibration_standards'])
-                the_targets += calibrators['target'].tolist()
-            targets = collect_targets(kat,
-                    the_targets,
-                    )
+            target_list = []
+            obs_targets = []
+            if 'target_list' in observation_cycle.keys():
+                obs_targets = read_targets(observation_cycle['target_list'])
+                target_list += obs_targets['target'].tolist()
+            obs_calibrators = []
+            if 'calibration_standards' in observation_cycle.keys():
+                obs_calibrators = read_targets(observation_cycle['calibration_standards'])
+                target_list += obs_calibrators['target'].tolist()
+            targets = collect_targets(kat, target_list)
             observer = targets._antenna.observer
 
             # Only observe targets in valid LST range
@@ -265,7 +320,6 @@ def run_observation(opts):
                 if opts.all_up and (len(targets.filter(el_limit_deg=opts.horizon)) != len(targets)):
                     raise NotAllTargetsUpError('Not all targets are currently visible - '
                                                'please re-run the script with --visibility for information')
-            # Ludwig stats -- not sure if need to keep these
             user_logger.info('Imaging targets are [{}]'.format(
                              ', '.join([repr(target.name) for target in targets.filter(['~bpcal', '~gaincal'])])))
             user_logger.info("Bandpass calibrators are [{}]".format(
@@ -282,14 +336,14 @@ def run_observation(opts):
                 # If bandpass interval is specified,
                 # force the first visit to be bandpass calibrator(s)
                 target = None
-                for cnt, calibrator in enumerate(calibrators):
+                for cnt, calibrator in enumerate(obs_calibrators):
                     if 'bpcal' in calibrator['target']:
                         target = calibrator
                         session.capture_start()
                         observe_target(session, observer, target)
                 # Else go to first target
                 if target is None:
-                    target = target_list[0]
+                    target = obs_targets[0]
                     user_logger.info('Slewing to first target')
                     observe_target(session, observer, target, duration_=0)
                     # Only start capturing once we are on target
@@ -300,12 +354,13 @@ def run_observation(opts):
 
                     # Cycle through target list in order listed
                     targets_visible = False
-                    for target in target_list:
+                    for target in obs_targets:
+                        if nd_setup: nd_fire(kat, nd_setup)
                         if observe_target(session, observer, target):
                             targets_visible = True
 
                         # Evaluate calibrator cadence
-                        for calibrator in calibrators:
+                        for calibrator in obs_calibrators:
                             if calibrator['cadence'] < 0:
                                 continue
                             if calibrator['last_observed'] is None:
@@ -319,9 +374,10 @@ def run_observation(opts):
 
                     # Cycle through calibrator list and evaluate those with
                     # cadence, while observing those that don't
-                    for calibrator in calibrators:
+                    for calibrator in obs_calibrators:
                         if calibrator['cadence'] < 0 or \
                                 calibrator['last_observed'] is None:
+                            if nd_setup: nd_fire(kat, nd_setup)
                             if observe_target(session, observer, calibrator):
                                 targets_visible = True
                         else:
@@ -375,9 +431,12 @@ if __name__ == '__main__':
     if opts.profile:
         opts.profile = read_yaml(opts.profile)
 
+    print opts.profile
+    # quit()
+
     # setup and observation
     with telescope(opts, args_) as system:
         print 'run_observation'
-        run_observation(opts)
+        run_observation(opts, system)
 
 # -fin-
