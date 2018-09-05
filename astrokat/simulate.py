@@ -29,27 +29,45 @@ out_hdlr.setLevel(logging.INFO)
 user_logger.addHandler(out_hdlr)
 user_logger.setLevel(logging.INFO)
 
+class Fakr(namedtuple('Fakr', 'priv_value')):
+    def get_value(self):
+        return self.priv_value
 
 # Fake telescope connection
 class verify_and_connect:
     def __init__(self, dummy):
         kwargs = vars(dummy)
-        self._lst = kwargs['profile']['observation_loop'][0]['LST'].split('-')[0].strip()
-        self._ants = kwargs['noise_pattern'] if 'noise_pattern' in kwargs else []
-        self._session_cnt = 0
         self.dry_run = True
+        self._ants = kwargs['noise_pattern'] if 'noise_pattern' in kwargs else []
+        self._lst = kwargs['profile']['observation_loop'][0]['LST'].split('-')[0].strip()
+        self._sensors = self.fake_sensors(kwargs)
+        self._session_cnt = 0
     def __enter__(self):
         return self
     def __getattr__(self, key):
         return self
     def __call__(self, *args, **kwargs):
         return self
+    def __str__(self):
+        return 'A string'
     def __iter__(self):
         Ant = namedtuple('Ant', ['name'])
         yield Ant(self._ants)
         raise StopIteration
     def __exit__(self, type, value, traceback):
         pass
+
+    def get(self, sensorname):
+        return self._sensors[sensorname]
+
+    def fake_sensors(self, kwargs):
+        _sensors = {}
+        if 'product' in kwargs['profile']['instrument'].keys():
+            _sensors['sub_product'] = Fakr(kwargs['profile']['instrument']['product'])
+        if 'dumprate' in kwargs['profile']['instrument'].keys():
+            _sensors['sub_dump_rate'] = Fakr(1./float(kwargs['profile']['instrument']['dumprate']))
+        # print _sensors
+        return _sensors
 
 # Fake observation session
 class start_session:
