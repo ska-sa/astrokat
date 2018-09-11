@@ -1,4 +1,4 @@
-# Take a catalogue file and construct
+# Take a catalogue file and construct a basic observation configuration file
 import argparse
 import os
 import sys
@@ -48,13 +48,27 @@ def cli(prog):
         type=str,
         help='Observation instrument product configuration')
     group.add_argument(
-        '--dumprate',
+        '--band',
+        type=str,
+        help='Observation band: L, UHF, X, S')
+    group.add_argument(
+        '--dump-rate',
         type=int,
         help='Averaging time per dump [sec]')
+    group.add_argument(
+        '--antennas',
+        type=str,
+        nargs='+',
+        help="List of antennas required for this observation to run.")
+    group.add_argument(
+        '--ptuse',
+        action='store_true',
+        help='Beamformer pipeline')
     group.add_argument(
         '--noise-source',
         type=float,
         nargs=2,
+        metavar=('CYCLE_LEN', 'ON_FRAC'),
         help="Initiate a noise diode pattern on all antennas, "
              "<cycle_length_sec> <on_fraction>")
     group.add_argument(
@@ -81,6 +95,7 @@ def cli(prog):
         '--target-duration',
         type=float,
         default=300,  # sec
+        required=True,
         help='Default target track duration [sec] (default = %(default)ss)')
     group.add_argument(
         '--drift-scan',
@@ -200,11 +215,6 @@ class build_observation:
         # noise diode setup
         if len(noisediode) > 0:
             obs_plan['noise_diode'] = noisediode
-        # observational setup
-        obs_type = 'observation_loop'
-        if driftscan:
-            obs_type = 'drift_scans'
-        obs_plan[obs_type] = []
         start_lst = Observatory().start_obs(self.target_list)
         end_lst = Observatory().end_obs(self.target_list)
         # rounding errors can cause 24 LST, which will lead to an inf loop
@@ -215,6 +225,7 @@ class build_observation:
             end_lst = 23.9
         if lst is None:
             lst = '{}-{}'.format(start_lst, end_lst)
+        # observational setup
         target_list = []
         calibrator_list = []
         for target in self.target_list:
@@ -222,15 +233,16 @@ class build_observation:
                 # find and list calibrator targets
                 calibrator_list.append(target)
             else:
-                # find and list source targets
+                # set target observation type
+                if driftscan:
+                    target = ', '.join([target, 'type=drift_scan'])
+                # list source targets
                 target_list.append(target)
-        obs_loop = {
+        obs_plan['observation_loop'] = [{
                 'lst': lst,
                 'target_list': target_list,
-                }
-        if obs_type == 'observation_loop':
-            obs_loop['calibration_standards'] = calibrator_list
-        obs_plan[obs_type] = [obs_loop]
+                'calibration_standards': calibrator_list,
+                }]
         self.configuration = obs_plan
         return obs_plan
 
@@ -256,11 +268,8 @@ class build_observation:
                 if noise_diode[key] is not None:
                     init_str += "  {}: {}\n".format(key, noise_diode[key])
 
-        obs_type = 'observation_loop'
-        if 'drift_scans' in self.configuration.keys():
-            obs_type = 'drift_scans'
-        obs_loop = self.configuration[obs_type][0]
-        init_str += '{}:\n'.format(obs_type)
+        obs_loop = self.configuration['observation_loop'][0]
+        init_str += '{}:\n'.format('observation_loop')
         init_str += "  - LST: {}\n".format(obs_loop['lst'])
 
         target_list = ''
@@ -295,14 +304,17 @@ if __name__ == '__main__':
     # read instrument requirements if provided
     instrument = {}
     instrument['product'] = args.product
-    instrument['dumprate'] = args.dumprate
+    instrument['band'] = args.band
+    instrument['dump_rate'] = args.dump_rate
+    instrument['pool_resources'] = args.antennas
+    if args.ptuse:
+        instrument['pool_resources'] += 'ptuse'
     # add noise diode usage
     noise_diode = {}
     if args.noise_source is not None:
         noise_diode = {'cycle_len': args.noise_source[0],
                        'on_fraction': args.noise_source[1],
                        'pattern': args.noise_pattern}
-    ## ? add correlator setup??
     # create observation configuration file
     obs_plan.configure(
             instrument=instrument,
