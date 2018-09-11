@@ -308,7 +308,7 @@ if __name__ == '__main__':
     instrument['dump_rate'] = args.dump_rate
     instrument['pool_resources'] = args.antennas
     if args.ptuse:
-        instrument['pool_resources'] += 'ptuse'
+        instrument['pool_resources'].append('ptuse')
     # add noise diode usage
     noise_diode = {}
     if args.noise_source is not None:
