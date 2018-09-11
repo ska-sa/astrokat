@@ -53,7 +53,8 @@ def cli(prog):
         help='Observation band: L, UHF, X, S')
     group.add_argument(
         '--dump-rate',
-        type=int,
+        type=float,
+        default=1.,  # sec
         help='Averaging time per dump [sec]')
     group.add_argument(
         '--antennas',
@@ -305,7 +306,7 @@ if __name__ == '__main__':
     instrument = {}
     instrument['product'] = args.product
     instrument['band'] = args.band
-    instrument['dump_rate'] = args.dump_rate
+    instrument['dump_rate'] = 1./args.dump_rate
     instrument['pool_resources'] = args.antennas
     if args.ptuse:
         instrument['pool_resources'].append('ptuse')
