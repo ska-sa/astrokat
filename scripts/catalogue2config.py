@@ -54,7 +54,6 @@ def cli(prog):
     group.add_argument(
         '--dump-rate',
         type=float,
-        default=1.,  # sec
         help='Averaging time per dump [sec]')
     group.add_argument(
         '--antennas',
@@ -96,7 +95,6 @@ def cli(prog):
         '--target-duration',
         type=float,
         default=300,  # sec
-        required=True,
         help='Default target track duration [sec] (default = %(default)ss)')
     group.add_argument(
         '--drift-scan',
@@ -306,7 +304,8 @@ if __name__ == '__main__':
     instrument = {}
     instrument['product'] = args.product
     instrument['band'] = args.band
-    instrument['dump_rate'] = 1./args.dump_rate
+    if args.dump_rate is not None:
+        instrument['dump_rate'] = 1./args.dump_rate
     instrument['pool_resources'] = args.antennas
     if args.ptuse:
         instrument['pool_resources'].append('ptuse')
