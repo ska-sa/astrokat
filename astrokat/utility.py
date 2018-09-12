@@ -43,7 +43,7 @@ def katpoint_target(target_item):
                 break
     target = '{}, {} {}, {}, {}'.format(
         name, ctag, tags, x, y)
-    return target
+    return name, target
 
 # find when is LST for date given, else for today
 def lst2utc(req_lst, date=None):

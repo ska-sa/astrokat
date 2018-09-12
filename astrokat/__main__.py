@@ -95,7 +95,7 @@ def cli(prog,
     ex_group = group.add_mutually_exclusive_group()
     ex_group.add_argument('--visibility',
                           action='store_true',
-                          help='Display short summary of target visibility') 
+                          help='Display short summary of target visibility')
     ex_group.add_argument('--all-up',
                           action='store_true',
                           help='Ensure all target are above horizon before continuing')

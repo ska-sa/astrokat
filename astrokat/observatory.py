@@ -36,7 +36,7 @@ class Observatory:
 
 ##TODO: look at this again with comparison to the utility.katpoint_target function
     def get_target(self, target_item):
-        target_item = katpoint_target(target_item)
+        name, target_item = katpoint_target(target_item)
         return self.set_target(target_item)
 
 
