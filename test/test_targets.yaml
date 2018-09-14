@@ -1,8 +1,8 @@
 instrument:
-  pool_resources: ['m011,', 'm022', 'ptuse']
+  pool_resources: m011,m022,ptuse
   band: l
   product: c856M4k
-  dump_rate: 0.5
+  dump_rate: 0.25
 noise_diode:
   pattern: all
   on_fraction: -1.0
