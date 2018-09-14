@@ -92,7 +92,7 @@ class start_session:
             self.kat._session_cnt += 1
         if self.kat._session_cnt < len(self.kwargs['profile']['observation_loop']):
             self.kat._lst = self.kwargs['profile']['observation_loop'][self.kat._session_cnt]['LST'].split('-')[0].strip()
-    def track(self, target, duration=0):
+    def track(self, target, duration=0, announce=False):
         self.track_ = True
         now = simobserver.date.datetime()
         then = now + timedelta(seconds=duration)
