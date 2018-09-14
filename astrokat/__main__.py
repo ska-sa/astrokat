@@ -84,6 +84,7 @@ def cli(prog,
     parser.add_argument('--profile',
                         default=[],
                         type=str,
+                        required=True,
                         help='Observation profile represented in the configuration file,'\
                              ' obs_config.yaml (**required**)')
     ## TODO: Need to add a intertrack noise fire as session provides
