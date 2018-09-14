@@ -74,7 +74,9 @@ def cli(prog,
                 " At least one target must be specified." \
                 " Also note the **required** options."
         parser = argparse.ArgumentParser(usage=usage,
-                                         description=description)
+                                         description=description,
+                                         # conflict_handler='resolve',
+                                        )
 
     # Standard track experiment options
     parser.add_argument('--version',
