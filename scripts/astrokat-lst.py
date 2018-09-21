@@ -1,3 +1,5 @@
+## MeerKAT LST calculation helper tools
+
 import argparse
 import ephem
 import katpoint
