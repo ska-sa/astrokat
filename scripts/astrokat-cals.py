@@ -229,31 +229,34 @@ def main(args):
     catalogue_header += '# PI: {}\n'.format(args.pi)
     catalogue_header += '# Contact details: {}\n'.format(args.contact)
 
-    if args.prop_id is None:
-        raise RuntimeError('Proposal ID must be provided when creating catalogue CSV file')
-    if args.target is not None:
-        cat_name_ = ''.join(args.target[0].split(' '))  # remove spaces from filename
-    else:
-        cat_name_ = os.path.splitext(os.path.basename(args.catalogue))[0]
-    catalogue_fname = '{}_{}.csv'.format(args.prop_id, cat_name_)
-    catalogue_fname = os.path.join(args.catalogue_path, catalogue_fname)
-
     catalogue_data = '\nObservation catalogue for {}Z\n'.format(creation_time)
     catalogue_data += catalogue_header
-    observation_catalogue.save(catalogue_fname)
-    with open(catalogue_fname, 'r+') as fcat:
-        sources = fcat.readlines()
-        fcat.seek(0)
-        fcat.write(catalogue_header)
-        for target in sources:
-            catalogue_data += target
-            fcat.write(target)
-    print catalogue_data
+    if args.prop_id is not None:
+        if args.target is not None:
+            cat_name_ = ''.join(args.target[0].split(' '))  # remove spaces from filename
+        else:
+            cat_name_ = os.path.splitext(os.path.basename(args.catalogue))[0]
+        catalogue_fname = '{}_{}.csv'.format(args.prop_id, cat_name_)
+        catalogue_fname = os.path.join(args.catalogue_path, catalogue_fname)
+
+        observation_catalogue.save(catalogue_fname)
+        with open(catalogue_fname, 'r+') as fcat:
+            sources = fcat.readlines()
+            fcat.seek(0)
+            fcat.write(catalogue_header)
+            for target in sources:
+                fcat.write(target)
+        print 'Observation catalogue {}'.format(catalogue_fname)
+    else:
+        for target in observation_catalogue.targets:
+            catalogue_data += '{}\n'.format(target)
+        print catalogue_data
 
     fig = source_elevation(observation_catalogue, location, report=args.report)
     if args.report:
         report_fname = '{}_{}.pdf'.format(args.prop_id, cat_name_)
-        print report_fname
+        report_fname = os.path.join(args.catalogue_path, report_fname)
+        print 'Observation catalogue {}'.format(report_fname)
         with PdfPages(report_fname) as pdf:
             plt.text(0.05, 0.97,
                     catalogue_data,
@@ -272,7 +275,7 @@ def main(args):
 
     else:
         print observation_table
-        print('Catalogue will be written to file {}'.format(catalogue_fname))
+        # print('Catalogue will be written to file {}'.format(catalogue_fname))
         plt.show()
 
 if __name__ == '__main__':
