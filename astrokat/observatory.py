@@ -25,11 +25,11 @@ class Observatory:
             return ephem.hours('0:0:01.0')
         except AttributeError:
             return ephem.hours('0:0:01.0')
-        else:
-            if not lst:
-                return rise_time
-            self.observer.date = rise_time
-            return self.observer.sidereal_time()
+
+        if not lst:
+            return rise_time
+        self.observer.date = rise_time
+        return self.observer.sidereal_time()
 
     def _ephem_settime_(self, ephem_target, lst=True):
         try:
@@ -39,11 +39,11 @@ class Observatory:
             return ephem.hours('23:59:59.0')
         except AttributeError:
             return ephem.hours('23:59:59.0')
-        else:
-            if not lst:
-                return rise_time
-            self.observer.date = set_time
-            return self.observer.sidereal_time()
+
+        if not lst:
+            return set_time
+        self.observer.date = set_time
+        return self.observer.sidereal_time()
 
     # default reference location
     def get_location(self):
