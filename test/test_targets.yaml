@@ -1,7 +1,11 @@
+# TODO: Add relevant comments
+# TODO: Add timing information -- desired min_duration, max_duration, (?)expected duration(?)
 instrument:
+  # TODO: Add list of antennas with fractional requirements for available
   pool_resources: m011,m022,ptuse
   band: l
   product: c856M4k
+  # TODO: Add integration_period in seconds (user in [s] system in [Hz])
   dump_rate: 0.25
 noise_diode:
   pattern: all
@@ -10,5 +14,6 @@ noise_diode:
 observation_loop:
   - LST: 0.0-23.9
     target_list:
+    # TODO: Add scan observation type
       - name=1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, duration=120.0, type=drift_scan
       - name=0408-65, radec=04:08:20.38 -65:45:09.1, tags=target, duration=180.0
