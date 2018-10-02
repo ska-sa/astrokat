@@ -1,4 +1,5 @@
 ## MeerKAT calibrator selection tools
+#  Returns the closest calibrator(s) for per target
 
 import argparse
 import katpoint
@@ -20,8 +21,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 catalogue_path = 'katconfig/user/catalogues'
 try:
     import katconf
-except ImportError:
-    pass  # not on live system
+except ImportError:  # not on live system
+    catalogue_path = '../calibrators'
 
 
 def cli(prog):
@@ -59,18 +60,7 @@ Proposal ID")
             help='\
 List of tags for types of calibrators to provide per target: \
 gain, bandpass, flux, polarisation.')
-    group = parser.add_argument_group(
-title="Observation target specification (*required*)",
-description = "Multiple targets are added using a catalogue file, " \
-"while for a single target a quick command line option is also available. " \
-"Note: Simultaneous use of a catalogue and input target is not allowed.")
-    ex_group = group.add_mutually_exclusive_group(required=True)
-    ex_group.add_argument(
-            '--catalogue',
-            type=str,
-            help='\
-Observation catalogue CSV file for output or view')
-    ex_group.add_argument(
+    parser.add_argument(
             '--target',
             nargs=3,
             type=str,
@@ -78,21 +68,22 @@ Observation catalogue CSV file for output or view')
             help='\
 Returns MeerKAT LST range for a celestial target with coordinates \
 HH:MM:SS DD:MM:SS')
-
-    group = parser.add_argument_group(
-title="Catalogue output options",
-description = "Options to view and output suggested observation catalogue")
-    group.add_argument(
-            '--view',
-            action='store_true',
-            help='\
-Display catalogue source elevation over time')
-    group.add_argument(
+    parser.add_argument(
             '--catalogue-path',
             type=str,
             default='.',  # working dir
             help='\
-Path to write observation CSV file')
+Path to write observation catalogue CSV file')
+
+    group = parser.add_argument_group(
+title="Catalogue output options",
+description = "Options to view constructed observation catalogue")
+    group.add_argument(
+            '--view',
+            type=str,
+            metavar='CATALOGUE',
+            help='\
+Display catalogue sources elevation over time')
     group.add_argument(
             '--report',
             action='store_true',
@@ -153,7 +144,7 @@ def source_elevation(catalogue, location, report=False):
             fontsize=10)
     plt.yticks(fontsize=10)
     plt.xlabel('Local Sidereal Time (hours)')
-    # plt.savefig('elevation_utc_lst.png',dpi=300)
+    plt.savefig('elevation_utc_lst.png',dpi=300)
     return fig
 
 # Target information line in table
@@ -179,22 +170,20 @@ def main(args):
     ref_antenna = katpoint.Antenna(location)
 
     if args.view:
-        source_elevation(katpoint.Catalogue(file(args.catalogue)), location)
+        source_elevation(katpoint.Catalogue(file(args.view)), location)
+        plt.show()
         quit()
+
+    if not args.target:
+        raise RuntimeError('No targets provided, exiting')
 
     calibrator = lambda catalogue, target, ref_antenna: catalogue.closest_to(target, antenna=ref_antenna)
     sun = katpoint.Target('Sun, special')
 
-    if args.catalogue:
-        catalogue = katpoint.Catalogue(file(args.catalogue))
-        catalogue.antenna = katpoint.Antenna(location)
-        targets = catalogue.filter(['~bpcal', '~gaincal', '~fluxcal', '~polcal'])
-    elif args.target:
-        args.target = [target.strip() for target in args.target]
-        target = ', '.join(map(str, [args.target[0], 'radec target', args.target[1], args.target[2]]))
-        targets = [katpoint.Target(target)]
-    else:
-        raise RuntimeError('No targets provided, exiting')
+    # input target from command line
+    args.target = [target.strip() for target in args.target]
+    target = ', '.join(map(str, [args.target[0], 'radec target', args.target[1], args.target[2]]))
+    targets = [katpoint.Target(target)]
 
     # constructing observational catalogue
     observation_catalogue = katpoint.Catalogue()
@@ -212,11 +201,11 @@ def main(args):
 
         # read calibrator catalogues
         for cal_tag in args.calibrators:
-            # TODO: add katconf read
-            # (katconf.resource_string(opts.configdelayfile).split('\n'))
+    #         # TODO: add katconf read
+    #         # (katconf.resource_string(opts.configdelayfile).split('\n'))
             cal_catalogue = os.path.join(
                     catalogue_path,
-                    'Lband-interferometric-{}-calibrators.csv'.format(cal_tag),
+                    'Lband-{}-calibrators.csv'.format(cal_tag),
                     )
             calibrators = katpoint.Catalogue(file(cal_catalogue))
             calibrator_, separation_angle =  calibrator(calibrators, target, ref_antenna)
@@ -231,32 +220,27 @@ def main(args):
 
     catalogue_data = '\nObservation catalogue for {}Z\n'.format(creation_time)
     catalogue_data += catalogue_header
-    if args.prop_id is not None:
-        if args.target is not None:
-            cat_name_ = ''.join(args.target[0].split(' '))  # remove spaces from filename
-        else:
-            cat_name_ = os.path.splitext(os.path.basename(args.catalogue))[0]
-        catalogue_fname = '{}_{}.csv'.format(args.prop_id, cat_name_)
-        catalogue_fname = os.path.join(args.catalogue_path, catalogue_fname)
 
-        observation_catalogue.save(catalogue_fname)
-        with open(catalogue_fname, 'r+') as fcat:
-            sources = fcat.readlines()
-            fcat.seek(0)
-            fcat.write(catalogue_header)
-            for target in sources:
-                fcat.write(target)
-        print 'Observation catalogue {}'.format(catalogue_fname)
-    else:
-        for target in observation_catalogue.targets:
-            catalogue_data += '{}\n'.format(target)
-        print catalogue_data
+    cat_name_ = ''.join(args.target[0].split(' '))  # remove spaces from filename
+    catalogue_fname = '{}_{}.csv'.format(args.prop_id, cat_name_)
+    catalogue_fname = os.path.join(args.catalogue_path, catalogue_fname)
+
+    observation_catalogue.save(catalogue_fname)
+    with open(catalogue_fname, 'r+') as fcat:
+        sources = fcat.readlines()
+        fcat.seek(0)
+        fcat.write(catalogue_header)
+        for target in sources:
+            catalogue_data += '{}'.format(target)
+            fcat.write(target)
+    print catalogue_data
+    print 'Observation catalogue {}'.format(catalogue_fname)
 
     fig = source_elevation(observation_catalogue, location, report=args.report)
     if args.report:
         report_fname = '{}_{}.pdf'.format(args.prop_id, cat_name_)
         report_fname = os.path.join(args.catalogue_path, report_fname)
-        print 'Observation catalogue {}'.format(report_fname)
+        print 'Observation catalogue report {}'.format(report_fname)
         with PdfPages(report_fname) as pdf:
             plt.text(0.05, 0.97,
                     catalogue_data,
@@ -275,7 +259,6 @@ def main(args):
 
     else:
         print observation_table
-        # print('Catalogue will be written to file {}'.format(catalogue_fname))
         plt.show()
 
 if __name__ == '__main__':
