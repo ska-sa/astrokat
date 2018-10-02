@@ -1,0 +1,6 @@
+# Polarisation calibration targets
+# Perley and Butler 2013 (https://arxiv.org/pdf/1302.6662.pdf)
+# Names, tag, RA, Dec, Flux model
+J0137+3309 | 3C48, radec polcal, 01:37:41.29, +33:09:35.13, (50. 50000. 0.5240 1.7377 -0.6396 0.0498)
+J0521+1638 | 3C138, radec polcal, 05:21:09.93, +16:38:22.2, (50. 50000. 1.3781 0.1619 -0.0650 -0.0100)
+J1331+3030 | 3C286, radec polcal, 13:31:08.288, +30:30:32.959, (50. 50000. 0.0181 1.5920 -0.5011 0.0357)
