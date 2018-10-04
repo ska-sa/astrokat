@@ -253,6 +253,11 @@ def main(args):
     if not args.target:
         raise RuntimeError('No targets provided, exiting')
 
+    if not os.path.isdir(args.cat_path):
+        msg = 'Could not access calibrator catalogue default location\n'
+        msg += 'add explicit location of catalogue folder using --cat-path <dirname>'
+        raise RuntimeError(msg)
+
     # input target from command line
     args.target = [target.strip() for target in args.target]
     target = ', '.join(map(str, [args.target[0], 'radec target', args.target[1], args.target[2]]))
@@ -293,6 +298,12 @@ def main(args):
                             catalogue=catalogue_fname,
                             )
     print(obs_summary)
+
+    if text_only and not args.text_only:
+        msg = 'Required matplotlib functionalities not available\n'
+        msg += 'Cannot create elevation plot or generate report\n'
+        msg += 'Only producing catalogue file and output to screen'
+        print(msg)
     if not (text_only or args.text_only):
         # create elevation plot for sources
         fig = source_elevation(observation_catalogue, location, report=args.report)
