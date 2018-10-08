@@ -182,6 +182,7 @@ def observe(
         duration_=None,  # overwrite user settings
         ):
     target_visible = False
+    # TODO: you already have a catalogue of targets -- this must fit with that
     name_list = [name_.strip() for name_ in target['name'].split('|')]
     if len(name_list) > 1:
         target_name = filter(lambda x: x.startswith('*'), name_list)[0][1:]
@@ -234,6 +235,8 @@ def drift_pointing_offset(target, duration=60):
 class telescope:
     def __init__(self, opts, args=None):
         self.opts = opts
+        # move this to a callable function, so do it only if worth while to
+        # observe
         try:
             correlator_config = read_yaml(args.correlator)
         except AttributeError:
@@ -262,6 +265,7 @@ class telescope:
             # switch noise-source pattern off (known setup starting observation)
             nd_off(self.array)
 
+        # TODO: use sessions object, and remember to clean up when __exit__
         with start_session(self.array, **vars(self.opts)) as session:
             # Update correlator settings
             if self.feng is not None:
