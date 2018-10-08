@@ -46,7 +46,7 @@ def katpoint_target(target_item):
     return name, target
 
 # find when is LST for date given, else for today
-def lst2utc(req_lst, date=None):
+def lst2utc(req_lst, ref_location, date=None):
     def get_lst_range(date):
         time_range = katpoint.Timestamp(time.mktime(date.timetuple())).secs + numpy.arange(0, 24.*3600., 60)
         lst_range = katpoint.rad2deg(target.antenna.local_sidereal_time(time_range)) / 15
@@ -55,7 +55,7 @@ def lst2utc(req_lst, date=None):
     req_lst = float(req_lst)
     cat = katpoint.Catalogue(add_specials=True)
     # TODO: ref this back to observatory object
-    ref_location = 'ref, -30:42:47.4, 21:26:38.0, 1060.0, 0.0, , , 1.15'
+    # ref_location = 'ref, -30:42:47.4, 21:26:38.0, 1060.0, 0.0, , , 1.15'
     cat.antenna = katpoint.Antenna(ref_location)
     target = cat['Zenith']
     if date is None:  # find the best UTC for today
