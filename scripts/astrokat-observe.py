@@ -1,3 +1,4 @@
+# flake8: noqa
 #!/usr/bin/env python
 # Observation script and chronology check
 
@@ -16,6 +17,7 @@ from astrokat import (
     read_yaml,
     katpoint_target,
     Observatory,
+    noisediode,
     )
 
 try:
@@ -37,55 +39,61 @@ except ImportError:
 import katpoint
 
 
-# switch noise-source pattern off
-def nd_on(mkat, logging=True):
-    if logging: user_logger.info('Switch noise-diode on')
-    mkat.ants.req.dig_noise_source('now', 1)
+# # switch noise-source pattern off
+# def nd_on(mkat, logging=True):
+#     if logging: user_logger.info('Switch noise-diode on')
+#     # Noise Diodes are triggered on all antennas in array simultaneously
+#     # add a second to ensure all digitisers set at the same time
+#     timestamp = time.time() + 1
+#     mkat.ants.req.dig_noise_source(timestamp, 1)
 
-# switch noise-source pattern off
-def nd_off(mkat, logging=True):
-    if logging: user_logger.info('Switch noise-diode off')
-    mkat.ants.req.dig_noise_source('now', 0)
+# # switch noise-source pattern off
+# def nd_off(mkat, logging=True):
+#     if logging: user_logger.info('Switch noise-diode off')
+#     # Noise Diodes are triggered on all antennas in array simultaneously
+#     # add a second to ensure all digitisers set at the same time
+#     timestamp = time.time() + 1
+#     mkat.ants.req.dig_noise_source(timestamp, 0)
 
-# fire noisediode before track
-def nd_fire(mkat, nd_setup):
-    cycle_length = nd_setup['cycle_len']
-    user_logger.info('Firing noise diode for {}s before track on target'.format(cycle_length))
-    nd_on(mkat, logging=False)
-    # TODO: add some overwrite func that will update the time for sims
-    time.sleep(float(cycle_length))
-    nd_off(mkat, logging=False)
+# # fire noisediode before track
+# def nd_fire(mkat, nd_setup):
+#     cycle_length = nd_setup['cycle_len']
+#     user_logger.info('Firing noise diode for {}s before track on target'.format(cycle_length))
+#     nd_on(mkat, logging=False)
+#     # TODO: add some overwrite func that will update the time for sims
+#     time.sleep(float(cycle_length))
+#     nd_off(mkat, logging=False)
 
-def set_nd_pattern(mkat, nd_pattern, cycle_length, on_fraction):
-    sub_ants = [ant.name for ant in mkat.ants]
-    if nd_pattern == 'all':
-        # Noise Diodes are triggered on all antennas in array simultaneously
-        # add a second to ensure all digitisers set at the same time
-        timestamp = time.time() + 1
-        msg = 'Set all noise diode with timestamp {} ({})'.format(
-                int(timestamp), time.ctime(timestamp))
-        user_logger.info(msg)
-        mkat.ants.req.dig_noise_source(timestamp, on_fraction, cycle_length)
-    elif nd_pattern == 'cycle':
-        # Noise Diodes should trigger one after another, within reason
-        # add time [sec] to ensure all digitisers set at the same time
-        timestamp = time.time() + 2
-        for ant in sub_ants:
-            msg = 'Set noise diode for antenna {} with timestamp {}'.format(
-                    ant, timestamp)
-            user_logger.info(msg)
-            ped = getattr(mkat, ant)
-            ped.req.dig_noise_source(timestamp, on_fraction, cycle_length)
-            timestamp += cycle_length * on_fraction
-    elif nd_pattern in sub_ants:
-        # Noise Diodes are triggered for only one antenna in the array
-        ant_name = nd_pattern
-        user_logger.info('Set noise diode for antenna {}'.format(ant_name))
-        ped = getattr(mkat, ant_name)
-        ped.req.dig_noise_source('now', on_fraction, cycle_length)
-    else:
-        msg = 'Unknown ND cycle option, cannot apply requested pattern'
-        raise ValueError(msg)
+# def set_nd_pattern(mkat, nd_pattern, cycle_length, on_fraction):
+#     sub_ants = [ant.name for ant in mkat.ants]
+#     if nd_pattern == 'all':
+#         # Noise Diodes are triggered on all antennas in array simultaneously
+#         # add a second to ensure all digitisers set at the same time
+#         timestamp = time.time() + 1
+#         msg = 'Set all noise diode with timestamp {} ({})'.format(
+#                 int(timestamp), time.ctime(timestamp))
+#         user_logger.info(msg)
+#         mkat.ants.req.dig_noise_source(timestamp, on_fraction, cycle_length)
+#     elif nd_pattern == 'cycle':
+#         # Noise Diodes should trigger one after another, within reason
+#         # add time [sec] to ensure all digitisers set at the same time
+#         timestamp = time.time() + 2
+#         for ant in sub_ants:
+#             msg = 'Set noise diode for antenna {} with timestamp {}'.format(
+#                     ant, timestamp)
+#             user_logger.info(msg)
+#             ped = getattr(mkat, ant)
+#             ped.req.dig_noise_source(timestamp, on_fraction, cycle_length)
+#             timestamp += cycle_length * on_fraction
+#     elif nd_pattern in sub_ants:
+#         # Noise Diodes are triggered for only one antenna in the array
+#         ant_name = nd_pattern
+#         user_logger.info('Set noise diode for antenna {}'.format(ant_name))
+#         ped = getattr(mkat, ant_name)
+#         ped.req.dig_noise_source('now', on_fraction, cycle_length)
+#     else:
+#         msg = 'Unknown ND cycle option, cannot apply requested pattern'
+#         raise ValueError(msg)
 
 
 def set_fengines(session,
@@ -254,16 +262,16 @@ class telescope:
         ## System setup before observation
         user_logger.warning('Telescope __enter__, first verify_and_connect')
         # verify subarray setup correct for observation before doing any work
-        if 'instrument' in self.opts.profile.keys():
-            self.subarray_setup(self.array, self.opts.profile['instrument'])
+        if 'instrument' in self.opts.template.keys():
+            self.subarray_setup(self.array, self.opts.template['instrument'])
 
         # Set up noise diode if requested
-        if 'noise_diode' in self.opts.profile.keys():
-            self.noise_diode(self.array, self.opts.profile['noise_diode'])
+        if 'noise_diode' in self.opts.template.keys():
+            self.noise_diode(self.array, self.opts.template['noise_diode'])
         else:
         # Ensure default setup before starting observation
             # switch noise-source pattern off (known setup starting observation)
-            nd_off(self.array)
+            noisediode.off(self.array)
 
         # TODO: use sessions object, and remember to clean up when __exit__
         with start_session(self.array, **vars(self.opts)) as session:
@@ -283,7 +291,7 @@ class telescope:
         user_logger.warning('Telescope __exit__, third verify_and_connect')
         # print 'TODO: Restore defaults'
         # switch noise-source pattern off (ensure this after each observation)
-        nd_off(self.array)
+        noisediode.off(self.array)
         self.array.disconnect()
 
     def subarray_setup(self, mkat, instrument):
@@ -325,28 +333,28 @@ class telescope:
                     on_fraction,
                     noise_pattern)
             user_logger.info(msg)
-            set_nd_pattern(mkat, noise_pattern, cycle_length, on_fraction)
+            noisediode.pattern(mkat, noise_pattern, cycle_length, on_fraction)
         else:
             msg = 'Noise diode will be fired on {} antenna(s) for {} sec before each track or scan'.format(
                     noise_pattern,
                     cycle_length)
             user_logger.info(msg)
-            nd_off(mkat, logging=False)
+            noisediode.off(mkat, logging=False)
 
 
 
 def run_observation(opts, mkat):
 
     # noise-source on, activated when needed
-    if 'noise_diode' in opts.profile.keys():
-        nd_setup = opts.profile['noise_diode']
+    if 'noise_diode' in opts.template.keys():
+        nd_setup = opts.template['noise_diode']
     else:
         nd_setup = None
 
     user_logger.warning('Run observation __enter__, second verify_and_connect')
 
     # Each observation loop contains a number of observation cycles over LST ranges
-    for observation_cycle in opts.profile['observation_loop']:
+    for observation_cycle in opts.template['observation_loop']:
         # Unpack all target information
         target_list = []
         obs_targets = []
@@ -437,7 +445,7 @@ def run_observation(opts, mkat):
                 for target in obs_targets:
                     user_logger.warning('Tracking target {}'.format(target))
                     # noise diode fire should be corrected in sessions
-                    if nd_setup: nd_fire(mkat.array, nd_setup)
+                    if nd_setup: noisediode.trigger(mkat.array, nd_setup)
                     if observe(session, catalogue, target):
                         targets_visible = True
 
@@ -459,7 +467,7 @@ def run_observation(opts, mkat):
                 for calibrator in obs_calibrators:
                     if calibrator['cadence'] < 0 or \
                             calibrator['last_observed'] is None:
-                        if nd_setup: nd_fire(mkat.array, nd_setup)
+                        if nd_setup: noisediode.trigger(mkat.array, nd_setup)
                         if observe(session, catalogue, calibrator):
                             targets_visible = True
                     else:
@@ -518,9 +526,9 @@ if __name__ == '__main__':
                 parser.add_argument(arg)
         args_ = parser.parse_args(args)
 
-    # package observation from profile configuration
-    if opts.profile:
-        opts.profile = read_yaml(opts.profile)
+    # package observation from template plan
+    if opts.template:
+        opts.template = read_yaml(opts.template)
 
     # setup and observation
     with telescope(opts, args_) as mkat:
