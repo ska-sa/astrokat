@@ -42,7 +42,7 @@ class verify_and_connect:
         kwargs = vars(dummy)
         self.dry_run = True
         self._ants = kwargs['noise_pattern'] if 'noise_pattern' in kwargs else []
-        self._lst = kwargs['profile']['observation_loop'][0]['LST'].split('-')[0].strip()
+        self._lst = kwargs['template']['observation_loop'][0]['LST'].split('-')[0].strip()
         self._sensors = self.fake_sensors(kwargs)
         self._session_cnt = 0
 
@@ -71,9 +71,9 @@ class verify_and_connect:
 
     def fake_sensors(self, kwargs):
         _sensors = {}
-        for key in kwargs['profile']['instrument'].keys():
+        for key in kwargs['template']['instrument'].keys():
             fakesensor = 'sub_{}'.format(key)
-            _sensors[fakesensor] = Fakr(kwargs['profile']['instrument'][key])
+            _sensors[fakesensor] = Fakr(kwargs['template']['instrument'][key])
         return _sensors
 
 
@@ -107,8 +107,8 @@ class start_session:
     def __exit__(self, type, value, traceback):
         if self.track_:
             self.kat._session_cnt += 1
-        if self.kat._session_cnt < len(self.kwargs['profile']['observation_loop']):
-            self.kat._lst = self.kwargs['profile']['observation_loop'][self.kat._session_cnt]['LST'].split('-')[0].strip()
+        if self.kat._session_cnt < len(self.kwargs['template']['observation_loop']):
+            self.kat._lst = self.kwargs['template']['observation_loop'][self.kat._session_cnt]['LST'].split('-')[0].strip()
 
     def track(self, target, duration=0, announce=False):
         self.track_ = True
