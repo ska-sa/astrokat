@@ -94,7 +94,7 @@ def set_fengines(session,
     if not session.cbf.fengine.inputs:
         msg = 'Failed to get correlator input labels, cannot set the F-engine gains'
         raise RuntimeError(msg)
-
+    
     for inp in session.cbf.fengine.inputs:
         # Set the gain to a single non complex number if needed
         if requant_gains is not None:
@@ -168,7 +168,7 @@ def read_targets(target_items):
     target_list['obs_type'] = obs_types
     target_list['last_observed'] = [None]*ntargets
     target_list['obs_cntr'] = [0]*ntargets
-
+    
     # import pprint
     # pprint.pprint(target_list)
     return target_list
@@ -187,18 +187,18 @@ def observe(
         target_name = filter(lambda x: x.startswith('*'), name_list)[0][1:]
     else:
         target_name = name_list[0]
-
+    
     target_ = catalogue[target_name]
     duration = target['duration']
     type_ = target['obs_type']
-
+    
     # functional overwrite of duration for system reasons
     if duration_ is not None:
         duration = duration_
     # simple way to get telescope to slew to target
     if duration <= 0:
         return session.track(target_, duration=duration_, announce=False)
-
+    
     user_logger.info('{} {} {} for {} sec'.format(
         type_.capitalize(), target_.tags[1], target.name, duration))
     # TODO: add some delay for slew time
@@ -206,12 +206,12 @@ def observe(
     if type_ == 'drift_scan' and session.track(target_, duration=0, announce=False):
         # set transit point as target
         target_ = drift_pointing_offset(target_, duration=duration)
-
+    
     session.label('track')
     if session.track(target_, duration=duration):
         target_visible = True
         target['obs_cntr'] += 1
-
+    
     target['last_observed'] = catalogue._antenna.observer.date.datetime()
     return target_visible
 
@@ -237,7 +237,7 @@ def calibrator_cadence(observer, catalogue):
         calibrator = catalogue[i]
         if calibrator['cadence'] > 0:
             if calibrator['last_observed'] is None or (observer.date.datetime() - calibrator['last_observed']).seconds > calibrator['cadence']:
-			    return i
+                return i
     return None
 
 class telescope:
@@ -255,14 +255,14 @@ class telescope:
         # connecting to proxies and devices
         self.array = verify_and_connect(opts)
         # create single kat object, cannot repeatedly recreate
-
+    
     def __enter__(self):
         ## System setup before observation
         user_logger.warning('Telescope __enter__, first verify_and_connect')
         # verify subarray setup correct for observation before doing any work
         if 'instrument' in self.opts.profile.keys():
             self.subarray_setup(self.array, self.opts.profile['instrument'])
-
+        
         # Set up noise diode if requested
         if 'noise_diode' in self.opts.profile.keys():
             self.noise_diode(self.array, self.opts.profile['noise_diode'])
@@ -270,7 +270,7 @@ class telescope:
         # Ensure default setup before starting observation
             # switch noise-source pattern off (known setup starting observation)
             nd_off(self.array)
-
+        
         with start_session(self.array, **vars(self.opts)) as session:
             # Update correlator settings
             if self.feng is not None:
@@ -282,7 +282,7 @@ class telescope:
 #         set_bf_weights(self.array, opts.bf_ants, opts.bf_weights)
         # return restore_values
         return self
-
+    
     def __exit__(self, type, value, traceback):
         ## Ensure known exit state before quitting
         user_logger.warning('Telescope __exit__, third verify_and_connect')
@@ -290,7 +290,7 @@ class telescope:
         # switch noise-source pattern off (ensure this after each observation)
         nd_off(self.array)
         self.array.disconnect()
-
+    
     def subarray_setup(self, mkat, instrument):
         # current sensor list included in instrument
         # sub_ [
@@ -319,7 +319,7 @@ class telescope:
                 raise RuntimeError('Subarray configation {} incorrect, {} required, {} found'.format(
                     sensor_name, conf_param, sub_sensor))
 
-
+    
     def noise_diode(self, mkat, nd_setup):
         cycle_length = nd_setup['cycle_len']
         on_fraction = nd_setup['on_fraction']
@@ -340,15 +340,15 @@ class telescope:
 
 
 def run_observation(opts, mkat):
-
+    
     # noise-source on, activated when needed
     if 'noise_diode' in opts.profile.keys():
         nd_setup = opts.profile['noise_diode']
     else:
         nd_setup = None
-
+    
     user_logger.warning('Run observation __enter__, second verify_and_connect')
-
+    
     # Each observation loop contains a number of observation cycles over LST ranges
     for observation_cycle in opts.profile['observation_loop']:
         # Unpack all target information
@@ -368,7 +368,7 @@ def run_observation(opts, mkat):
                 dtype=float)
         user_logger.info('Observing targets over LST range {}-{}'.format(
             start_lst, end_lst))
-
+        
         # Verify that it is worth while continuing with the observation
         # Only observe targets in current LST range
         local_lst = ephem.hours(observer.sidereal_time())
@@ -377,7 +377,7 @@ def run_observation(opts, mkat):
             user_logger.warning('{} outside LST range {}-{}'.format(
                     local_lst, start_lst, end_lst))
             continue
-
+        
         ## Verify that it is worth while continuing with the observation
         # The filter functions uses the current time as timestamps
         # and thus incorrectly set the simulation timestamp
@@ -396,20 +396,20 @@ def run_observation(opts, mkat):
                          ', '.join([repr(bpcal.name) for bpcal in catalogue.filter('bpcal')])))
         user_logger.info("Gain calibrators are [{}]".format(
                          ', '.join([repr(gaincal.name) for gaincal in catalogue.filter('gaincal')])))
-
+        
         if not 'description' in vars(opts):
             session_opts = vars(opts)
             description = 'Observation run'
             if 'proposal_description' in vars(opts):
                 descrption = opts.proposal_description
             session_opts['description'] = description
-
+        
         ## Target observation loop
         with start_session(mkat.array, **vars(opts)) as session:
-
+            
             session.standard_setup(**vars(opts))
             session.capture_init()
-
+            
             # If bandpass interval is specified,
             # force the first visit to be bandpass calibrator(s)
             target = None
@@ -419,11 +419,11 @@ def run_observation(opts, mkat):
                     if observe(session,
                               catalogue,
                               target,
-                              duration_=0): 
+                              duration_=0):
                         break
                 # Only start capturing once we are on target
                 session.capture_start()# is this a good idea??
-
+            
             done = False
             # while not done:
             #TODO Change this to use a while loop
@@ -439,7 +439,7 @@ def run_observation(opts, mkat):
                         if observe(session, catalogue, obs_targets[cal]):
                             targets_visible += True
                         cal = calibrator_cadence(observer,obs_targets)
-
+                    
                     user_logger.warning('Tracking target {}'.format(target['name']))
                     # noise diode fire should be corrected in sessions
                     if not target['cadence'] > 0 :
@@ -454,7 +454,7 @@ def run_observation(opts, mkat):
                 local_lst = ephem.hours(observer.sidereal_time())
                 if ephem.hours(local_lst) > ephem.hours(str(end_lst)):
                     done = True
-
+        
         # display observation cycle statistics
         print
         user_logger.info("Observation loop statistics")
@@ -480,7 +480,7 @@ if __name__ == '__main__':
                      '--no-mask',
                      '--centre-freq',
                      '--description'])
-
+    
     # get correlator settings from config files
     args_ = None
     if args:
@@ -495,11 +495,11 @@ if __name__ == '__main__':
             if arg.startswith(("-", "--")):
                 parser.add_argument(arg)
         args_ = parser.parse_args(args)
-
+    
     # package observation from profile configuration
     if opts.profile:
         opts.profile = read_yaml(opts.profile)
-
+    
     # setup and observation
     with telescope(opts, args_) as mkat:
         run_observation(opts, mkat)
