@@ -128,6 +128,7 @@ def cli(prog,
 
 
 if __name__ == '__main__':
-    cli()
+    import sys
+    cli(sys.argv[0])
 
 # -fin-
