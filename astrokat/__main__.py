@@ -69,7 +69,7 @@ def session_options(parser,
         group.add_argument('--horizon',
                            type=float,
                            default=20,
-                           help='TBD')
+                           help='Lowest elevation limit in degrees')
     return parser
 
 
@@ -92,12 +92,13 @@ def cli(prog,
             " Also note the **required** options."
         parser = argparse.ArgumentParser(usage=usage,
                                          description=description,
+                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                          )
 
     # Standard track experiment options
     parser.add_argument('--version',
                         action='version', version=version)
-    parser.add_argument('--template',  # profile
+    parser.add_argument('--template',
                         default=[],
                         type=str,
                         required=True,
