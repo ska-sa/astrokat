@@ -1,4 +1,3 @@
-# flake8: noqa
 #!/usr/bin/env python
 # Observation script and chronology check
 
@@ -7,9 +6,6 @@ import astrokat
 import ephem
 
 import numpy as np
-from itertools import chain
-import time
-from datetime import datetime, timedelta
 
 from astrokat import (
     NoTargetsUpError,
@@ -31,7 +27,7 @@ try:
         SessionCBF,
         SessionSDP)
 except ImportError:
-    from astrokat import(
+    from astrokat import (
         collect_targets,
         user_logger,
         start_session,
@@ -41,7 +37,7 @@ import katpoint
 
 
 # unpack targets to katpoint compatable format
-# TODO: target description defined in function needs to be in configuration 
+# TODO: target description defined in function needs to be in configuration
 def read_targets(target_items):
     desc = {
             'names': (
@@ -64,7 +60,7 @@ def read_targets(target_items):
                 ),
             }
     ntargets = len(target_items)
-    target_list = np.recarray(ntargets, dtype = desc)
+    target_list = np.recarray(ntargets, dtype=desc)
     names = []
     targets = []
     durations = []
@@ -152,6 +148,7 @@ def observe(
     target_instructions['last_observed'] = catalogue._antenna.observer.date.datetime()
     return target_visible
 
+
 def drift_pointing_offset(target, duration=60):
     try:
         obs_start_ts = target.antenna.observer.date
@@ -179,9 +176,9 @@ class telescope(object):
         except AttributeError:
             self.feng = self.xeng = self.beng = None
         else:
-            self.feng=correlator_config['Fengine']
-            self.xeng=correlator_config['Xengine']
-            self.beng=correlator_config['Bengine']
+            self.feng = correlator_config['Fengine']
+            self.xeng = correlator_config['Xengine']
+            self.beng = correlator_config['Bengine']
         # Check options and build KAT configuration,
         # connecting to proxies and devices
         # create single kat object, cannot repeatedly recreate
@@ -226,7 +223,7 @@ class telescope(object):
 
     def __exit__(self, type, value, traceback):
         user_logger.info('Returning telescope to startup state')
-        ## Ensure known exit state before quitting
+        # Ensure known exit state before quitting
         # TODO: Return correlator settings to entry values
         # switch noise-source pattern off (ensure this after each observation)
         noisediode.off(self.array)
@@ -251,7 +248,7 @@ class telescope(object):
             if type(conf_param) is list:
                 conf_param = set(conf_param)
             if type(sub_sensor) is list:
-                sub_sensor= set(sub_sensor)
+                sub_sensor = set(sub_sensor)
             if key == 'product' and conf_param in sub_sensor:
                 continue
             elif key == 'pool_resources':
@@ -273,7 +270,6 @@ class telescope(object):
 #                     cycle_length)
 #             user_logger.info(msg)
 #             noisediode.off(mkat, logging=False)
-
 
 
 def run_observation(opts, mkat):
@@ -327,7 +323,7 @@ def run_observation(opts, mkat):
                     local_lst, start_lst, end_lst))
             continue
 
-        ## Verify that it is worth while continuing with the observation
+        # Verify that it is worth while continuing with the observation
         # The filter functions uses the current time as timestamps
         # and thus incorrectly set the simulation timestamp
         if not mkat.array.dry_run:
@@ -346,14 +342,15 @@ def run_observation(opts, mkat):
         user_logger.info("Gain calibrators are [{}]".format(
                          ', '.join([repr(gaincal.name) for gaincal in catalogue.filter('gaincal')])))
 
-        if not 'description' in vars(opts):
+        if 'description' not in vars(opts):
             session_opts = vars(opts)
-            description = 'Observation run'
-            if 'proposal_description' in vars(opts):
-                descrption = opts.proposal_description
-            session_opts['description'] = description
+            # description = 'Observation run'
+            # # TODO: need to allow user descriptions
+            # # if 'proposal_description' in vars(opts):
+            # #     descrption = opts.proposal_description
+            # session_opts['description'] = description
 
-        ## Target observation loop
+        # Target observation loop
         mkat.session.standard_setup(**vars(opts))
         mkat.session.capture_init()
 
@@ -385,7 +382,7 @@ def run_observation(opts, mkat):
                 # Evaluate targets with cadence
                 for cadence_source in cadence_list:
                     if cadence_source['last_observed'] is None:
-                        targets_visible =  observe(mkat.session, catalogue, cadence_source)
+                        targets_visible = observe(mkat.session, catalogue, cadence_source)
                     else:
                         deltatime = observer.date.datetime() - cadence_source['last_observed']
                         if deltatime.total_seconds() > cadence_source['cadence']:
@@ -395,7 +392,7 @@ def run_observation(opts, mkat):
                 delta_time = (observer.date.datetime()-start_time).total_seconds()
                 if obs_duration > 0:
                     if delta_time >= obs_duration or \
-                        (obs_duration-delta_time) < obs_targets[cnt]['duration']:
+                            (obs_duration-delta_time) < obs_targets[cnt]['duration']:
                         done = True
                         break
                 else:
@@ -418,13 +415,12 @@ def run_observation(opts, mkat):
         if len(obs_targets) > 0:
             user_logger.info("Targets observed :")
             for unique_target in np.unique(obs_targets['name']):
-                cntrs = obs_targets[obs_targets['name']==unique_target]['obs_cntr']
-                durations = obs_targets[obs_targets['name']==unique_target]['duration']
+                cntrs = obs_targets[obs_targets['name'] == unique_target]['obs_cntr']
+                durations = obs_targets[obs_targets['name'] == unique_target]['duration']
                 user_logger.info('{} observed for {} seconds'.format(
                     unique_target,
                     np.sum(cntrs*durations)))
         print
-
 
 
 if __name__ == '__main__':
@@ -437,17 +433,24 @@ if __name__ == '__main__':
                      '--centre-freq',
                      '--description'])
 
+    # suppress the sessions noise diode, which is outdated
+    # will use it again once functionality corrected
+    opts.nd_params = 'off'
+
     # get correlator settings from config files
     args_ = None
     if args:
         import argparse
         parser = argparse.ArgumentParser()
         for arg in args:
+            # optsparser conversion does not handle description very well
+            # corrections added here clears syntax errors that produce dry-run error in output
             if 'description' in arg:
                 update_opts = vars(opts)
                 update_opts[arg.split('=')[0].split('-')[-1]] = arg.split('=')[1]
+            # catch other hidden arguments such as correlator settings
             if len(arg.split('=')[1]) > 1:
-                arg = "{}='{}'".format(arg.split('=')[0],arg.split('=')[1])
+                arg = "{}='{}'".format(arg.split('=')[0], arg.split('=')[1])
             if arg.startswith(("-", "--")):
                 parser.add_argument(arg)
         args_ = parser.parse_args(args)
