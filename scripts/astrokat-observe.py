@@ -357,31 +357,17 @@ def run_observation(opts, mkat):
         mkat.session.standard_setup(**vars(opts))
         mkat.session.capture_init()
 
-        # If bandpass interval is specified,
-        # force the first visit to be bandpass calibrator(s)
-        bpcals_observed = False
-        for cnt, source in enumerate(obs_targets):
-            if 'bpcal' in source['target']:
-                mkat.session.capture_start()
-                bpcals_observed = observe(mkat.session, catalogue, source)
-        # Else go to first target
-        if not bpcals_observed:
-            user_logger.info('Slewing to first target')
-            for target in obs_targets:
-                if observe(mkat.session,
-                          catalogue,
-                          target,
-                          _duration_=0):
-                    break
-            # Only start capturing once we are on target
-            mkat.session.capture_start()
+        # Go to first target before starting capture
+        user_logger.info('Slewing to first target')
+        observe(mkat.session, catalogue, obs_targets[0], _duration_=0)
+        # Only start capturing once we are on target
+        mkat.session.capture_start()
 
         # set up duration periods for observation control
         obs_duration = -1
         if 'durations' in opts.template:
             if 'obs_duration' in opts.template['durations']:
                 obs_duration = opts.template['durations']['obs_duration']
-        shortest_target = np.min(obs_targets['duration'])
         start_time = observer.date.datetime()
         done = False
         while not done:
@@ -389,7 +375,7 @@ def run_observation(opts, mkat):
             # Cycle through target list in order listed
             targets_visible = False
 
-            for target in obs_targets:
+            for cnt, target in enumerate(obs_targets):
 #                 # noise diode fire should be corrected in sessions
 #                 if nd_setup: noisediode.trigger(mkat.array, nd_setup)
                 # observe non cadence target
@@ -409,7 +395,7 @@ def run_observation(opts, mkat):
                 delta_time = (observer.date.datetime()-start_time).total_seconds()
                 if obs_duration > 0:
                     if delta_time >= obs_duration or \
-                        (obs_duration-delta_time) < shortest_target:
+                        (obs_duration-delta_time) < obs_targets[cnt]['duration']:
                         done = True
                         break
                 else:
@@ -431,12 +417,14 @@ def run_observation(opts, mkat):
             (observer.date.datetime()-start_time).total_seconds()))
         if len(obs_targets) > 0:
             user_logger.info("Targets observed :")
-            for target in obs_targets:
-                user_logger.info('{} observation on {} observed for {} seconds'.format(
-                    target['obs_type'],
-                    target['name'],
-                    float(target['obs_cntr'])*target['duration']))
+            for unique_target in np.unique(obs_targets['name']):
+                cntrs = obs_targets[obs_targets['name']==unique_target]['obs_cntr']
+                durations = obs_targets[obs_targets['name']==unique_target]['duration']
+                user_logger.info('{} observed for {} seconds'.format(
+                    unique_target,
+                    np.sum(cntrs*durations)))
         print
+
 
 
 if __name__ == '__main__':
