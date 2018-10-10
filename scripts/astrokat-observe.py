@@ -140,16 +140,14 @@ def observe(
 
     # do the different observations depending on requested type
     # check if target is visible before doing any work
-    if obs_type == 'drift_scan':
-        target_visible = session.track(target, duration=0, announce=False)
-        if target_visible:
-            # set transit point as target
-            target = drift_pointing_offset(target, duration=duration)
-    else:  # doing a track is the default observation type
-        session.label('track')
-        if session.track(target, duration=duration):
-            target_visible = True
-            target_instructions['obs_cntr'] += 1
+    if obs_type == 'drift_scan' and session.track(target, duration=0, announce=False):
+        # set transit point as target
+        target = drift_pointing_offset(target, duration=duration)
+
+    session.label('track')
+    if session.track(target, duration=duration):
+        target_visible = True
+        target_instructions['obs_cntr'] += 1
 
     target_instructions['last_observed'] = catalogue._antenna.observer.date.datetime()
     return target_visible
@@ -170,7 +168,8 @@ def drift_pointing_offset(target, duration=60):
     target.antenna.observer.date = obs_start_ts
     return target
 
-class telescope:
+
+class telescope(object):
     def __init__(self, opts, args=None):
         user_logger.info('Setting up telescope for observation')
         self.opts = opts
@@ -296,6 +295,11 @@ def run_observation(opts, mkat):
             continue
         obs_targets = read_targets(observation_cycle['target_list'])
         target_list = obs_targets['target'].tolist()
+        # Extract targets with cadences
+        cadence_list = []
+        for target in obs_targets:
+            if target['cadence'] > 0:
+                cadence_list.append(target)
 #         obs_calibrators = []
 #         if 'calibration_standards' in observation_cycle.keys():
 #             obs_calibrators = read_targets(observation_cycle['calibration_standards'])
@@ -372,15 +376,15 @@ def run_observation(opts, mkat):
             # Only start capturing once we are on target
             mkat.session.capture_start()
 
+        # set up duration periods for observation control
         obs_duration = -1
         if 'durations' in opts.template:
             if 'obs_duration' in opts.template['durations']:
                 obs_duration = opts.template['durations']['obs_duration']
+        shortest_target = np.min(obs_targets['duration'])
         start_time = observer.date.datetime()
         done = False
         while not done:
-            if (observer.date.datetime()-start_time).total_seconds() >= obs_duration:
-                done = True
 
             # Cycle through target list in order listed
             targets_visible = False
@@ -388,40 +392,33 @@ def run_observation(opts, mkat):
             for target in obs_targets:
 #                 # noise diode fire should be corrected in sessions
 #                 if nd_setup: noisediode.trigger(mkat.array, nd_setup)
-                targets_visible = observe(mkat.session, catalogue, target)
+                # observe non cadence target
+                if target['cadence'] < 0:
+                    targets_visible = observe(mkat.session, catalogue, target)
 
-                # Evaluate calibrator cadence
-                # TODO: separate out targets with cadences
-#                 for calibrator in obs_calibrators:
-#                     if calibrator['cadence'] < 0:
-#                         continue
-#                     if calibrator['last_observed'] is None:
-#                         if observe(mkat.session, catalogue, calibrator):
-#                             targets_visible = True
-#                     else:
-#                         deltatime = observer.date.datetime() - calibrator['last_observed']
-#                         if deltatime.total_seconds() > calibrator['cadence']:
-#                             if observe(mkat.session, catalogue, calibrator):
-#                                 targets_visible = True
+                # Evaluate targets with cadence
+                for cadence_source in cadence_list:
+                    if cadence_source['last_observed'] is None:
+                        targets_visible =  observe(mkat.session, catalogue, cadence_source)
+                    else:
+                        deltatime = observer.date.datetime() - cadence_source['last_observed']
+                        if deltatime.total_seconds() > cadence_source['cadence']:
+                            targets_visible = observe(mkat.session, catalogue, cadence_source)
 
-#             # Cycle through calibrator list and evaluate those with
-#             # cadence, while observing those that don't
-#             for calibrator in obs_calibrators:
-#                 if calibrator['cadence'] < 0 or \
-#                         calibrator['last_observed'] is None:
-#                     if nd_setup: noisediode.trigger(mkat.array, nd_setup)
-#                     if observe(mkat.session, catalogue, calibrator):
-#                         targets_visible = True
-#                 else:
-#                     deltatime = observer.date.datetime() - calibrator['last_observed']
-#                     if deltatime.total_seconds() > calibrator['cadence']:
-#                         if observe(mkat.session, catalgoue, calibrator):
-#                             targets_visible = True
-
-                # End if there is nothing to do
-                if not targets_visible:
-                    user_logger.warning('No targets are currently visible - stopping script instead of hanging around')
+                # loop continuation checks
+                delta_time = (observer.date.datetime()-start_time).total_seconds()
+                if obs_duration > 0:
+                    if delta_time >= obs_duration or \
+                        (obs_duration-delta_time) < shortest_target:
+                        done = True
+                        break
+                else:
                     done = True
+
+            # End if there is nothing to do
+            if not targets_visible:
+                user_logger.warning('No targets are currently visible - stopping script instead of hanging around')
+                done = True
                 # Verify the LST range is still valid
                 local_lst = ephem.hours(observer.sidereal_time())
                 if ephem.hours(local_lst) > ephem.hours(str(end_lst)):
@@ -430,20 +427,16 @@ def run_observation(opts, mkat):
         # display observation cycle statistics
         print
         user_logger.info("Observation loop statistics")
+        user_logger.info("Total observation time {:.2f} seconds".format(
+            (observer.date.datetime()-start_time).total_seconds()))
         if len(obs_targets) > 0:
-            user_logger.info("Targets observed : {}".format(obs_targets['name']))
-            user_logger.info('Time on target:')
+            user_logger.info("Targets observed :")
             for target in obs_targets:
                 user_logger.info('{} observation on {} observed for {} seconds'.format(
                     target['obs_type'],
                     target['name'],
                     float(target['obs_cntr'])*target['duration']))
-#         if len(obs_calibrators) > 0:
-#             user_logger.info("Calibrators observed : {}".format(obs_calibrators['name']))
-#             user_logger.info('Time on calibrator:')
-#             for target in obs_calibrators:
-#                 user_logger.info('{} observed for {} seconds'.format(target['name'], float(target['obs_cntr'])*target['duration']))
-#         print
+        print
 
 
 if __name__ == '__main__':
