@@ -6,8 +6,16 @@ from datetime import datetime
 from simulate import user_logger, setobserver
 from utility import katpoint_target, lst2utc
 
-# default reference position for MKAT array
-ref_location = 'ref, -30:42:47.4, 21:26:38.0, 1060.0, 0.0, , , 1.15'
+try:
+    import katconf
+except ImportError:
+    # default reference position for MKAT array
+    ref_location = 'ref, -30:42:47.4, 21:26:38.0, 1060.0, 0.0, , , 1.15'
+else:
+    # default reference position for MKAT array from katconf
+    ref_location = (katconf.ArrayConfig().array['array']['name'] + ', ' +
+                    katconf.ArrayConfig().array['array']['position'])
+
 
 # Basic LST calculations using ephem
 class Observatory:
@@ -61,11 +69,10 @@ class Observatory:
         target.body.compute(self.observer)
         return target
 
-##TODO: look at this again with comparison to the utility.katpoint_target function
+# TODO: look at this again with comparison to the utility.katpoint_target function
     def get_target(self, target_item):
         name, target_item = katpoint_target(target_item)
         return self.set_target(target_item)
-
 
     def unpack_target(self, target_item):
         target_dict = {}
@@ -76,9 +83,9 @@ class Observatory:
 
     def lst2hours(self, ephem_lst):
         time_ = datetime.strptime('{}'.format(ephem_lst), '%H:%M:%S.%f').time()
-        time_ = time_.hour + \
-                (time_.minute/60.) + \
-                (time_.second+time_.microsecond/1e6)/3600.
+        time_ = (time_.hour +
+                 (time_.minute/60.) +
+                 (time_.second+time_.microsecond/1e6)/3600.)
         return '%.3f' % time_
 
     def start_obs(self, target_list):
@@ -115,6 +122,7 @@ class Observatory:
             #     end_lst.append(self.observer.sidereal_time())
         end_lst = end_lst[numpy.asarray(end_lst, dtype=float).argmax()]
         return self.lst2hours(end_lst)
+
 
 # Collecting targets into katpoint catalogue
 def collect_targets(kat, args):
@@ -157,8 +165,10 @@ def collect_targets(kat, args):
                         arg, err))
     if len(catalogue) == 0:
         raise ValueError("No known targets found in argument list")
-    user_logger.info("Found {} target(s): {} from {} catalogue(s), {} from default catalogue and {} as target string(s)".format(
-        len(catalogue), from_catalogues, num_catalogues, from_names, from_strings))
+    user_logger.info("Found {} target(s): {} from {} catalogue(s), {} from default "
+                     "catalogue and {} as target string(s)".format(
+                         len(catalogue), from_catalogues, num_catalogues, from_names,
+                         from_strings))
     return catalogue
 
 # -fin-
