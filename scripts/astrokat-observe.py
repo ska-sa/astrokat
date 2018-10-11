@@ -231,6 +231,15 @@ def drift_pointing_offset(target, duration=60):
     target.antenna.observer.date = obs_start_ts
     return target
 
+def calibrator_cadence(observer, catalogue):
+    # This returns a single target that should be observed taking into cadence
+    for i in range(len((catalogue))):
+        calibrator = catalogue[i]
+        if calibrator['cadence'] > 0:
+            if calibrator['last_observed'] is None or (observer.date.datetime() - calibrator['last_observed']).seconds > calibrator['cadence']:
+                return i
+    return None
+
 class telescope:
     def __init__(self, opts, args=None):
         self.opts = opts
@@ -330,7 +339,6 @@ class telescope:
             nd_off(mkat, logging=False)
 
 
-
 def run_observation(opts, mkat):
 
     # noise-source on, activated when needed
@@ -349,10 +357,8 @@ def run_observation(opts, mkat):
         if 'target_list' in observation_cycle.keys():
             obs_targets = read_targets(observation_cycle['target_list'])
             target_list += obs_targets['target'].tolist()
-        obs_calibrators = []
-        if 'calibration_standards' in observation_cycle.keys():
-            obs_calibrators = read_targets(observation_cycle['calibration_standards'])
-            target_list += obs_calibrators['target'].tolist()
+        else:
+            raise RuntimeError('No Targets')
         catalogue = collect_targets(mkat.array, target_list)
         observer = catalogue._antenna.observer
 
@@ -407,11 +413,6 @@ def run_observation(opts, mkat):
             # If bandpass interval is specified,
             # force the first visit to be bandpass calibrator(s)
             target = None
-            for cnt, calibrator in enumerate(obs_calibrators):
-                if 'bpcal' in calibrator['target']:
-                    target = calibrator
-                    observe(session, catalogue, target)
-            # Else go to first target
             if target is None:
                 user_logger.info('Slewing to first target')
                 for target in obs_targets:
@@ -421,49 +422,30 @@ def run_observation(opts, mkat):
                               duration_=0):
                         break
                 # Only start capturing once we are on target
-                session.capture_start()
+                session.capture_start()# is this a good idea??
 
             done = False
             # while not done:
+            #TODO Change this to use a while loop
             for cnt in range(4):
-
                 # Cycle through target list in order listed
                 targets_visible = False
-
                 for target in obs_targets:
-                    user_logger.warning('Tracking target {}'.format(target))
+                    cal = calibrator_cadence(observer,obs_targets)
+                    while cal is not None: # Go through all calibrators
+                        user_logger.warning('Tracking target calibrator_cadence {}'.format(target['name']))
+                        # noise diode fire should be corrected in sessions
+                        if nd_setup:nd_fire(mkat.array, nd_setup)
+                        if observe(session, catalogue, obs_targets[cal]):
+                            targets_visible += True
+                        cal = calibrator_cadence(observer,obs_targets)
+
+                    user_logger.warning('Tracking target {}'.format(target['name']))
                     # noise diode fire should be corrected in sessions
-                    if nd_setup: nd_fire(mkat.array, nd_setup)
-                    if observe(session, catalogue, target):
-                        targets_visible = True
-
-                    # Evaluate calibrator cadence
-                    for calibrator in obs_calibrators:
-                        if calibrator['cadence'] < 0:
-                            continue
-                        if calibrator['last_observed'] is None:
-                            if observe(session, catalogue, calibrator):
-                                targets_visible = True
-                        else:
-                            deltatime = observer.date.datetime() - calibrator['last_observed']
-                            if deltatime.total_seconds() > calibrator['cadence']:
-                                if observe(session, catalogue, calibrator):
-                                    targets_visible = True
-
-                # Cycle through calibrator list and evaluate those with
-                # cadence, while observing those that don't
-                for calibrator in obs_calibrators:
-                    if calibrator['cadence'] < 0 or \
-                            calibrator['last_observed'] is None:
+                    if not target['cadence'] > 0 :
                         if nd_setup: nd_fire(mkat.array, nd_setup)
-                        if observe(session, catalogue, calibrator):
-                            targets_visible = True
-                    else:
-                        deltatime = observer.date.datetime() - calibrator['last_observed']
-                        if deltatime.total_seconds() > calibrator['cadence']:
-                            if observe(session, catalgoue, calibrator):
-                                targets_visible = True
-
+                        if observe(session, catalogue, target):
+                            targets_visible += True
                 # End if there is nothing to do
                 if not targets_visible:
                     user_logger.warning('No targets are currently visible - stopping script instead of hanging around')
@@ -481,11 +463,11 @@ def run_observation(opts, mkat):
             user_logger.info('Time on target:')
             for target in obs_targets:
                 user_logger.info('{} observed for {} seconds'.format(target['name'], float(target['obs_cntr'])*target['duration']))
-        if len(obs_calibrators) > 0:
-            user_logger.info("Calibrators observed : {}".format(obs_calibrators['name']))
-            user_logger.info('Time on calibrator:')
-            for target in obs_calibrators:
-                user_logger.info('{} observed for {} seconds'.format(target['name'], float(target['obs_cntr'])*target['duration']))
+        #if len(obs_calibrators) > 0:
+        #    user_logger.info("Calibrators observed : {}".format(obs_calibrators['name']))
+        #    user_logger.info('Time on calibrator:')
+        #    for target in obs_calibrators:
+        #        user_logger.info('{} observed for {} seconds'.format(target['name'], float(target['obs_cntr'])*target['duration']))
         print
 
 
