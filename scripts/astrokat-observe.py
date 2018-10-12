@@ -18,22 +18,15 @@ from astrokat import (
     Observatory,
     )
 
+libnames = ['collect_targets', 'user_logger', 'start_session', 'verify_and_connect']
 try:
-    from katcorelib.observe import (
-        collect_targets,
-        user_logger,
-        start_session,
-        verify_and_connect)
-    from katcorelib.observe import (
-        SessionCBF,
-        SessionSDP)
+    lib = __import__('katcorelib', globals(), locals(), libnames, -1)
 except ImportError:
-    from astrokat import(
-        collect_targets,
-        user_logger,
-        start_session,
-        verify_and_connect,
-        )
+    lib = __import__('astrokat', globals(), locals(), libnames, -1)
+finally:
+    for libname in libnames:
+        globals()[libname] = getattr(lib, libname)
+
 import katpoint
 
 
