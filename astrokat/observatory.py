@@ -115,7 +115,7 @@ def collect_targets(kat, args):
                 catalogue.add(open(arg))
             except ValueError:
                 msg = 'Catalogue {} contains bad targets'.format(arg)
-                user_logger.warningm(msg)
+                user_logger.warning(msg)
             from_catalogues += len(catalogue) - count_before_add
             num_catalogues += 1
         except IOError:
