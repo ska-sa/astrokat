@@ -7,6 +7,8 @@ import ephem
 
 import numpy as np
 
+from datetime import datetime, timedelta
+
 from astrokat import (
     NoTargetsUpError,
     NotAllTargetsUpError,
@@ -145,7 +147,8 @@ def observe(
         target_visible = True
         target_instructions['obs_cntr'] += 1
 
-    target_instructions['last_observed'] = catalogue._antenna.observer.date.datetime()
+#     target_instructions['last_observed'] = catalogue._antenna.observer.date.datetime()
+    target_instructions['last_observed'] = datetime.now()
     return target_visible
 
 
@@ -183,8 +186,8 @@ class telescope(object):
         # connecting to proxies and devices
         # create single kat object, cannot repeatedly recreate
         self.array = verify_and_connect(opts)
-        # create a single session to avoid bogus errors
-        self.session = start_session(self.array, **vars(self.opts))
+        # # create a single session to avoid bogus errors
+        # self.session = start_session(self.array, **vars(self.opts))
 
     def __enter__(self):
         # Verify subarray setup correct for observation before doing any work
@@ -209,7 +212,7 @@ class telescope(object):
             noisediode.off(self.array)
 
         # TODO: add part that implements noise diode fire per track
-        # TODO: move this to a callable function, so do it only if worth while to observe
+        # TODO: move this to a callable function, so do it only if worth while to observe and move back to body with session
 #         # Update correlator settings
 #         if self.feng is not None:
 #             set_fengines(self.session,
@@ -342,76 +345,87 @@ def run_observation(opts, mkat):
         user_logger.info("Gain calibrators are [{}]".format(
                          ', '.join([repr(gaincal.name) for gaincal in catalogue.filter('gaincal')])))
 
+        # Description argument in instruction_set should be retired, but is needed by sessions
+        # Assign proposal_description if available, else create a dummy
         if 'description' not in vars(opts):
             session_opts = vars(opts)
-            # description = 'Observation run'
-            # # TODO: need to allow user descriptions
-            # # if 'proposal_description' in vars(opts):
-            # #     descrption = opts.proposal_description
-            # session_opts['description'] = description
+            description = 'Observation run'
+            if 'proposal_description' in vars(opts):
+                descrption = opts.proposal_description
+            session_opts['description'] = description
 
         # Target observation loop
-        mkat.session.standard_setup(**vars(opts))
-        mkat.session.capture_init()
+        with start_session(mkat.array, **vars(opts)) as session:
+            session.standard_setup(**vars(opts))
+            # Adding explicit init after "Capture-init failed" exception was encountered
+            session.capture_init()
 
-        # Go to first target before starting capture
-        user_logger.info('Slewing to first target')
-        observe(mkat.session, catalogue, obs_targets[0], _duration_=0)
-        # Only start capturing once we are on target
-        mkat.session.capture_start()
+            # Go to first target before starting capture
+            user_logger.info('Slewing to first target')
+            observe(session, catalogue, obs_targets[0], _duration_=0)
+            # Only start capturing once we are on target
+            session.capture_start()
 
-        # set up duration periods for observation control
-        obs_duration = -1
-        if 'durations' in opts.template:
-            if 'obs_duration' in opts.template['durations']:
-                obs_duration = opts.template['durations']['obs_duration']
-        start_time = observer.date.datetime()
-        done = False
-        while not done:
+            # set up duration periods for observation control
+            obs_duration = -1
+            if 'durations' in opts.template:
+                if 'obs_duration' in opts.template['durations']:
+                    obs_duration = opts.template['durations']['obs_duration']
+            # only start observation timer after you are on the first target to avoid loosing time to long slews from the previous observation
+            # start_time = observer.date.datetime()
+            start_time = datetime.now()
+            done = False
+            while not done:
+                # only a single run for dry-run at the moment, since timing calculation not sorted yet
+                if mkat.array.dry_run:
+                    done = True
 
-            # Cycle through target list in order listed
-            targets_visible = False
+                # Cycle through target list in order listed
+                targets_visible = False
 
-            for cnt, target in enumerate(obs_targets):
-#                 # noise diode fire should be corrected in sessions
-#                 if nd_setup: noisediode.trigger(mkat.array, nd_setup)
-                # observe non cadence target
-                if target['cadence'] < 0:
-                    targets_visible = observe(mkat.session, catalogue, target)
+                for cnt, target in enumerate(obs_targets):
+                    # # noise diode fire should be corrected in sessions
+                    # if nd_setup: noisediode.trigger(mkat.array, nd_setup)
+                    # observe non cadence target
+                    if target['cadence'] < 0:
+                        targets_visible = observe(session, catalogue, target)
 
-                # Evaluate targets with cadence
-                for cadence_source in cadence_list:
-                    if cadence_source['last_observed'] is None:
-                        targets_visible = observe(mkat.session, catalogue, cadence_source)
+                    # Evaluate targets with cadence
+                    for cadence_source in cadence_list:
+                        if cadence_source['last_observed'] is None:
+                            targets_visible = observe(session, catalogue, cadence_source)
+                        else:
+                            # deltatime = observer.date.datetime() - cadence_source['last_observed']
+                            deltatime = datetime.now() - cadence_source['last_observed']
+                            if deltatime.total_seconds() > cadence_source['cadence']:
+                                targets_visible = observe(session, catalogue, cadence_source)
+
+                    # loop continuation checks
+                    # delta_time = (observer.date.datetime()-start_time).total_seconds()
+                    delta_time = (datetime.now()-start_time).total_seconds()
+                    if obs_duration > 0:
+                        if delta_time >= obs_duration or \
+                                (obs_duration-delta_time) < obs_targets[cnt]['duration']:
+                            done = True
+                            break
                     else:
-                        deltatime = observer.date.datetime() - cadence_source['last_observed']
-                        if deltatime.total_seconds() > cadence_source['cadence']:
-                            targets_visible = observe(mkat.session, catalogue, cadence_source)
-
-                # loop continuation checks
-                delta_time = (observer.date.datetime()-start_time).total_seconds()
-                if obs_duration > 0:
-                    if delta_time >= obs_duration or \
-                            (obs_duration-delta_time) < obs_targets[cnt]['duration']:
                         done = True
-                        break
-                else:
-                    done = True
 
-            # End if there is nothing to do
-            if not targets_visible:
-                user_logger.warning('No targets are currently visible - stopping script instead of hanging around')
-                done = True
-                # Verify the LST range is still valid
-                local_lst = ephem.hours(observer.sidereal_time())
-                if ephem.hours(local_lst) > ephem.hours(str(end_lst)):
-                    done = True
+                    # End if there is nothing to do
+                    if not targets_visible:
+                        user_logger.warning('No targets are currently visible - stopping script instead of hanging around')
+                        done = True
+                    # Verify the LST range is still valid
+                    local_lst = ephem.hours(observer.sidereal_time())
+                    if ephem.hours(local_lst) > ephem.hours(str(end_lst)):
+                        done = True
 
         # display observation cycle statistics
         print
         user_logger.info("Observation loop statistics")
         user_logger.info("Total observation time {:.2f} seconds".format(
-            (observer.date.datetime()-start_time).total_seconds()))
+            (datetime.now()-start_time).total_seconds()))
+            # (observer.date.datetime()-start_time).total_seconds()))
         if len(obs_targets) > 0:
             user_logger.info("Targets observed :")
             for unique_target in np.unique(obs_targets['name']):
