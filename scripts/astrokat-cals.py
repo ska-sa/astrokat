@@ -24,14 +24,6 @@ try:
 except ImportError:  # not a processing node
     text_only = True
 
-# set up path and access method for calibrator catalogues
-#catalogue_path = '/var/kat/config/katconfig/user/catalogues'
-
-#try:
-#    import katconf
-#except ImportError:  # not on live system
-#    pass
-
 
 def cli(prog):
     version = "{} 0.1".format(prog)
@@ -69,12 +61,6 @@ Proposal ID")
             help='\
 List of tags for types of calibrators to provide per target: \
 gain, bandpass, flux, polarisation.')
-    parser.add_argument(
-            '--cal-catalogue-path',
-            type=str,
-            default='katconfig/user/catalogues',
-            help='\
-Path to directory containing calibrator catalogue files.')
     parser.add_argument(
             '--target',
             nargs=3,
@@ -308,8 +294,7 @@ def main(args):
         for cal_tag in args.cal_tags:
             cal_catalogue = os.path.join(
                     catalogue_path,
-                    'sources_pnt.csv',
-                    #'Lband-interferometric-{}-calibrators.csv'.format(cal_tag),
+                    'Lband-interferometric-{}-calibrators.csv'.format(cal_tag),
                     )
            
             if args.cat_path:
