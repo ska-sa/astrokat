@@ -279,7 +279,9 @@ def main(args):
                     )
             calibrators = katpoint.Catalogue(file(cal_catalogue))
             calibrator, separation_angle = get_cal(calibrators, target, ref_antenna)
-            observation_catalogue.add(calibrator)
+            if observation_catalogue.__contains__(calibrator):
+                observation_catalogue[calibrator.name].tags.append(cal_tag+'cal')
+            observation_catalogue.add(calibrator, tags=cal_tag+'cal')
 
     # write observation catalogue
     fname = ''.join(args.target[0].split(' '))  # remove spaces from filename
