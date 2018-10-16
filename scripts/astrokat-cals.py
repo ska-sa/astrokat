@@ -25,10 +25,12 @@ except ImportError:  # not a processing node
     text_only = True
 
 # set up path and access method for calibrator catalogues
-try:
-    import katconf
-except ImportError:  # not on live system
-    pass
+#catalogue_path = '/var/kat/config/katconfig/user/catalogues'
+
+#try:
+#    import katconf
+#except ImportError:  # not on live system
+#    pass
 
 
 def cli(prog):
@@ -68,6 +70,12 @@ Proposal ID")
 List of tags for types of calibrators to provide per target: \
 gain, bandpass, flux, polarisation.')
     parser.add_argument(
+            '--cal-catalogue-path',
+            type=str,
+            default='katconfig/user/catalogues',
+            help='\
+Path to directory containing calibrator catalogue files.')
+    parser.add_argument(
             '--target',
             nargs=3,
             type=str,
@@ -78,7 +86,6 @@ HH:MM:SS DD:MM:SS')
     parser.add_argument(
             '--cat-path',
             type=str,
-            default='katconfig/user/catalogues',
             help='\
 Path to calibrator catalogue folder')
 
@@ -232,6 +239,34 @@ def get_cal(catalogue, target, ref_antenna):
 
 
 def main(args):
+
+    cam_config_path = '/var/kat/config'
+    node_file = '/var/kat/node.conf'
+
+    try:
+        import katconf
+        # Set up configuration source
+        if os.path.isdir(cam_config_path):
+            katconf.set_config(katconf.environ(override=cam_config_path))
+        elif os.path.isfile(node_file):
+            with open(node_file, 'r') as fh:
+                node_conf = json.loads(fh.read())
+            for key, val in node_conf.items():
+                # Remove comments at the end of the line
+                val = val.split("#", 1)[0]
+                settings[key] = val.strip()
+                if node_conf.get("configuri", False):
+                    katconf.set_config(katconf.environ(node_conf["configuri"]))
+                else:
+                    print('katconf config not set')
+        else:
+            raise ValueError("Could not open node config file")
+        config_available = True
+    except ImportError:
+        config_available = False
+        pass  # not on live system
+
+
     location = Observatory().location
     creation_time = katpoint.Timestamp()
     ref_antenna = katpoint.Antenna(location)
@@ -253,10 +288,10 @@ def main(args):
     if not args.target:
         raise RuntimeError('No targets provided, exiting')
 
-    if not os.path.isdir(args.cat_path):
-        msg = 'Could not access calibrator catalogue default location\n'
-        msg += 'add explicit location of catalogue folder using --cat-path <dirname>'
-        raise RuntimeError(msg)
+    if args.cat_path and os.path.isdir(args.cat_path):
+        catalogue_path = args.cat_path
+    else:
+        catalogue_path = 'katconfig/user/catalogues'
 
     # input target from command line
     args.target = [target.strip() for target in args.target]
@@ -269,16 +304,25 @@ def main(args):
 
     for target in targets:
         observation_catalogue.add(target)
-
         # read calibrator catalogues and calibrators to catalogue
         for cal_tag in args.cal_tags:
-            # TODO: add katconf read
             cal_catalogue = os.path.join(
-                    args.cat_path,
-                    'Lband-{}-calibrators.csv'.format(cal_tag),
+                    catalogue_path,
+                    'sources_pnt.csv',
+                    #'Lband-interferometric-{}-calibrators.csv'.format(cal_tag),
                     )
-            calibrators = katpoint.Catalogue(file(cal_catalogue))
-            calibrator, separation_angle = get_cal(calibrators, target, ref_antenna)
+           
+            if args.cat_path:
+                assert os.path.isfile(cal_catalogue), 'Catalogue file does not exist'
+                calibrators = katpoint.Catalogue(file(cal_catalogue))
+            elif config_available:
+                assert katconf.resource_exists(cal_catalogue), 'Catalogue file does not exist'
+                calibrators = katpoint.Catalogue(
+                    katconf.resource_template(cal_catalogue))
+            else:
+                raise RuntimeError('Loading calibrator catalogue {} failed!'.format(cal_catalogue))
+
+            calibrator, separation_angle =  get_cal(calibrators, target, ref_antenna)
             observation_catalogue.add(calibrator)
 
     # write observation catalogue
