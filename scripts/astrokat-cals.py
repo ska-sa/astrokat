@@ -229,6 +229,7 @@ def main(args):
 
     cam_config_path = '/var/kat/config'
     node_file = '/var/kat/node.conf'
+    settings = {}
 
     try:
         import katconf
@@ -248,10 +249,9 @@ def main(args):
                     print('katconf config not set')
         else:
             raise ValueError("Could not open node config file")
-        config_available = True
+        node_config_available = True
     except ImportError:
-        config_available = False
-        pass  # not on live system
+        node_config_available = False
 
 
     location = Observatory().location
@@ -277,8 +277,10 @@ def main(args):
 
     if args.cat_path and os.path.isdir(args.cat_path):
         catalogue_path = args.cat_path
+        config_file_available = True
     else:
         catalogue_path = 'katconfig/user/catalogues'
+        config_file_available = False
 
     # input target from command line
     args.target = [target.strip() for target in args.target]
@@ -298,10 +300,10 @@ def main(args):
                     'Lband-{}-calibrators.csv'.format(cal_tag),
                     )
            
-            if args.cat_path:
+            if config_file_available:
                 assert os.path.isfile(cal_catalogue), 'Catalogue file does not exist'
                 calibrators = katpoint.Catalogue(file(cal_catalogue))
-            elif config_available:
+            elif node_config_available:
                 assert katconf.resource_exists(cal_catalogue), 'Catalogue file does not exist'
                 calibrators = katpoint.Catalogue(
                     katconf.resource_template(cal_catalogue))

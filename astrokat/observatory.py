@@ -14,6 +14,7 @@ try:
     # Set up configuration sourcei
     config_path = '/var/kat/config'
     node_file = '/var/kat/node.conf'
+    settings = {}
     if os.path.isdir(config_path):
         katconf.set_config(katconf.environ(override=config_path))
     elif os.path.isfile(node_file):
