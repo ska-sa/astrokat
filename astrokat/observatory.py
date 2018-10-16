@@ -1,3 +1,4 @@
+import os
 import ephem
 import numpy
 import katpoint
@@ -6,9 +7,29 @@ from datetime import datetime
 from simulate import user_logger, setobserver
 from utility import katpoint_target, lst2utc
 
+
 try:
     import katconf
-except ImportError:
+    # Set up configuration sourcei
+    config_path = '/var/kat/config'
+    node_file = '/var/kat/node.conf'
+    if os.path.isdir(config_path):
+        katconf.set_config(katconf.environ(override=config_path))
+    elif os.path.isfile(node_file):
+        with open(node_file, 'r') as fh:
+            node_conf = json.loads(fh.read())
+        for key, val in node_conf.items():
+            # Remove comments at the end of the line
+            val = val.split("#", 1)[0]
+            settings[key] = val.strip()
+            if node_conf.get("configuri", False):
+                katconf.set_config(katconf.environ(node_conf["configuri"]))
+            else:
+                raise ValueError("Could not open node config file using configuri")
+    else:
+        raise ValueError("Could not open node config file")
+
+except (ImportError, ValueError):
     # default reference position for MKAT array
     ref_location = 'ref, -30:42:47.4, 21:26:38.0, 1060.0, 0.0, , , 1.15'
 else:
