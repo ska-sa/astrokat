@@ -1,4 +1,5 @@
 import os
+import json
 import ephem
 import numpy
 import katpoint

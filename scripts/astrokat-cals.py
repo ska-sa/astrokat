@@ -7,6 +7,7 @@ import argparse
 import katpoint
 import numpy
 import os
+import json
 import sys
 
 from astrokat import Observatory
