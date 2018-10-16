@@ -294,7 +294,7 @@ def main(args):
         for cal_tag in args.cal_tags:
             cal_catalogue = os.path.join(
                     catalogue_path,
-                    'Lband-interferometric-{}-calibrators.csv'.format(cal_tag),
+                    'Lband-{}-calibrators.csv'.format(cal_tag),
                     )
            
             if args.cat_path:
