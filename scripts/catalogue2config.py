@@ -149,10 +149,21 @@ class unpack_catalogue:
             bpcal_interval=None,
             ):
         target_list = []
+        header = ''
         with open(self.infile, 'r') as fin:
             for idx, line in enumerate(fin.readlines()):
+                # keep header information
+                if line[0] == '#':
+                    header += line
+                    continue
+                # unpack data columns
                 try:
-                    [name, tags, ra, dec] = line.strip().split(',')
+                    # [name, tags, ra, dec] = line.strip().split(',')
+                    data_columns = line.strip().split(',')
+                    if len(data_columns) == 4:
+                        [name, tags, ra, dec] = line.strip().split(',')
+                    else:
+                        [name, tags, ra, dec, flux] = line.strip().split(',')
                 except ValueError:
                     print 'Could not unpack line:{}'.format(line)
                     continue
@@ -190,7 +201,7 @@ class unpack_catalogue:
 
                 target = target_spec.format(*target_items)
                 target_list.append(target)
-        return target_list
+        return header, target_list
 
 
 ## Create a default observation config file
@@ -226,27 +237,33 @@ class build_observation:
             lst = '{}-{}'.format(start_lst, end_lst)
         # observational setup
         target_list = []
-        calibrator_list = []
+#         calibrator_list = []
         for target in self.target_list:
-            if 'cal' in target:
-                # find and list calibrator targets
-                calibrator_list.append(target)
-            else:
-                # set target observation type
-                if driftscan:
-                    target = ', '.join([target, 'type=drift_scan'])
-                # list source targets
-                target_list.append(target)
+#             if 'cal' in target:
+#                 # find and list calibrator targets
+#                 calibrator_list.append(target)
+#             else:
+#                 # set target observation type
+#                 if driftscan:
+#                     target = ', '.join([target, 'type=drift_scan'])
+#                 # list source targets
+#                 target_list.append(target)
+            # set target observation type
+            if driftscan:
+                target = ', '.join([target, 'type=drift_scan'])
+            # list source targets
+            target_list.append(target)
         obs_plan['observation_loop'] = [{
                 'lst': lst,
                 'target_list': target_list,
-                'calibration_standards': calibrator_list,
+#                 'calibration_standards': calibrator_list,
                 }]
         self.configuration = obs_plan
         return obs_plan
 
 
     def write_yaml(self,
+            header=None,
             configuration=None,
             outfile='obs_config.yaml'):
         if configuration is not None:
@@ -254,6 +271,8 @@ class build_observation:
         if self.configuration is None:
             raise RuntimeError('No observation configuration to output')
         init_str = ''
+        if header is not None:
+            init_str = header
         if 'instrument' in self.configuration.keys():
             init_str += 'instrument:\n'
             instrument = self.configuration['instrument']
@@ -285,14 +304,14 @@ class build_observation:
             fout.write(init_str)
             if len(target_list) > 0:
                 fout.write('    target_list:\n{}'.format(target_list))
-            if len(calibrator_list) > 0:
-                fout.write('    calibration_standards:\n{}'.format(calibrator_list))
+#             if len(calibrator_list) > 0:
+#                 fout.write('    calibration_standards:\n{}'.format(calibrator_list))
 
 if __name__ == '__main__':
     args = cli(sys.argv[0])
     # read targets from catalogue file
     cat_obj = unpack_catalogue(args.catalogue)
-    catalogue = cat_obj.read_catalogue(
+    header, catalogue = cat_obj.read_catalogue(
             target_duration=args.target_duration,
             gaincal_duration=args.gaincal_duration,
             gaincal_interval=args.gaincal_interval,
@@ -321,6 +340,7 @@ if __name__ == '__main__':
             noisediode=noise_diode,
             lst=args.lst,
             driftscan=args.drift_scan)
-    obs_plan.write_yaml(outfile=args.obsfile)
+    obs_plan.write_yaml(header=header,
+                        outfile=args.obsfile)
 
 # -fin-
