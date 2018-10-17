@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # Observation script and chronology check
 
-import os
 import astrokat
 import ephem
+import katpoint
+import os
 
 import numpy as np
-
-from datetime import datetime, timedelta
 
 from astrokat import (
     NoTargetsUpError,
@@ -19,23 +18,14 @@ from astrokat import (
     correlator,
     )
 
+libnames = ['collect_targets', 'user_logger', 'start_session', 'verify_and_connect']
 try:
-    from katcorelib.observe import (
-        collect_targets,
-        user_logger,
-        start_session,
-        verify_and_connect)
-    from katcorelib.observe import (
-        SessionCBF,
-        SessionSDP)
+    lib = __import__('katcorelib', globals(), locals(), libnames, -1)
 except ImportError:
-    from astrokat import (
-        collect_targets,
-        user_logger,
-        start_session,
-        verify_and_connect,
-        )
-import katpoint
+    lib = __import__('astrokat', globals(), locals(), libnames, -1)
+finally:
+    for libname in libnames:
+        globals()[libname] = getattr(lib, libname)
 
 
 # unpack targets to katpoint compatable format
@@ -147,8 +137,8 @@ def observe(
         target_visible = True
         target_instructions['obs_cntr'] += 1
 
-#     target_instructions['last_observed'] = catalogue._antenna.observer.date.datetime()
-    target_instructions['last_observed'] = datetime.now()
+    target_instructions['last_observed'] = catalogue._antenna.observer.date.datetime()
+#     target_instructions['last_observed'] = datetime.now()
     return target_visible
 
 
@@ -169,6 +159,19 @@ def drift_pointing_offset(target, duration=60):
     return target
 
 
+# finding each cadence target in order of target list
+def cadence_target(observer, target_list):
+    for target in target_list:
+        if target['cadence'] > 0:
+            if target['last_observed'] is None:
+                return target
+            delta_time = observer.date.datetime() - target['last_observed']
+            # delta_time = (datetime.now() - target['last_observed'])
+            if delta_time.total_seconds() > target['cadence']:
+                return target
+    return False
+
+
 class telescope(object):
     def __init__(self, opts, args=None):
         user_logger.info('Setting up telescope for observation')
@@ -186,8 +189,6 @@ class telescope(object):
         # connecting to proxies and devices
         # create single kat object, cannot repeatedly recreate
         self.array = verify_and_connect(opts)
-        # # create a single session to avoid bogus errors
-        # self.session = start_session(self.array, **vars(self.opts))
 
     def __enter__(self):
         # Verify subarray setup correct for observation before doing any work
@@ -294,15 +295,6 @@ def run_observation(opts, mkat):
             continue
         obs_targets = read_targets(observation_cycle['target_list'])
         target_list = obs_targets['target'].tolist()
-        # Extract targets with cadences
-        cadence_list = []
-        for target in obs_targets:
-            if target['cadence'] > 0:
-                cadence_list.append(target)
-#         obs_calibrators = []
-#         if 'calibration_standards' in observation_cycle.keys():
-#             obs_calibrators = read_targets(observation_cycle['calibration_standards'])
-#             target_list += obs_calibrators['target'].tolist()
         catalogue = collect_targets(mkat.array, target_list)
         observer = catalogue._antenna.observer
 
@@ -351,7 +343,7 @@ def run_observation(opts, mkat):
             session_opts = vars(opts)
             description = 'Observation run'
             if 'proposal_description' in vars(opts):
-                descrption = opts.proposal_description
+                description = opts.proposal_description
             session_opts['description'] = description
 
         # Target observation loop
@@ -372,43 +364,48 @@ def run_observation(opts, mkat):
                 if 'obs_duration' in opts.template['durations']:
                     obs_duration = opts.template['durations']['obs_duration']
             # only start observation timer after you are on the first target to avoid loosing time to long slews from the previous observation
-            # start_time = observer.date.datetime()
-            start_time = datetime.now()
+            start_time = observer.date.datetime()
+            # start_time = datetime.now()
+
             done = False
             while not done:
-                # only a single run for dry-run at the moment, since timing calculation not sorted yet
-                if mkat.array.dry_run:
-                    done = True
+                # # only a single run for dry-run at the moment, since timing calculation not sorted yet
+                # if mkat.array.dry_run:
+                #     done = True
 
                 # Cycle through target list in order listed
                 targets_visible = False
 
                 for cnt, target in enumerate(obs_targets):
+                    # check and observe all targets with cadences
+                    while_cntr = 0
+                    while True:
+                        tgt = cadence_target(observer, obs_targets)
+                        if not tgt:
+                            break
+                        if observe(session, catalogue, tgt):
+                            targets_visible += True
+                        while_cntr += 1
+                        if while_cntr > len(obs_targets):
+                            break
+
                     # # noise diode fire should be corrected in sessions
                     # if nd_setup: noisediode.trigger(mkat.array, nd_setup)
                     # observe non cadence target
                     if target['cadence'] < 0:
                         targets_visible = observe(session, catalogue, target)
 
-                    # Evaluate targets with cadence
-                    for cadence_source in cadence_list:
-                        if cadence_source['last_observed'] is None:
-                            targets_visible = observe(session, catalogue, cadence_source)
-                        else:
-                            # deltatime = observer.date.datetime() - cadence_source['last_observed']
-                            deltatime = datetime.now() - cadence_source['last_observed']
-                            if deltatime.total_seconds() > cadence_source['cadence']:
-                                targets_visible = observe(session, catalogue, cadence_source)
-
                     # loop continuation checks
-                    # delta_time = (observer.date.datetime()-start_time).total_seconds()
-                    delta_time = (datetime.now()-start_time).total_seconds()
+                    delta_time = (observer.date.datetime()-start_time).total_seconds()
+                    # delta_time = (datetime.now()-start_time).total_seconds()
                     if obs_duration > 0:
                         if delta_time >= obs_duration or \
                                 (obs_duration-delta_time) < obs_targets[cnt]['duration']:
+                            user_logger.info('Scheduled observation time lapsed - ending observation')
                             done = True
                             break
                     else:
+                        user_logger.info('Observation list completed - ending observation')
                         done = True
 
                     # End if there is nothing to do
@@ -424,8 +421,8 @@ def run_observation(opts, mkat):
         print
         user_logger.info("Observation loop statistics")
         user_logger.info("Total observation time {:.2f} seconds".format(
-            (datetime.now()-start_time).total_seconds()))
-            # (observer.date.datetime()-start_time).total_seconds()))
+            # (datetime.now()-start_time).total_seconds()))
+            (observer.date.datetime()-start_time).total_seconds()))
         if len(obs_targets) > 0:
             user_logger.info("Targets observed :")
             for unique_target in np.unique(obs_targets['name']):
