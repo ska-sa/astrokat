@@ -5,8 +5,6 @@ try:
 except ImportError:
     live_system = False
     pass
-except:
-    raise
 
 
 # Add standard observation script options from sessions
@@ -18,7 +16,7 @@ def session_options(parser,
         title="Standard MeerKAT Options",
         description="Default observation script options")
     if live_system:
-        parser_ = standard_script_options('','')
+        parser_ = standard_script_options('', '')
         # fudge parser_ class from OptionParser to Group
         for opt in parser_.option_list:
             # Disregarding options we don't want in the group
@@ -32,16 +30,34 @@ def session_options(parser,
                     continue
                 args = opt.__dict__['_short_opts'] + args
 
-            kwargs = {'dest':opt.__dict__['dest'],
-                      'type':type(opt.__dict__['default']) if type(opt.__dict__['default']) != tuple else None ,
-                      'default':opt.__dict__['default'] if type(opt.__dict__['default']) != tuple else None ,
-                      'nargs':opt.__dict__['nargs'] if opt.__dict__['nargs'] != 1 else None,
-                      'metavar':opt.__dict__['metavar'] if not opt.__dict__['choices'] else '',
-                      'choices':opt.__dict__['choices'],
-                      'action':opt.__dict__['action'] if opt.__dict__['action'] != 'store_true' else None,
-                      'const':opt.__dict__['const'] if opt.__dict__['action'] == 'store_const' else None,
-                      'help': opt.__dict__['help'].replace("%default", "%(default)s") if long_ != '--quorum' else opt.__dict__['help'].replace("%", "%%"),
-                      'required': True if '**required**' in opt.__dict__['help'] else False,
+            kwargs = {'dest':
+                      opt.__dict__['dest'],
+                      'type':
+                      type(opt.__dict__['default'])
+                      if type(opt.__dict__['default']) != tuple else None,
+                      'default':
+                      opt.__dict__['default']
+                      if type(opt.__dict__['default']) != tuple else None,
+                      'nargs':
+                      opt.__dict__['nargs']
+                      if opt.__dict__['nargs'] != 1 else None,
+                      'metavar':
+                      opt.__dict__['metavar']
+                      if not opt.__dict__['choices'] else '',
+                      'choices':
+                      opt.__dict__['choices'],
+                      'action':
+                      opt.__dict__['action']
+                      if opt.__dict__['action'] != 'store_true' else None,
+                      'const':
+                      opt.__dict__['const']
+                      if opt.__dict__['action'] == 'store_const' else None,
+                      'help':
+                      opt.__dict__['help'].replace("%default", "%(default)s")
+                      if long_ != '--quorum' else opt.__dict__['help'].replace("%", "%%"),
+                      'required':
+                      True
+                      if '**required**' in opt.__dict__['help'] else False,
                       }
 
             group.add_argument(*args, **kwargs)
@@ -49,11 +65,11 @@ def session_options(parser,
         group.add_argument('-o',
                            '--observer',
                            type=str,
-                           help='TBD')
+                           help='Name of person doing the observation')
         group.add_argument('--horizon',
                            type=float,
                            default=20,
-                           help='TBD')
+                           help='Lowest elevation limit in degrees')
     return parser
 
 
@@ -67,34 +83,39 @@ def cli(prog,
         version = "%s 0.1" % prog
         # TODO: more complex usage string in separate function
         usage = "%s [options] -o <observer>" \
-                " --profile <YAMLfile>" \
-                " [<'profile'> ...]" % prog
-        description = "Sources are specified either as part of an observation profile." \
-                " Track one or more sources for a specified time." \
-                " At least one target must be specified." \
-                " Also note the **required** options."
+                " --template <YAMLfile>" \
+                " [<'template'> ...]" % prog
+        description = \
+            "Sources are specified either as part of an observation profile." \
+            " Track one or more sources for a specified time." \
+            " At least one target must be specified." \
+            " Also note the **required** options."
         parser = argparse.ArgumentParser(usage=usage,
                                          description=description,
-                                         # conflict_handler='resolve',
-                                        )
+                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         )
 
     # Standard track experiment options
     parser.add_argument('--version',
                         action='version', version=version)
-    parser.add_argument('--profile',
+    parser.add_argument('--template',
                         default=[],
                         type=str,
                         required=True,
-                        help='Observation profile represented in the configuration file,'\
-                             ' obs_config.yaml (**required**)')
-    ## TODO: Need to add a intertrack noise fire as session provides
+                        help='Observation profile represented in the configuration file,'
+                             ' obs_template.yml (**required**)')
 
     # Add standard observation script options from sessions
-    parser = session_options(parser, x_short_opts=x_short_opts, x_long_opts=x_long_opts)
+    parser = session_options(parser,
+                             x_short_opts=x_short_opts,
+                             x_long_opts=x_long_opts,
+                             )
 
-    # Observation simulation for offline planning using actual observation script
-    group = parser.add_argument_group(title="Observation Planning and Verifications",
-                                      description = "Basic checks and output before starting and observation to ensure expected outcome")
+    # Observation simulation for planning using observation script
+    title = "Observation Planning and Verifications"
+    description = "Basic checks and output before starting and observation to ensure expected outcome"
+    group = parser.add_argument_group(title=title,
+                                      description=description)
     ex_group = group.add_mutually_exclusive_group()
     ex_group.add_argument('--visibility',
                           action='store_true',
@@ -107,6 +128,7 @@ def cli(prog,
 
 
 if __name__ == '__main__':
-    cli()
+    import sys
+    cli(sys.argv[0])
 
 # -fin-
