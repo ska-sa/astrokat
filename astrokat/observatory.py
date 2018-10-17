@@ -6,8 +6,15 @@ from datetime import datetime
 from simulate import user_logger, setobserver
 from utility import katpoint_target, lst2utc
 
-# default reference position for MKAT array
-ref_location = 'ref, -30:42:47.4, 21:26:38.0, 1060.0, 0.0, , , 1.15'
+try:
+    import katconf
+except ImportError:
+    # default reference position for MKAT array
+    ref_location = 'ref, -30:42:47.4, 21:26:38.0, 1060.0, 0.0, , , 1.15'
+else:
+    # default reference position for MKAT array from katconf
+    ref_location = (katconf.ArrayConfig().array['array']['name'] + ', ' +
+                    katconf.ArrayConfig().array['array']['position'])
 
 
 # Basic LST calculations using ephem
@@ -143,12 +150,13 @@ def collect_targets(kat, args):
                     user_logger.warning(msg)
     if len(catalogue) == 0:
         raise ValueError("No known targets found in argument list")
-    msg = "Found {} target(s): {} from {} catalogue(s), {} from default catalogue and {} as target string(s)".format(
-            len(catalogue),
-            from_catalogues,
-            num_catalogues,
-            from_names,
-            from_strings)
+    msg = "Found {} target(s): {} from {} catalogue(s), {} from default " \
+          "catalogue and {} as target string(s)".format(
+                    len(catalogue),
+                    from_catalogues,
+                    num_catalogues,
+                    from_names,
+                    from_strings)
     user_logger.info(msg)
     return catalogue
 
