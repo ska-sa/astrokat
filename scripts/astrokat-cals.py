@@ -227,34 +227,9 @@ def get_cal(catalogue, target, ref_antenna):
 
 def main(args):
 
-    cam_config_path = '/var/kat/config'
-    node_file = '/var/kat/node.conf'
-    settings = {}
-
-    try:
-        import katconf
-        # Set up configuration source
-        if os.path.isdir(cam_config_path):
-            katconf.set_config(katconf.environ(override=cam_config_path))
-        elif os.path.isfile(node_file):
-            with open(node_file, 'r') as fh:
-                node_conf = json.loads(fh.read())
-            for key, val in node_conf.items():
-                # Remove comments at the end of the line
-                val = val.split("#", 1)[0]
-                settings[key] = val.strip()
-                if node_conf.get("configuri", False):
-                    katconf.set_config(katconf.environ(node_conf["configuri"]))
-                else:
-                    print('katconf config not set')
-        else:
-            raise ValueError("Could not open node config file")
-        node_config_available = True
-    except ImportError:
-        node_config_available = False
-
-
-    location = Observatory().location
+    observatory = Observatory()
+    location = observatory.location
+    node_config_available = observatory.node_config_available
     creation_time = katpoint.Timestamp()
     ref_antenna = katpoint.Antenna(location)
 
@@ -304,9 +279,8 @@ def main(args):
                 assert os.path.isfile(cal_catalogue), 'Catalogue file does not exist'
                 calibrators = katpoint.Catalogue(file(cal_catalogue))
             elif node_config_available:
-                assert katconf.resource_exists(cal_catalogue), 'Catalogue file does not exist'
                 calibrators = katpoint.Catalogue(
-                    katconf.resource_template(cal_catalogue))
+                    observatory._read_file_from_node_config(cal_catalogue))
             else:
                 raise RuntimeError('Loading calibrator catalogue {} failed!'.format(cal_catalogue))
 
