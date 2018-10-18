@@ -10,7 +10,7 @@ from utility import katpoint_target, lst2utc
 
 try:
     import katconf
-    # Set up configuration sourcei
+    # Set up configuration source
     _config_path = '/var/kat/config'
     _node_file = '/var/kat/node.conf'
     _settings = {}
@@ -43,6 +43,7 @@ else:
 
 # Basic LST calculations using ephem
 class Observatory(object):
+
     def __init__(self, location=None):
         self.location = _ref_location 
         self.node_config_available = _node_config_available
