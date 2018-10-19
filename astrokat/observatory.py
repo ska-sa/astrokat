@@ -1,3 +1,5 @@
+import os
+import json
 import ephem
 import numpy
 import katpoint
@@ -8,19 +10,43 @@ from utility import katpoint_target, lst2utc
 
 try:
     import katconf
-except ImportError:
+    # Set up configuration source
+    _config_path = '/var/kat/config'
+    _node_file = '/var/kat/node.conf'
+    _settings = {}
+    if os.path.isdir(_config_path):
+        katconf.set_config(katconf.environ(override=_config_path))
+    elif os.path.isfile(_node_file):
+        with open(_node_file, 'r') as fh:
+            _node_conf = json.loads(fh.read())
+        for _key, _val in _node_conf.items():
+            # Remove comments at the end of the line
+            _val = _val.split("#", 1)[0]
+            _settings[_key] = _val.strip()
+        if _settings.get("configuri", False):
+            katconf.set_config(katconf.environ(_node_conf["configuri"]))
+        else:
+            raise ValueError("Could not open node config file using configuri")
+    else:
+        raise ValueError("Could not open node config file")
+
+except (ImportError, ValueError):
     # default reference position for MKAT array
-    ref_location = 'ref, -30:42:47.4, 21:26:38.0, 1060.0, 0.0, , , 1.15'
+    _ref_location = 'ref, -30:42:39.8, 21:26:38.0, 1035.0, 0.0, , , 1.15'
+    _node_config_available = False
 else:
     # default reference position for MKAT array from katconf
-    ref_location = (katconf.ArrayConfig().array['array']['name'] + ', ' +
-                    katconf.ArrayConfig().array['array']['position'])
+    _ref_location = (katconf.ArrayConfig().array['array']['name'] + ', ' +
+                     katconf.ArrayConfig().array['array']['position'])
+    _node_config_available = True
 
 
 # Basic LST calculations using ephem
-class Observatory:
+class Observatory(object):
+
     def __init__(self, location=None):
-        self.location = ref_location
+        self.location = _ref_location 
+        self.node_config_available = _node_config_available
         if location is not None:
             self.location = location
         self.mkat = self.get_location()
@@ -52,6 +78,14 @@ class Observatory:
             return set_time
         self.observer.date = set_time
         return self.observer.sidereal_time()
+
+    def read_file_from_node_config(self, catalogue_file):
+        if not self.node_config_available:
+            raise AttributeError('Node config is not configured')
+        else:
+            err_msg = 'Catalogue file does not exist in node config!'
+            assert katconf.resource_exists(catalogue_file), err_msg
+            return katconf.resource_template(catalogue_file)
 
     # default reference location
     def get_location(self):
