@@ -23,16 +23,16 @@ try:
             # Remove comments at the end of the line
             _val = _val.split("#", 1)[0]
             _settings[_key] = _val.strip()
-            if _node_conf.get("configuri", False):
-                katconf.set_config(katconf.environ(_node_conf["configuri"]))
-            else:
-                raise ValueError("Could not open node config file using configuri")
+        if _settings.get("configuri", False):
+            katconf.set_config(katconf.environ(_node_conf["configuri"]))
+        else:
+            raise ValueError("Could not open node config file using configuri")
     else:
         raise ValueError("Could not open node config file")
 
 except (ImportError, ValueError):
     # default reference position for MKAT array
-    _ref_location = 'ref, -30:42:47.4, 21:26:38.0, 1060.0, 0.0, , , 1.15'
+    _ref_location = 'ref, -30:42:39.8, 21:26:38.0, 1035.0, 0.0, , , 1.15'
     _node_config_available = False
 else:
     # default reference position for MKAT array from katconf
