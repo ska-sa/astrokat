@@ -280,7 +280,7 @@ def main(args):
                 calibrators = katpoint.Catalogue(file(cal_catalogue))
             elif node_config_available:
                 calibrators = katpoint.Catalogue(
-                    observatory._read_file_from_node_config(cal_catalogue))
+                    observatory.read_file_from_node_config(cal_catalogue))
             else:
                 raise RuntimeError('Loading calibrator catalogue {} failed!'.format(cal_catalogue))
 

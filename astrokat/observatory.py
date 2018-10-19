@@ -19,10 +19,10 @@ try:
     elif os.path.isfile(_node_file):
         with open(_node_file, 'r') as fh:
             _node_conf = json.loads(fh.read())
-        for key, val in _node_conf.items():
+        for _key, _val in _node_conf.items():
             # Remove comments at the end of the line
-            val = val.split("#", 1)[0]
-            _settings[key] = val.strip()
+            _val = _val.split("#", 1)[0]
+            _settings[key] = _val.strip()
             if _node_conf.get("configuri", False):
                 katconf.set_config(katconf.environ(_node_conf["configuri"]))
             else:
@@ -79,7 +79,7 @@ class Observatory(object):
         self.observer.date = set_time
         return self.observer.sidereal_time()
 
-    def _read_file_from_node_config(self, catalogue_file):
+    def read_file_from_node_config(self, catalogue_file):
         if not self.node_config_available:
             raise AttributeError('Node config is not configured')
         else:
