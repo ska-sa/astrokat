@@ -22,7 +22,7 @@ try:
         for _key, _val in _node_conf.items():
             # Remove comments at the end of the line
             _val = _val.split("#", 1)[0]
-            _settings[key] = _val.strip()
+            _settings[_key] = _val.strip()
             if _node_conf.get("configuri", False):
                 katconf.set_config(katconf.environ(_node_conf["configuri"]))
             else:
