@@ -275,7 +275,6 @@ class telescope(object):
 #             user_logger.info(msg)
 #             noisediode.off(mkat, logging=False)
 
-
 def run_observation(opts, mkat):
 
     # TODO: undo outdated noise diode implementations

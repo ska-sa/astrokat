@@ -7,6 +7,7 @@ import argparse
 import katpoint
 import numpy
 import os
+import json
 import sys
 
 from astrokat import Observatory
@@ -23,12 +24,6 @@ try:
     from matplotlib.backends.backend_pdf import PdfPages
 except ImportError:  # not a processing node
     text_only = True
-
-# set up path and access method for calibrator catalogues
-try:
-    import katconf
-except ImportError:  # not on live system
-    pass
 
 
 def cli(prog):
@@ -78,7 +73,6 @@ HH:MM:SS DD:MM:SS')
     parser.add_argument(
             '--cat-path',
             type=str,
-            default='katconfig/user/catalogues',
             help='\
 Path to calibrator catalogue folder')
 
@@ -232,7 +226,10 @@ def get_cal(catalogue, target, ref_antenna):
 
 
 def main(args):
-    location = Observatory().location
+
+    observatory = Observatory()
+    location = observatory.location
+    node_config_available = observatory.node_config_available
     creation_time = katpoint.Timestamp()
     ref_antenna = katpoint.Antenna(location)
 
@@ -253,10 +250,12 @@ def main(args):
     if not args.target:
         raise RuntimeError('No targets provided, exiting')
 
-    if not os.path.isdir(args.cat_path):
-        msg = 'Could not access calibrator catalogue default location\n'
-        msg += 'add explicit location of catalogue folder using --cat-path <dirname>'
-        raise RuntimeError(msg)
+    if args.cat_path and os.path.isdir(args.cat_path):
+        catalogue_path = args.cat_path
+        config_file_available = True
+    else:
+        catalogue_path = 'katconfig/user/catalogues'
+        config_file_available = False
 
     # input target from command line
     args.target = [target.strip() for target in args.target]
@@ -269,16 +268,23 @@ def main(args):
 
     for target in targets:
         observation_catalogue.add(target)
-
         # read calibrator catalogues and calibrators to catalogue
         for cal_tag in args.cal_tags:
-            # TODO: add katconf read
             cal_catalogue = os.path.join(
-                    args.cat_path,
+                    catalogue_path,
                     'Lband-{}-calibrators.csv'.format(cal_tag),
                     )
-            calibrators = katpoint.Catalogue(file(cal_catalogue))
-            calibrator, separation_angle = get_cal(calibrators, target, ref_antenna)
+           
+            if config_file_available:
+                assert os.path.isfile(cal_catalogue), 'Catalogue file does not exist'
+                calibrators = katpoint.Catalogue(file(cal_catalogue))
+            elif node_config_available:
+                calibrators = katpoint.Catalogue(
+                    observatory.read_file_from_node_config(cal_catalogue))
+            else:
+                raise RuntimeError('Loading calibrator catalogue {} failed!'.format(cal_catalogue))
+
+            calibrator, separation_angle =  get_cal(calibrators, target, ref_antenna)
             observation_catalogue.add(calibrator)
 
     # write observation catalogue
