@@ -1,4 +1,3 @@
-# flake8: noqa
 # MeerKAT calibrator selection tools
 #  Returns the closest calibrator(s) for per target
 
@@ -14,13 +13,10 @@ import sys
 from astrokat import Observatory
 from datetime import datetime
 
-# check if system can create images and pdf report
-# TODO: replace this global flag with a better test
 text_only = False
 try:
     import matplotlib.pyplot as plt
     import matplotlib.dates as mdates
-    from matplotlib.ticker import MaxNLocator, MultipleLocator
     from matplotlib.font_manager import FontProperties
     from matplotlib.backends.backend_pdf import PdfPages
 except ImportError:  # not a processing node
@@ -88,13 +84,16 @@ solar separation angle from target observation region')
             '--datetime',
             default=datetime.utcnow(),
             help="\
-catalogue creation or viewing date and time with string format 'YYYY-MM-DD HH:MM'")
+catalogue creation or viewing date and time with \
+string format 'YYYY-MM-DD HH:MM'")
 
     group = parser.add_argument_group(
-title="observation target specification (*required*)",
-description = "multiple targets are added using an input file, " \
-"while for a single target a quick command line option is also available " \
-" -- simultaneous use of a catalogue and input target is not allowed.")
+                                      title="\
+observation target specification (*required*)",
+                                      description="\
+multiple targets are added using an input file, \
+while for a single target a quick command line option is also available \
+ -- simultaneous use of a catalogue and input target is not allowed.")
     ex_group = group.add_mutually_exclusive_group(required=True)
     ex_group.add_argument(
             '--infile',
@@ -138,8 +137,17 @@ output observation target information text only')
     return parser.parse_args()
 
 
-# Generates a plot of elevation over time for all sources in catalogue
 def source_elevation(catalogue, ref_antenna, report=False):
+    """
+        Generates a plot of elevation over time for 24 hour period
+        for all sources in provided catalogue at a specific location
+
+        @param catalogue: katpoint.Catalogue object
+        @param ref_antenna: katpoint.Antenna object
+        @param report: [optional] matplotlib figure suitable for PDF report
+
+        @return: matplotlib figure handle
+    """
     catalogue.antenna = ref_antenna
     creation_date = catalogue.antenna.observer.date
     now_timestamp = katpoint.Timestamp(creation_date)
@@ -148,7 +156,7 @@ def source_elevation(catalogue, ref_antenna, report=False):
 
     lst_timestamps = []
     for timestamp in timestamps:
-        catalogue.antenna.observer.date=ephem.Date(timestamp)
+        catalogue.antenna.observer.date = ephem.Date(timestamp)
         lst_time = '{}'.format(catalogue.antenna.observer.sidereal_time())
         lst_timestamps.append(datetime.strptime(lst_time, '%H:%M:%S.%f').strftime('%H:%M'))
 
@@ -176,7 +184,7 @@ def source_elevation(catalogue, ref_antenna, report=False):
                fmt='.',
                linewidth=0,
                label=label)
-    ax.axhspan(15, 20, facecolor='k', alpha = 0.3)
+    ax.axhspan(15, 20, facecolor='k', alpha=0.3)
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.9, box.height])
     plt.grid()
@@ -206,6 +214,9 @@ def source_elevation(catalogue, ref_antenna, report=False):
 
 # --Output observation target stats--
 class bcolors:
+    """
+        Helper class for command line color output
+    """
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
     OKGREEN = '\033[92m'
@@ -215,7 +226,7 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-# Target information line in table
+
 def table_line(
         target,  # katpoint target
         sep_angle=None,  # degrees
@@ -223,6 +234,17 @@ def table_line(
         sol_limit=None,  # degrees
         notes='',
         ):
+    """
+        Construct a line of target information to display on command line output
+
+        @param target: target from katpoint.Catalogue object
+        @param sep_angle: [optional] separation angle in degrees as float
+        @param cal_limit: [optional] maximum separation angle between target and calibrator
+        @param sol_limit: [optional] minimum separation angle between target and Sun
+        @param notes: [optional] user provided extra information
+
+        @return: <name> <risetime UTC> <settime UTC> <Separation> <Notes>
+    """
     rise_time = Observatory()._ephem_risetime_(target.body, lst=False)
     set_time = Observatory()._ephem_settime_(target.body, lst=False)
 
@@ -249,13 +271,25 @@ def table_line(
             )
     return clo_clr + table_info + bcolors.ENDC
 
+
 # Create observation table
-def obs_table(timestamp,  # time of calculation
-              ref_antenna,  # reference location for pointing calculation
+def obs_table(timestamp,
+              ref_antenna,
               catalogue,
-              cal_ref_list=[],  # reference targets for calibrator selection
-              solar_sep=90,  # maximum solar separation angle
+              cal_ref_list=[],
+              solar_sep=90,
               ):
+    """
+        Construct a command line table to displaying catalogue target information
+
+        @param timestamp: time of calculation as katpoint.Timestamp object
+        @param ref_antenna: reference location for pointing calculation as katpoint.Antenna object
+        @param catalogue: catalogue of targets as katpoint.Catalogue object
+        @param cal_ref_list: [optional] reference targets for calibrator selection
+        @param solar_sep: [optional] minimum solar separation angle
+
+        @return: <name> <tag> <risetime UTC> <settime UTC> <Separation> <Notes>
+    """
     observation_table = '\nObservation Table for {}\n'.format(timestamp)
     observation_table += '{: <16}{: <16}{: <16}{: <16}{: <16}{: <16}\n'.format(
             'Sources',
@@ -292,7 +326,7 @@ def obs_table(timestamp,  # time of calculation
     for calibrator in catalogue.filter(['bpcal', 'fluxcal', 'polcal', 'gaincal']):
         # find closest reference target
         sep_angles = [calibrator.separation(tgt, timestamp, ref_antenna)
-                for tgt in cal_ref_list]
+                      for tgt in cal_ref_list]
         note = ''
         separation_angle = None
         if len(sep_angles) > 0:
@@ -312,6 +346,10 @@ def obs_table(timestamp,  # time of calculation
 # --write observation catalogue--
 # construct suplementary header information
 def write_header(args, userheader=''):
+    """
+        Creates fancy header to add at the top of the calibrator catalgoue
+        Adding information such as proposal ID, PI, contact details
+    """
     catalogue_header = userheader
     catalogue_header += '# Observation catalogue for proposal ID {}\n'.format(
             args.prop_id)
@@ -322,6 +360,9 @@ def write_header(args, userheader=''):
 
 # write observation catalogue using katpoint functionality
 def write_catalogue(filename, catalogue_header, katpoint_catalogue):
+    """
+        Add all katpoint.Catalogue object targets to CVS file
+    """
     katpoint_catalogue.save(filename)
     with open(filename, 'r+') as fcat:
         sources = fcat.readlines()
@@ -397,7 +438,7 @@ def main(args):
                     target = line.strip().replace('calref', 'target')
                     cal_targets.append(katpoint.Target(target))
                 else:  # add target to catalogue
-                    target = line.strip().replace('radec' , 'radec target')
+                    target = line.strip().replace('radec', 'radec target')
                     observation_catalogue.add(katpoint.Target(target))
         # if not reference target for calibrator selection is specified,
         # simply select the first target listed in the catalogue
@@ -473,7 +514,6 @@ def main(args):
                          verticalalignment='top',
                          size=12)
                 pdf.savefig()
-                # plt.close()
             print('Observation catalogue report {}'.format(report_fname))
         plt.show()
         plt.close()
