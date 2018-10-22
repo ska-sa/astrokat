@@ -8,14 +8,11 @@ import os
 
 import numpy as np
 
-# from datetime import datetime, timedelta
-
 from astrokat import (
     NoTargetsUpError,
     NotAllTargetsUpError,
     read_yaml,
     katpoint_target,
-    # Observatory,
     noisediode,
     correlator,
     )
@@ -163,6 +160,21 @@ def drift_pointing_offset(target, duration=60):
     return target
 
 
+# finding each cadence target in order of target list
+def cadence_target(session, observer, target_list):
+    for target in target_list:
+        if target['cadence'] > 0:
+            if target['last_observed'] is None:
+                return target
+
+            delta_time = session.time - target['last_observed']
+            # delta_time = observer.date.datetime() - target['last_observed']
+            # delta_time = (datetime.now() - target['last_observed'])
+            if delta_time > target['cadence']:
+                return target
+    return False
+
+
 class telescope(object):
     def __init__(self, opts, args=None):
         user_logger.info('Setting up telescope for observation')
@@ -287,11 +299,6 @@ def run_observation(opts, mkat):
             continue
         obs_targets = read_targets(observation_cycle['target_list'])
         target_list = obs_targets['target'].tolist()
-        # Extract targets with cadences
-        cadence_list = []
-        for target in obs_targets:
-            if target['cadence'] > 0:
-                cadence_list.append(target)
         catalogue = collect_targets(mkat.array, target_list)
         observer = catalogue._antenna.observer
 
@@ -371,34 +378,36 @@ def run_observation(opts, mkat):
                 targets_visible = False
 
                 for cnt, target in enumerate(obs_targets):
+                    # check and observe all targets with cadences
+                    while_cntr = 0
+                    while True:
+                        tgt = cadence_target(session, observer, obs_targets)
+                        if not tgt:
+                            break
+                        if observe(session, catalogue, tgt):
+                            targets_visible += True
+                        while_cntr += 1
+                        if while_cntr > len(obs_targets):
+                            break
+
                     # # noise diode fire should be corrected in sessions
                     # if nd_setup: noisediode.trigger(mkat.array, nd_setup)
                     # observe non cadence target
                     if target['cadence'] < 0:
                         targets_visible = observe(session, catalogue, target)
 
-                    # Evaluate targets with cadence
-                    for cadence_source in cadence_list:
-                        if cadence_source['last_observed'] is None:
-                            targets_visible = observe(session, catalogue, cadence_source)
-                        else:
-                            deltatime = session.time - cadence_source['last_observed']
-                            # deltatime = observer.date.datetime() - cadence_source['last_observed']
-                            # deltatime = datetime.now() - cadence_source['last_observed']
-                            # if deltatime.total_seconds() > cadence_source['cadence']:
-                            if deltatime > cadence_source['cadence']:
-                                targets_visible = observe(session, catalogue, cadence_source)
-
                     # loop continuation checks
-                    delta_time = (session.time-session.start_time)#.total_seconds()
+                    delta_time = (session.time-session.start_time)
                     # delta_time = (observer.date.datetime()-start_time).total_seconds()
                     # delta_time = (datetime.now()-start_time).total_seconds()
                     if obs_duration > 0:
                         if delta_time >= obs_duration or \
                                 (obs_duration-delta_time) < obs_targets[cnt]['duration']:
+                            user_logger.info('Scheduled observation time lapsed - ending observation')
                             done = True
                             break
                     else:
+                        user_logger.info('Observation list completed - ending observation')
                         done = True
 
                     # End if there is nothing to do
