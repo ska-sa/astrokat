@@ -1,4 +1,7 @@
 from .__main__ import cli  # noqa
+import noisediode  # noqa
+import correlator  # noqa
+
 from .simulate import (  # noqa
     user_logger,
     verify_and_connect,
