@@ -4,7 +4,7 @@ import logging
 import sys
 
 from collections import namedtuple
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 global simobserver
 simobserver = ephem.Observer()
@@ -71,7 +71,7 @@ class verify_and_connect:
 
     def fake_sensors(self, kwargs):
         _sensors = {}
-        if not 'instrument' in kwargs['template'].keys():
+        if 'instrument' not in kwargs['template'].keys():
             return _sensors
         if kwargs['template']['instrument'] is None:
             return _sensors
@@ -87,6 +87,8 @@ class start_session:
         self.kwargs = kwargs
         self.track_ = False
         self.kat = dummy_kat
+        self.start_time = (datetime.now() - datetime(1970, 1, 1)).total_seconds()
+        self.time = self.start_time
 
     def __enter__(self):
         return self
@@ -116,6 +118,8 @@ class start_session:
 
     def track(self, target, duration=0, announce=False):
         self.track_ = True
+        # self.time += timedelta(seconds=duration)
+        self.time += duration
         now = simobserver.date.datetime()
         then = now + timedelta(seconds=duration)
         simobserver.date = ephem.Date(then)

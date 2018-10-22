@@ -1,20 +1,21 @@
 #!/usr/bin/env python
 # Observation script and chronology check
 
-import os
 import astrokat
 import ephem
+import katpoint
+import os
 
 import numpy as np
 
-from datetime import datetime, timedelta
+# from datetime import datetime, timedelta
 
 from astrokat import (
     NoTargetsUpError,
     NotAllTargetsUpError,
     read_yaml,
     katpoint_target,
-    Observatory,
+    # Observatory,
     noisediode,
     correlator,
     )
@@ -27,24 +28,6 @@ except ImportError:
 finally:
     for libname in libnames:
         globals()[libname] = getattr(lib, libname)
-
-# try:
-#     from katcorelib.observe import (
-#         collect_targets,
-#         user_logger,
-#         start_session,
-#         verify_and_connect)
-#     from katcorelib.observe import (
-#         SessionCBF,
-#         SessionSDP)
-# except ImportError:
-#     from astrokat import (
-#         collect_targets,
-#         user_logger,
-#         start_session,
-#         verify_and_connect,
-#         )
-import katpoint
 
 
 # unpack targets to katpoint compatable format
@@ -147,17 +130,19 @@ def observe(
 
     # do the different observations depending on requested type
     # check if target is visible before doing any work
+    session.label('track')
     if obs_type == 'drift_scan' and session.track(target, duration=0, announce=False):
+        session.label('drift_scan')
         # set transit point as target
         target = drift_pointing_offset(target, duration=duration)
 
-    session.label('track')
     if session.track(target, duration=duration):
         target_visible = True
         target_instructions['obs_cntr'] += 1
 
-#     target_instructions['last_observed'] = catalogue._antenna.observer.date.datetime()
-    target_instructions['last_observed'] = datetime.now()
+    # target_instructions['last_observed'] = catalogue._antenna.observer.date.datetime()
+    # target_instructions['last_observed'] = datetime.now()
+    target_instructions['last_observed'] = session.time
     return target_visible
 
 
@@ -195,8 +180,6 @@ class telescope(object):
         # connecting to proxies and devices
         # create single kat object, cannot repeatedly recreate
         self.array = verify_and_connect(opts)
-        # # create a single session to avoid bogus errors
-        # self.session = start_session(self.array, **vars(self.opts))
 
     def __enter__(self):
         # Verify subarray setup correct for observation before doing any work
@@ -309,10 +292,6 @@ def run_observation(opts, mkat):
         for target in obs_targets:
             if target['cadence'] > 0:
                 cadence_list.append(target)
-#         obs_calibrators = []
-#         if 'calibration_standards' in observation_cycle.keys():
-#             obs_calibrators = read_targets(observation_cycle['calibration_standards'])
-#             target_list += obs_calibrators['target'].tolist()
         catalogue = collect_targets(mkat.array, target_list)
         observer = catalogue._antenna.observer
 
@@ -361,7 +340,7 @@ def run_observation(opts, mkat):
             session_opts = vars(opts)
             description = 'Observation run'
             if 'proposal_description' in vars(opts):
-                descrption = opts.proposal_description
+                description = opts.proposal_description
             session_opts['description'] = description
 
         # Target observation loop
@@ -381,14 +360,12 @@ def run_observation(opts, mkat):
             if 'durations' in opts.template:
                 if 'obs_duration' in opts.template['durations']:
                     obs_duration = opts.template['durations']['obs_duration']
-            # only start observation timer after you are on the first target to avoid loosing time to long slews from the previous observation
-            start_time = observer.date.datetime()
-            # start_time = datetime.now()
+
             done = False
             while not done:
-                # only a single run for dry-run at the moment, since timing calculation not sorted yet
-                if mkat.array.dry_run:
-                    done = True
+                # # only a single run for dry-run at the moment, since timing calculation not sorted yet
+                # if mkat.array.dry_run:
+                #     done = True
 
                 # Cycle through target list in order listed
                 targets_visible = False
@@ -405,13 +382,16 @@ def run_observation(opts, mkat):
                         if cadence_source['last_observed'] is None:
                             targets_visible = observe(session, catalogue, cadence_source)
                         else:
-                            deltatime = observer.date.datetime() - cadence_source['last_observed']
+                            deltatime = session.time - cadence_source['last_observed']
+                            # deltatime = observer.date.datetime() - cadence_source['last_observed']
                             # deltatime = datetime.now() - cadence_source['last_observed']
-                            if deltatime.total_seconds() > cadence_source['cadence']:
+                            # if deltatime.total_seconds() > cadence_source['cadence']:
+                            if deltatime > cadence_source['cadence']:
                                 targets_visible = observe(session, catalogue, cadence_source)
 
                     # loop continuation checks
-                    delta_time = (observer.date.datetime()-start_time).total_seconds()
+                    delta_time = (session.time-session.start_time)#.total_seconds()
+                    # delta_time = (observer.date.datetime()-start_time).total_seconds()
                     # delta_time = (datetime.now()-start_time).total_seconds()
                     if obs_duration > 0:
                         if delta_time >= obs_duration or \
@@ -435,7 +415,9 @@ def run_observation(opts, mkat):
         user_logger.info("Observation loop statistics")
         user_logger.info("Total observation time {:.2f} seconds".format(
             # (datetime.now()-start_time).total_seconds()))
-            (observer.date.datetime()-start_time).total_seconds()))
+            # (observer.date.datetime()-start_time).total_seconds()))
+            # (session.time-session.start_time).total_seconds()))
+            (session.time-session.start_time)))
         if len(obs_targets) > 0:
             user_logger.info("Targets observed :")
             for unique_target in np.unique(obs_targets['name']):
