@@ -66,7 +66,6 @@ gain, bp, flux, pol.')
     parser.add_argument(
             '--cat-path',
             type=str,
-            default='katconfig/user/catalogues',
             help='\
 path to calibrator catalogue folder')
     parser.add_argument(
@@ -406,15 +405,18 @@ def main(args):
             plt.show()
         quit()
 
-    if not args.target:
-        raise RuntimeError('No targets provided, exiting')
-
     if args.cat_path and os.path.isdir(args.cat_path):
         catalogue_path = args.cat_path
         config_file_available = True
     else:
         catalogue_path = 'katconfig/user/catalogues'
         config_file_available = False
+
+    # before doing anything, verify that calibrator catalogues can be accessed
+    if not os.path.isdir(catalogue_path):
+        msg = 'Could not access calibrator catalogue default location\n'
+        msg += 'add explicit location of catalogue folder using --cat-path <dirname>'
+        raise RuntimeError(msg)
 
     # constructing observational catalogue
     observation_catalogue = katpoint.Catalogue()
@@ -453,19 +455,15 @@ def main(args):
                     catalogue_path,
                     'Lband-{}-calibrators.csv'.format(caltag_dict[cal_tag]),
                     )
-            if config_file_available:
-                assert os.path.isfile(cal_catalogue), 'Catalogue file does not exist'
-                calibrators = katpoint.Catalogue(file(cal_catalogue))
-            elif node_config_available:
-                calibrators = katpoint.Catalogue(
-                    observatory.read_file_from_node_config(cal_catalogue))
-            else:
-                msg = 'Loading calibrator catalogue {} failed!\n'.format(cal_catalogue)
-                msg += 'Add explicit location of catalogue folder using --cat-path <dirname>'
-                raise RuntimeError(msg)
-
             try:
-                calibrators = katpoint.Catalogue(file(cal_catalogue))
+                if config_file_available:
+                    # assert os.path.isfile(cal_catalogue), 'Catalogue file does not exist'
+                    calibrators = katpoint.Catalogue(file(cal_catalogue))
+                elif node_config_available:
+                    calibrators = katpoint.Catalogue(
+                        observatory.read_file_from_node_config(cal_catalogue))
+                else:  # user specified calibrator file
+                    calibrators = katpoint.Catalogue(file(cal_catalogue))
             except IOError:
                 msg = bcolors.WARNING
                 msg += 'Unable to open {}\n'.format(cal_catalogue)
