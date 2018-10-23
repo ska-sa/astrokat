@@ -94,8 +94,6 @@ def read_targets(target_items):
     target_list['last_observed'] = [None]*ntargets
     target_list['obs_cntr'] = [0]*ntargets
 
-    # import pprint
-    # pprint.pprint(target_list)
     return target_list
 
 
@@ -137,8 +135,6 @@ def observe(
         target_visible = True
         target_instructions['obs_cntr'] += 1
 
-    # target_instructions['last_observed'] = catalogue._antenna.observer.date.datetime()
-    # target_instructions['last_observed'] = datetime.now()
     target_instructions['last_observed'] = session.time
     return target_visible
 
@@ -168,8 +164,6 @@ def cadence_target(session, observer, target_list):
                 return target
 
             delta_time = session.time - target['last_observed']
-            # delta_time = observer.date.datetime() - target['last_observed']
-            # delta_time = (datetime.now() - target['last_observed'])
             if delta_time > target['cadence']:
                 return target
     return False
@@ -397,9 +391,7 @@ def run_observation(opts, mkat):
                         targets_visible = observe(session, catalogue, target)
 
                     # loop continuation checks
-                    delta_time = (session.time-session.start_time)
-                    # delta_time = (observer.date.datetime()-start_time).total_seconds()
-                    # delta_time = (datetime.now()-start_time).total_seconds()
+                    delta_time = session.time - session.start_time
                     if obs_duration > 0:
                         if delta_time >= obs_duration or \
                                 (obs_duration-delta_time) < obs_targets[cnt]['duration']:
@@ -423,9 +415,6 @@ def run_observation(opts, mkat):
         print
         user_logger.info("Observation loop statistics")
         user_logger.info("Total observation time {:.2f} seconds".format(
-            # (datetime.now()-start_time).total_seconds()))
-            # (observer.date.datetime()-start_time).total_seconds()))
-            # (session.time-session.start_time).total_seconds()))
             (session.time-session.start_time)))
         if len(obs_targets) > 0:
             user_logger.info("Targets observed :")
@@ -480,6 +469,8 @@ if __name__ == '__main__':
                 if 'integration_period' in instrument.keys():
                     integration_period = float(instrument['integration_period'])
                     instrument['dump_rate'] = 1./integration_period
+                    # remove integration_period here so as not to have to deal
+                    # with it later in the observation structure
 
     # setup and observation
     with telescope(opts, args_) as mkat:
