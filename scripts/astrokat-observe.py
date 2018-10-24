@@ -1,3 +1,4 @@
+# flake8: noqa
 #!/usr/bin/env python
 # Observation script and chronology check
 
@@ -189,15 +190,15 @@ class telescope(object):
 
     def __enter__(self):
         # Verify subarray setup correct for observation before doing any work
-        if 'instrument' in self.opts.template.keys():
-            if self.opts.template['instrument'] is not None:
-                self.subarray_setup(self.array, self.opts.template['instrument'])
+        if 'instrument' in self.opts.yaml.keys():
+            if self.opts.yaml['instrument'] is not None:
+                self.subarray_setup(self.array, self.opts.yaml['instrument'])
 
         # Set up noise diode if requested
-        if 'noise_diode' in self.opts.template.keys():
-            noise_pattern = self.opts.template['noise_diode']['pattern']
-            cycle_length = self.opts.template['noise_diode']['cycle_len']
-            on_fraction = self.opts.template['noise_diode']['on_fraction']
+        if 'noise_diode' in self.opts.yaml.keys():
+            noise_pattern = self.opts.yaml['noise_diode']['pattern']
+            cycle_length = self.opts.yaml['noise_diode']['cycle_len']
+            on_fraction = self.opts.yaml['noise_diode']['on_fraction']
             noisediode.pattern(self.array, noise_pattern, cycle_length, on_fraction)
 
             msg = 'Set noise source behaviour to {} sec period with {} on fraction and apply pattern to {}'.format(
@@ -280,13 +281,13 @@ def run_observation(opts, mkat):
 #     if 'nd-params' in vars(opts):
 #         raise RuntimeError('Noide diode parameters to be check')
 #     # noise-source on, activated when needed
-#     if 'noise_diode' in opts.template.keys():
-#         nd_setup = opts.template['noise_diode']
+#     if 'noise_diode' in opts.yaml.keys():
+#         nd_setup = opts.yaml['noise_diode']
 #     else:
 #         nd_setup = None
 
     # Each observation loop contains a number of observation cycles over LST ranges
-    for observation_cycle in opts.template['observation_loop']:
+    for observation_cycle in opts.yaml['observation_loop']:
         # Unpack all target information
         if not ('target_list' in observation_cycle.keys()):
             user_logger.warning('No targets provided - stopping script instead of hanging around')
@@ -358,9 +359,9 @@ def run_observation(opts, mkat):
 
             # set up duration periods for observation control
             obs_duration = -1
-            if 'durations' in opts.template:
-                if 'obs_duration' in opts.template['durations']:
-                    obs_duration = opts.template['durations']['obs_duration']
+            if 'durations' in opts.yaml:
+                if 'obs_duration' in opts.yaml['durations']:
+                    obs_duration = opts.yaml['durations']['obs_duration']
 
             done = False
             while not done:
@@ -439,6 +440,9 @@ if __name__ == '__main__':
 
     # suppress the sessions noise diode, which is outdated
     # will use it again once functionality corrected
+    # TODO: Currently the fire_noise_diode function in mkat_session.py is
+    # outdated. This has to be updated to reflect the new noise diode pattern
+    # implementation, and this default setting then removed.
     opts.nd_params = 'off'
 
     # get correlator settings from config files
@@ -459,12 +463,12 @@ if __name__ == '__main__':
                 parser.add_argument(arg)
         args_ = parser.parse_args(args)
 
-    # unpack observation from template plan
-    if opts.template:
-        opts.template = read_yaml(opts.template)
+    # unpack observation from observation plan
+    if opts.yaml:
+        opts.yaml = read_yaml(opts.yaml)
         # handle mapping of user friendly keys to CAM resource keys
-        if 'instrument' in opts.template.keys():
-            instrument = opts.template['instrument']
+        if 'instrument' in opts.yaml.keys():
+            instrument = opts.yaml['instrument']
             if instrument is not None:
                 if 'integration_period' in instrument.keys():
                     integration_period = float(instrument['integration_period'])

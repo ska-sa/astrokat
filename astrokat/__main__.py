@@ -83,8 +83,8 @@ def cli(prog,
         version = "%s 0.1" % prog
         # TODO: more complex usage string in separate function
         usage = "%s [options] -o <observer>" \
-                " --template <YAMLfile>" \
-                " [<'template'> ...]" % prog
+                " --yaml <YAMLfile>" \
+                " [<'YAMLfile'> ...]" % prog
         description = \
             "Sources are specified either as part of an observation profile." \
             " Track one or more sources for a specified time." \
@@ -98,12 +98,12 @@ def cli(prog,
     # Standard track experiment options
     parser.add_argument('--version',
                         action='version', version=version)
-    parser.add_argument('--template',
+    parser.add_argument('--yaml',
                         default=[],
                         type=str,
                         required=True,
                         help='Observation profile represented in the configuration file,'
-                             ' obs_template.yml (**required**)')
+                             ' obs_plan.yml (**required**)')
 
     # Add standard observation script options from sessions
     parser = session_options(parser,
