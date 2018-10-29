@@ -41,10 +41,10 @@ class verify_and_connect:
     def __init__(self, dummy):
         kwargs = vars(dummy)
         self.dry_run = True
-        self._ants = kwargs['noise_pattern'] if 'noise_pattern' in kwargs else []
-        self._lst = kwargs['template']['observation_loop'][0]['LST'].split('-')[0].strip()
+        self._lst = kwargs['yaml']['observation_loop'][0]['LST'].split('-')[0].strip()
         self._sensors = self.fake_sensors(kwargs)
         self._session_cnt = 0
+        self._ants = ['m011', 'm022', 'm033', 'm044']
 
     def __enter__(self):
         return self
@@ -55,12 +55,16 @@ class verify_and_connect:
     def __call__(self, *args, **kwargs):
         return self
 
+    def __repr__(self):
+        return 'A representation'
+
     def __str__(self):
         return 'A string'
 
     def __iter__(self):
         Ant = namedtuple('Ant', ['name'])
-        yield Ant(self._ants)
+        for ant in self._ants:
+            yield Ant(ant)
         raise StopIteration
 
     def __exit__(self, type, value, traceback):
@@ -71,13 +75,13 @@ class verify_and_connect:
 
     def fake_sensors(self, kwargs):
         _sensors = {}
-        if 'instrument' not in kwargs['template'].keys():
+        if 'instrument' not in kwargs['yaml'].keys():
             return _sensors
-        if kwargs['template']['instrument'] is None:
+        if kwargs['yaml']['instrument'] is None:
             return _sensors
-        for key in kwargs['template']['instrument'].keys():
+        for key in kwargs['yaml']['instrument'].keys():
             fakesensor = 'sub_{}'.format(key)
-            _sensors[fakesensor] = Fakr(kwargs['template']['instrument'][key])
+            _sensors[fakesensor] = Fakr(kwargs['yaml']['instrument'][key])
         return _sensors
 
 
@@ -85,7 +89,10 @@ class verify_and_connect:
 class start_session:
     def __init__(self, dummy_kat, **kwargs):
         self.kwargs = kwargs
-        self.track_ = False
+        self.obs_params = kwargs
+        # self.track_ = False
+        # self.raster_scan_ = False
+        # self.scan_ = False
         self.kat = dummy_kat
         self.start_time = (datetime.now() - datetime(1970, 1, 1)).total_seconds()
         self.time = self.start_time
@@ -104,7 +111,8 @@ class start_session:
         return 'A string'
 
     def __nonzero__(self):
-        return 1
+        # return 1
+        return True
 
     def __iter__(self):
         yield self
@@ -113,16 +121,48 @@ class start_session:
     def __exit__(self, type, value, traceback):
         if self.track_:
             self.kat._session_cnt += 1
-        if self.kat._session_cnt < len(self.kwargs['template']['observation_loop']):
-            self.kat._lst = self.kwargs['template']['observation_loop'][self.kat._session_cnt]['LST'].split('-')[0].strip()
+        if self.kat._session_cnt < len(self.kwargs['yaml']['observation_loop']):
+            self.kat._lst = self.kwargs['yaml']['observation_loop'][self.kat._session_cnt]['LST'].split('-')[0].strip()
 
     def track(self, target, duration=0, announce=False):
         self.track_ = True
-        # self.time += timedelta(seconds=duration)
         self.time += duration
         now = simobserver.date.datetime()
         then = now + timedelta(seconds=duration)
         simobserver.date = ephem.Date(then)
-        return self.track_
+        return True
+        # return self.track_
+
+    def raster_scan(self, target,
+                    num_scans=3,
+                    scan_duration=30.0,
+                    scan_extent=6.0,
+                    scan_spacing=0.5,
+                    scan_in_azimuth=True,
+                    projection='zenithal-equidistant',
+                    announce=True):
+        self.raster_scan_ = True
+        duration = scan_duration * num_scans
+        self.time += duration
+        now = simobserver.date.datetime()
+        then = now + timedelta(seconds=duration)
+        simobserver.date = ephem.Date(then)
+        return True
+        # return self.raster_scan_
+
+    def scan(self, target,
+             duration=30.0,
+             start=(-3.0, 0.0),
+             end=(3.0, 0.0),
+             index=-1,
+             projection='zenithal-equidistant',
+             announce=True):
+        self.scan_ = True
+        self.time += duration
+        now = simobserver.date.datetime()
+        then = now + timedelta(seconds=duration)
+        simobserver.date = ephem.Date(then)
+        # return self.scan_
+        return True
 
 # -fin-

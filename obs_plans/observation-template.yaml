@@ -1,0 +1,65 @@
+## Example observation template file listing all available observation options
+# User header information
+# Free form information for user information and description
+
+## Information specifying resources that must be available in the active subarray before execution
+## If any of these resources are not available at runtime, the script will exit without observation
+instrument:
+  # resources that are fundamentally required for the observation to continue
+  pool_resources: m011,m022,ptuse
+  # subarray receptor: l (only option currently), u, s, x
+  band: l
+  # user product
+  product: c856M4k
+  # Data capture averaging or integration period in seconds
+  integration_period: 8
+## Subarray antenna layout related to PSF calculation
+configuration:
+  # list of antennas that would be preferred in the subarray
+  antennas:
+  # size of the array required before observation can continue
+  # or number of antennas from provided list that must be in the subarray
+  fraction_available:
+## Set noise diode pattern on all or selected antennas
+noise_diode:
+  # 'all' for the entire subarray,
+  # or antenna name m0XX for selected antennas
+  antennas: all
+  # timeperiod in seconds for an on/off noise diode cycle
+  cycle_len: 0.1  # sec
+  # fraction of cycle length that the noise diode should be switched on
+  on_frac: 0.5  # %
+## Desired observation durations
+durations:  # if left out only single observation run through target list
+  # desired start time
+  start_time:
+  # minimum observation period for science quality data in seconds
+  minimum_duration: 900  # sec
+  # requested observation duration in seconds
+  # this is a required key for duration (needed for planning)
+  obs_duration: 1800  # sec
+## Optional arguments for scan type observation
+scan:
+  duration: 30.0
+  start: -3.0,0.0
+  end: 3.0,0.0
+  index: -1
+  projection: default_proj
+## Optional arguments for raster scan type observation
+raster_scan:
+  num_scans: 3
+  scan_duration: 30.0
+  scan_extent: 6.0
+  scan_spacing: 0.5
+  scan_in_azimuth: True
+  projection: default_proj
+## Target observation loop (observation template may contain multiple observation loops)
+observation_loop:
+  # time range over which targets listed can be observed (see wiki for target options)
+  - LST: 0.0-23.9
+    target_list:
+      - name=drift-1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, duration=120.0, type=drift_scan, nd=10
+      # ability to disable the noise diode pattern for this target
+      - name=scan-1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, type=scan, nd=off
+      - name=track-1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, duration=120.0
+      - name=cadence-1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, duration=60.0, cadence=180

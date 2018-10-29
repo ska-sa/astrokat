@@ -38,6 +38,7 @@ def read_targets(target_items):
                 'duration',
                 'cadence',
                 'obs_type',
+                'noise_diode',
                 'last_observed',
                 'obs_cntr',
                 ),
@@ -46,6 +47,7 @@ def read_targets(target_items):
                 object,
                 float,
                 float,
+                object,
                 object,
                 object,
                 int,
@@ -58,6 +60,7 @@ def read_targets(target_items):
     durations = []
     cadences = []
     obs_types = []
+    nds = []
     for target_item in target_items:
         [name_list, target] = katpoint_target(target_item)
         # When unpacking, katpoint's naming convention will be to use the first
@@ -72,10 +75,12 @@ def read_targets(target_items):
         names.append(target_name)
         targets.append(target)
         target_ = [item.strip() for item in target_item.split(',')]
+        duration = np.nan
         cadence = -1  # default is to observe without cadence
         obs_type = 'track'  # assume tracking a target
+        nd = None
         for item_ in target_:
-            prefix = 'duration='
+            prefix = 'duration='  # need to add 'duration =' as well for user stupidity
             if item_.startswith(prefix):
                 duration = item_[len(prefix):]
             prefix = 'type='
@@ -84,14 +89,19 @@ def read_targets(target_items):
             prefix = 'cadence='
             if item_.startswith(prefix):
                 cadence = item_[len(prefix):]
+            prefix = 'nd='
+            if item_.startswith(prefix):
+                nd = item_[len(prefix):]
         durations.append(duration)
         obs_types.append(obs_type)
         cadences.append(cadence)
+        nds.append(nd)
     target_list['name'] = names
     target_list['target'] = targets
     target_list['duration'] = durations
     target_list['cadence'] = cadences
     target_list['obs_type'] = obs_types
+    target_list['noise_diode'] = nds
     target_list['last_observed'] = [None]*ntargets
     target_list['obs_cntr'] = [0]*ntargets
 
@@ -103,8 +113,7 @@ def observe(
         session,
         catalogue,
         target_instructions,
-        _duration_=None,  # overwrite user settings
-        ):
+        **kwargs):
     target_visible = False
 
     target_name = target_instructions['name']
@@ -113,28 +122,69 @@ def observe(
     obs_type = target_instructions['obs_type']
 
     # functional overwrite of duration for system reasons
-    if _duration_ is not None:
-        duration = _duration_
+    if 'duration' in kwargs:
+        duration = kwargs['duration']
+
     # simple way to get telescope to slew to target
     if duration <= 0:
-        return session.track(target, duration=duration, announce=False)
+        return session.track(target, duration=0, announce=False)
 
-    user_logger.info('{} {} {} for {} sec'.format(
-        obs_type.capitalize(), target.tags[1], target_name, duration))
+    msg = '{} {} {}'.format(
+        obs_type.capitalize(), target.tags[1], target_name)
+    if not np.isnan(duration):  # scan types do not have durations
+        msg += ' for {} sec'.format(duration)
+    user_logger.info(msg)
 
     # TODO: add some delay for slew time
 
+    # implement target specific noise diode behaviour
+    # TODO: noise diode fire should be corrected in sessions
+    # if nd_setup: noisediode.trigger(mkat.array, nd_setup)
+    nd_setup = None
+    if target_instructions['noise_diode'] is not None:
+        if 'off' in target_instructions['noise_diode']:
+            # if pattern specified, remember settings to reset
+            if 'noise_diode' in kwargs and \
+                    kwargs['noise_diode'] is not None:
+                nd_setup = kwargs['noise_diode']
+            # disable noise diode pattern for target
+            noisediode.off(session.kat)
+        else:
+            noisediode.trigger(session.kat,
+                    float(target_instructions['noise_diode']))
+
     # do the different observations depending on requested type
     # check if target is visible before doing any work
-    session.label('track')
-    if obs_type == 'drift_scan' and session.track(target, duration=0, announce=False):
-        session.label('drift_scan')
-        # set transit point as target
-        target = drift_pointing_offset(target, duration=duration)
+    if 'raster_scan' in obs_type or \
+            'scan' in obs_type:  # compensating for ' and spaces around key values
+        session.label(obs_type.strip())
+        if 'raster_scan' in obs_type:
+            scan_func = session.raster_scan
+        else:
+            scan_func = session.scan
+        if obs_type in kwargs:  # user settings other than defaults
+            target_visible = scan_func(target, **kwargs[obs_type])
+        else:
+            target_visible = scan_func(target)
+        if target_visible:
+            target_instructions['obs_cntr'] += 1
+    else:
+        session.label('track')
+        if 'drift_scan' in obs_type and \
+                session.track(target, duration=0, announce=False):
+            session.label('drift_scan')
+            # set transit point as target
+            target = drift_pointing_offset(target, duration=duration)
+        if session.track(target, duration=duration):
+            target_visible = True
+            target_instructions['obs_cntr'] += 1
 
-    if session.track(target, duration=duration):
-        target_visible = True
-        target_instructions['obs_cntr'] += 1
+    if nd_setup is not None:
+        # restore pattern if programmed at setup
+        noisediode.pattern(session.kat,
+                nd_setup['antennas'],
+                nd_setup['cycle_len'],
+                nd_setup['on_frac'])
 
     target_instructions['last_observed'] = session.time
     return target_visible
@@ -191,21 +241,12 @@ class telescope(object):
     def __enter__(self):
         # Verify subarray setup correct for observation before doing any work
         if 'instrument' in self.opts.yaml.keys():
-            if self.opts.yaml['instrument'] is not None:
-                self.subarray_setup(self.array, self.opts.yaml['instrument'])
+            self.subarray_setup(self.opts.yaml['instrument'])
 
+        # TODO: noise diode implementations should be moved to sessions
         # Set up noise diode if requested
         if 'noise_diode' in self.opts.yaml.keys():
-            noise_pattern = self.opts.yaml['noise_diode']['pattern']
-            cycle_length = self.opts.yaml['noise_diode']['cycle_len']
-            on_fraction = self.opts.yaml['noise_diode']['on_fraction']
-            noisediode.pattern(self.array, noise_pattern, cycle_length, on_fraction)
-
-            msg = 'Set noise source behaviour to {} sec period with {} on fraction and apply pattern to {}'.format(
-                    cycle_length,
-                    on_fraction,
-                    noise_pattern)
-            user_logger.info(msg)
+            self.noisediode_setup(self.opts.yaml['noise_diode'])
         else:
             # Ensure default setup before starting observation
             # switch noise-source pattern off (known setup starting observation)
@@ -232,7 +273,7 @@ class telescope(object):
         noisediode.off(self.array)
         self.array.disconnect()
 
-    def subarray_setup(self, mkat, instrument):
+    def subarray_setup(self, instrument):
         # current sensor list included in instrument
         # sub_ [
                 # pool_resources,  # ptuse or specific antennas
@@ -240,14 +281,12 @@ class telescope(object):
                 # dump_rate,      # dumprate
                 # band,           # band
                 # ]
-        # TODO: need to find a better way to implement the keyword mapping to
-        # sensor data than these hard coded strings!!
+        if self.opts.yaml['instrument'] is None:
+            return
         for key in instrument.keys():
-            if key in ['integration_period']:
-                continue  # pass over user specific option
             conf_param = instrument[key]
             sensor_name = 'sub_{}'.format(key)
-            sub_sensor = mkat.sensor.get(sensor_name).get_value()
+            sub_sensor = self.array.sensor.get(sensor_name).get_value()
             if type(conf_param) is list:
                 conf_param = set(conf_param)
             if type(sub_sensor) is list:
@@ -258,33 +297,30 @@ class telescope(object):
                 pool_params = [str_.strip() for str_ in conf_param.split(',')]
                 for param in pool_params:
                     if param not in sub_sensor:
-                        raise RuntimeError('Subarray configation {} incorrect, {} required, {} found'.format(
+                        raise RuntimeError('Subarray configuration {} incorrect, {} required, {} found'.format(
                             sensor_name, param, sub_sensor))
             elif conf_param != sub_sensor:
-                raise RuntimeError('Subarray configation {} incorrect, {} required, {} found'.format(
+                raise RuntimeError('Subarray configuration {} incorrect, {} required, {} found'.format(
                     sensor_name, conf_param, sub_sensor))
 
+    # set the noise diode pattern for the duration of the observation
+    def noisediode_setup(self, nd_setup):
+        if nd_setup is not None:
+            noisediode.pattern(
+                    self.array,
+                    nd_setup['antennas'],
+                    nd_setup['cycle_len'],
+                    nd_setup['on_frac'],
+                    )
 
-#     def noise_diode(self, mkat, nd_setup):
-#         if on_fraction > 0:
-#         else:
-#             msg = 'Noise diode will be fired on {} antenna(s) for {} sec before each track or scan'.format(
-#                     noise_pattern,
-#                     cycle_length)
-#             user_logger.info(msg)
-#             noisediode.off(mkat, logging=False)
 
 
 def run_observation(opts, mkat):
 
-    # TODO: undo outdated noise diode implementations
-#     if 'nd-params' in vars(opts):
-#         raise RuntimeError('Noide diode parameters to be check')
-#     # noise-source on, activated when needed
-#     if 'noise_diode' in opts.yaml.keys():
-#         nd_setup = opts.yaml['noise_diode']
-#     else:
-#         nd_setup = None
+    # # TODO: noise diode implementations should be moved to sessions
+    # if 'noise_diode' in opts.yaml.keys():
+    # else:
+    #     nd_setup = None
 
     # Each observation loop contains a number of observation cycles over LST ranges
     for observation_cycle in opts.yaml['observation_loop']:
@@ -336,6 +372,8 @@ def run_observation(opts, mkat):
         user_logger.info("Gain calibrators are [{}]".format(
                          ', '.join([repr(gaincal.name) for gaincal in catalogue.filter('gaincal')])))
 
+        # TODO: the description requirement in sessions should be re-evaluated
+        # since the schedule block has the description
         # Description argument in instruction_set should be retired, but is needed by sessions
         # Assign proposal_description if available, else create a dummy
         if 'description' not in vars(opts):
@@ -345,6 +383,22 @@ def run_observation(opts, mkat):
                 description = opts.proposal_description
             session_opts['description'] = description
 
+        # extract control and observation information provided in observation
+        # file
+        obs_plan_params = vars(opts)['yaml']
+
+        # set up duration periods for observation control
+        obs_duration = -1
+        if 'durations' in obs_plan_params:
+            if obs_plan_params['durations'] is None:
+                msg = 'durations primary key cannot be empty in observation YAML file'
+                raise RuntimeError(msg)
+            try:
+                obs_duration = obs_plan_params['durations']['obs_duration']
+            except TypeError:
+                msg = 'obs_duration subkey required with durations specification in observation YAML file'
+                raise RuntimeError(msg)
+
         # Target observation loop
         with start_session(mkat.array, **vars(opts)) as session:
             session.standard_setup(**vars(opts))
@@ -353,21 +407,12 @@ def run_observation(opts, mkat):
 
             # Go to first target before starting capture
             user_logger.info('Slewing to first target')
-            observe(session, catalogue, obs_targets[0], _duration_=0)
+            observe(session, catalogue, obs_targets[0], duration=0)
             # Only start capturing once we are on target
             session.capture_start()
 
-            # set up duration periods for observation control
-            obs_duration = -1
-            if 'durations' in opts.yaml:
-                if 'obs_duration' in opts.yaml['durations']:
-                    obs_duration = opts.yaml['durations']['obs_duration']
-
             done = False
             while not done:
-                # # only a single run for dry-run at the moment, since timing calculation not sorted yet
-                # if mkat.array.dry_run:
-                #     done = True
 
                 # Cycle through target list in order listed
                 targets_visible = False
@@ -379,17 +424,19 @@ def run_observation(opts, mkat):
                         tgt = cadence_target(session, observer, obs_targets)
                         if not tgt:
                             break
-                        if observe(session, catalogue, tgt):
+                        if observe(session, catalogue, tgt, **obs_plan_params):
                             targets_visible += True
                         while_cntr += 1
                         if while_cntr > len(obs_targets):
                             break
 
-                    # # noise diode fire should be corrected in sessions
-                    # if nd_setup: noisediode.trigger(mkat.array, nd_setup)
                     # observe non cadence target
                     if target['cadence'] < 0:
-                        targets_visible = observe(session, catalogue, target)
+                        targets_visible = observe(
+                                session,
+                                catalogue,
+                                target,
+                                **obs_plan_params)
 
                     # loop continuation checks
                     delta_time = session.time - session.start_time
@@ -399,18 +446,19 @@ def run_observation(opts, mkat):
                             user_logger.info('Scheduled observation time lapsed - ending observation')
                             done = True
                             break
-                    else:
-                        user_logger.info('Observation list completed - ending observation')
-                        done = True
 
-                    # End if there is nothing to do
-                    if not targets_visible:
-                        user_logger.warning('No targets are currently visible - stopping script instead of hanging around')
-                        done = True
-                    # Verify the LST range is still valid
-                    local_lst = ephem.hours(observer.sidereal_time())
-                    if ephem.hours(local_lst) > ephem.hours(str(end_lst)):
-                        done = True
+                if obs_duration < 0:
+                    user_logger.info('Observation list completed - ending observation')
+                    done = True
+
+                # End if there is nothing to do
+                if not targets_visible:
+                    user_logger.warning('No targets are currently visible - stopping script instead of hanging around')
+                    done = True
+                # Verify the LST range is still valid
+                local_lst = ephem.hours(observer.sidereal_time())
+                if ephem.hours(local_lst) > ephem.hours(str(end_lst)):
+                    done = True
 
         # display observation cycle statistics
         print
@@ -422,9 +470,14 @@ def run_observation(opts, mkat):
             for unique_target in np.unique(obs_targets['name']):
                 cntrs = obs_targets[obs_targets['name'] == unique_target]['obs_cntr']
                 durations = obs_targets[obs_targets['name'] == unique_target]['duration']
-                user_logger.info('{} observed for {} seconds'.format(
-                    unique_target,
-                    np.sum(cntrs*durations)))
+                if np.isnan(durations).any():
+                    user_logger.info('{} observed {} times'.format(
+                        unique_target,
+                        np.sum(cntrs)))
+                else:
+                    user_logger.info('{} observed for {} seconds'.format(
+                        unique_target,
+                        np.sum(cntrs*durations)))
         print
 
 
@@ -473,8 +526,7 @@ if __name__ == '__main__':
                 if 'integration_period' in instrument.keys():
                     integration_period = float(instrument['integration_period'])
                     instrument['dump_rate'] = 1./integration_period
-                    # remove integration_period here so as not to have to deal
-                    # with it later in the observation structure
+                    del instrument['integration_period']
 
     # setup and observation
     with telescope(opts, args_) as mkat:

@@ -184,8 +184,9 @@ def collect_targets(kat, args):
                     user_logger.warning(msg)
     if len(catalogue) == 0:
         raise ValueError("No known targets found in argument list")
-    msg = "Found {} target(s): {} from {} catalogue(s), {} from default "
-    "catalogue and {} as target string(s)".format(
+    msg = "\
+Found {} target(s): {} from {} catalogue(s), {} from default \
+catalogue and {} as target string(s)".format(
                     len(catalogue),
                     from_catalogues,
                     num_catalogues,
