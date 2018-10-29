@@ -2,6 +2,6 @@ instrument:
   product: c856M4k
 observation_loop:
   - LST: 0.0-23.9
-    calibration_standards:
+    target_list:
       - name=1934-638, radec=19:39:25.03 -63:42:45.63, tags=bpcal, duration=30.0
       - name=0408-65, radec=04:08:20.38 -65:45:09.1, tags=bpcal, duration=30.0

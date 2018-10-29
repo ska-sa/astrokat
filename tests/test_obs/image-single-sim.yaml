@@ -1,5 +1,7 @@
 instrument:
-  product: bc856M4k
+  product: c856M4k
+  band: l
+  integration_period: 8
 observation_loop:
   - LST: 11.140-23.248
     target_list:
