@@ -413,7 +413,7 @@ def main(args):
         config_file_available = False
 
     # before doing anything, verify that calibrator catalogues can be accessed
-    if not os.path.isdir(catalogue_path):
+    if not os.path.isdir(catalogue_path) and not node_config_available:
         msg = 'Could not access calibrator catalogue default location\n'
         msg += 'add explicit location of catalogue folder using --cat-path <dirname>'
         raise RuntimeError(msg)
@@ -464,7 +464,7 @@ def main(args):
                         observatory.read_file_from_node_config(cal_catalogue))
                 else:  # user specified calibrator file
                     calibrators = katpoint.Catalogue(file(cal_catalogue))
-            except IOError:
+            except (AssertionError, IOError):
                 msg = bcolors.WARNING
                 msg += 'Unable to open {}\n'.format(cal_catalogue)
                 msg += 'Observation file will still be created, please add calibrator manually\n'
