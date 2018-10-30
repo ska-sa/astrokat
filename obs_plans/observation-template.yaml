@@ -15,11 +15,14 @@ instrument:
   integration_period: 8
 ## Subarray antenna layout related to PSF calculation
 configuration:
-  # list of antennas that would be preferred in the subarray
-  antennas:
-  # size of the array required before observation can continue
-  # or number of antennas from provided list that must be in the subarray
-  fraction_available:
+  # size of the array required before observation can continue (minimum number of antennas)
+  min_ants: 16
+  # for baseline requirements
+  # since the MeerKAT antennas a numbered from the core outward,
+  # the way to specify selected baselines (such as long baselines)
+  # is to specify the number of antennas above a specific number
+  # format would be <antenna>,<nr antennas above specified antenna>
+  baselines: m011,3  # to ensure 3 antennas with numbers above the specified m011 is included
 ## Set noise diode pattern on all or selected antennas
 noise_diode:
   # 'all' for the entire subarray,
