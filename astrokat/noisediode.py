@@ -5,22 +5,22 @@ from simulate import user_logger
 
 
 # switch noise-source pattern off
-def on(mkat, time_delay=1, logging=True):
+def on(mkat, lead_time=2., logging=True):
     if logging:
         user_logger.info('Switch noise-diode on')
     # Noise Diodes are triggered on all antennas in array simultaneously
     # add a second to ensure all digitisers set at the same time
-    timestamp = time.time() + time_delay
+    timestamp = time.time() + lead_time
     mkat.ants.req.dig_noise_source(timestamp, 1)
 
 
 # switch noise-source pattern off
-def off(mkat, time_delay=1, logging=True):
+def off(mkat, lead_time=2., logging=True):
     if logging:
         user_logger.info('Switch noise-diode off')
     # Noise Diodes are triggered on all antennas in array simultaneously
     # add a second to ensure all digitisers set at the same time
-    timestamp = time.time() + time_delay
+    timestamp = time.time() + lead_time
     mkat.ants.req.dig_noise_source(timestamp, 0)
 
 
@@ -31,7 +31,8 @@ def trigger(mkat, period):
     user_logger.info(msg)
     on(mkat, logging=False)
     # TODO: add some overwrite func that will update the time for sims
-    time.sleep(float(period))
+    if not mkat.dry_run:
+        time.sleep(float(period))
     off(mkat, logging=False)
 
 
