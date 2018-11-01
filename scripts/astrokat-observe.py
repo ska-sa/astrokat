@@ -13,6 +13,7 @@ from astrokat import (
     NoTargetsUpError,
     NotAllTargetsUpError,
     read_yaml,
+    get_lst,
     katpoint_target,
     noisediode,
     correlator,
@@ -126,16 +127,15 @@ def observe(
         duration = kwargs['duration']
 
     # simple way to get telescope to slew to target
-    if duration <= 0:
+    if duration < 0:
         return session.track(target, duration=0, announce=False)
 
     msg = '{} {} {}'.format(
         obs_type.capitalize(), target.tags[1], target_name)
     if not np.isnan(duration):  # scan types do not have durations
         msg += ' for {} sec'.format(duration)
-    user_logger.info(msg)
-
-    # TODO: add some delay for slew time
+    if np.isnan(duration) or duration > 1:
+        user_logger.info(msg)
 
     # implement target specific noise diode behaviour
     # TODO: noise diode fire should be corrected in sessions
@@ -317,13 +317,17 @@ class telescope(object):
 
 def run_observation(opts, mkat):
 
-    # # TODO: noise diode implementations should be moved to sessions
-    # if 'noise_diode' in opts.yaml.keys():
-    # else:
-    #     nd_setup = None
+    # extract control and observation information provided in observation file
+    obs_plan_params = vars(opts)['yaml']
+    # set up duration periods for observation control
+    obs_duration = -1
+    if 'durations' in obs_plan_params.keys():
+        if 'obs_duration' in obs_plan_params.keys():
+            obs_duration = obs_plan_params['durations']['obs_duration']
 
     # Each observation loop contains a number of observation cycles over LST ranges
-    for observation_cycle in opts.yaml['observation_loop']:
+    # For a single observation loop, only a start LST and duration is required
+    for observation_cycle in obs_plan_params['observation_loop']:
         # Unpack all target information
         if not ('target_list' in observation_cycle.keys()):
             user_logger.warning('No targets provided - stopping script instead of hanging around')
@@ -334,24 +338,21 @@ def run_observation(opts, mkat):
         observer = catalogue._antenna.observer
 
         # Only observe targets in valid LST range
-        if 'LST' in observation_cycle.keys():
-            [start_lst, end_lst] = np.asarray(
-                    observation_cycle['LST'].strip().split('-'),
-                    dtype=float)
-        else:
-            start_lst = 0.
-            end_lst = 23.9
-        user_logger.info('Observing targets over LST range {}-{}'.format(
-            start_lst, end_lst))
-
+        [start_lst, end_lst] = get_lst(observation_cycle['LST'])
         # Verify that it is worth while continuing with the observation
         # Only observe targets in current LST range
         local_lst = ephem.hours(observer.sidereal_time())
-        if ephem.hours(local_lst) < ephem.hours(str(start_lst)) \
-                or ephem.hours(local_lst) > ephem.hours(str(end_lst)):
-            user_logger.warning('{} outside LST range {}-{}'.format(
-                    local_lst, start_lst, end_lst))
+        if ephem.hours(local_lst) < ephem.hours(str(start_lst)):
+            user_logger.warning('{} to early LST start {}'.format(
+                    local_lst, start_lst))
             continue
+        else:
+            if end_lst is not None:
+                if ephem.hours(local_lst) > ephem.hours(str(end_lst)):
+                    user_logger.warning('{} outside LST range {}-{}'.format(
+                            local_lst, start_lst, end_lst))
+                    continue
+
 
         # Verify that it is worth while continuing with the observation
         # The filter functions uses the current time as timestamps
@@ -383,22 +384,6 @@ def run_observation(opts, mkat):
                 description = opts.proposal_description
             session_opts['description'] = description
 
-        # extract control and observation information provided in observation
-        # file
-        obs_plan_params = vars(opts)['yaml']
-
-        # set up duration periods for observation control
-        obs_duration = -1
-        if 'durations' in obs_plan_params:
-            if obs_plan_params['durations'] is None:
-                msg = 'durations primary key cannot be empty in observation YAML file'
-                raise RuntimeError(msg)
-            try:
-                obs_duration = obs_plan_params['durations']['obs_duration']
-            except TypeError:
-                msg = 'obs_duration subkey required with durations specification in observation YAML file'
-                raise RuntimeError(msg)
-
         # Target observation loop
         with start_session(mkat.array, **vars(opts)) as session:
             session.standard_setup(**vars(opts))
@@ -407,7 +392,7 @@ def run_observation(opts, mkat):
 
             # Go to first target before starting capture
             user_logger.info('Slewing to first target')
-            observe(session, catalogue, obs_targets[0], duration=0)
+            observe(session, catalogue, obs_targets[0], duration=-1)
             # Only start capturing once we are on target
             session.capture_start()
 
@@ -418,6 +403,8 @@ def run_observation(opts, mkat):
                 targets_visible = False
 
                 for cnt, target in enumerate(obs_targets):
+                    # TODO: add some delay for slew time
+
                     # check and observe all targets with cadences
                     while_cntr = 0
                     while True:
@@ -457,8 +444,9 @@ def run_observation(opts, mkat):
                     done = True
                 # Verify the LST range is still valid
                 local_lst = ephem.hours(observer.sidereal_time())
-                if ephem.hours(local_lst) > ephem.hours(str(end_lst)):
-                    done = True
+                if end_lst is not None:
+                    if ephem.hours(local_lst) > ephem.hours(str(end_lst)):
+                        done = True
 
         # display observation cycle statistics
         print
@@ -527,6 +515,22 @@ if __name__ == '__main__':
                     integration_period = float(instrument['integration_period'])
                     instrument['dump_rate'] = 1./integration_period
                     del instrument['integration_period']
+        # verify required information in observation loop before continuing
+        if 'durations' in opts.yaml.keys():
+            if opts.yaml['durations'] is None:
+                msg = 'durations primary key cannot be empty in observation YAML file'
+                raise RuntimeError(msg)
+        if 'observation_loop' not in opts.yaml.keys():
+            raise RuntimeError('Nothing to observer, exiting')
+        if opts.yaml['observation_loop'] is None:
+            raise RuntimeError('Empty observation loop, exiting')
+        for obs_loop in opts.yaml['observation_loop']:
+            if type(obs_loop) is str:
+                raise RuntimeError('Expected observation list, got string')
+            if 'LST' not in obs_loop.keys():
+                raise RuntimeError('Observation LST not provided, exiting')
+            if 'target_list' not in obs_loop.keys():
+                raise RuntimeError('Empty target list, exiting')
 
     # setup and observation
     with telescope(opts, args_) as mkat:
