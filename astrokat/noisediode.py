@@ -4,6 +4,14 @@ import time
 from simulate import user_logger
 
 
+def _nd_switch_(mkat, switch):
+    # Noise Diodes are triggered on all antennas in array simultaneously
+    # add a second to ensure all digitisers set at the same time
+    timestamp = time.time() + lead_time
+    mkat.ants.req.dig_noise_source(timestamp, 1)
+    if not mkat.dry_run:
+        time.sleep(float(lead_time))
+
 # switch noise-source pattern off
 def on(mkat, lead_time=2., logging=True):
     if logging:
@@ -12,6 +20,8 @@ def on(mkat, lead_time=2., logging=True):
     # add a second to ensure all digitisers set at the same time
     timestamp = time.time() + lead_time
     mkat.ants.req.dig_noise_source(timestamp, 1)
+    if not mkat.dry_run:
+        time.sleep(float(lead_time))
 
 
 # switch noise-source pattern off
