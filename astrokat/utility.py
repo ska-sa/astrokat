@@ -32,6 +32,11 @@ def katpoint_target(target_item):
         prefix = 'tags='
         if item_.startswith(prefix):
             tags = item_[len(prefix):]
+        prefix = 'model='
+        if item_.startswith(prefix):
+            fluxmodel = item_[len(prefix):]
+        else:
+            fluxmodel = ()
         for coord in coords:
             prefix = coord+'='
             if item_.startswith(prefix):
@@ -39,10 +44,23 @@ def katpoint_target(target_item):
                 x = item_[len(prefix):].split()[0].strip()
                 y = item_[len(prefix):].split()[1].strip()
                 break
-    target = '{}, {} {}, {}, {}'.format(
-        name, ctag, tags, x, y)
+    target = '{}, {} {}, {}, {}, {}'.format(
+        name, ctag, tags, x, y, fluxmodel)
     return name, target
 
+
+# extract lst range from YAML key
+def get_lst(yaml_lst):
+    start_lst = None
+    end_lst = None
+    if type(yaml_lst) is float:
+        start_lst = yaml_lst
+    elif type(yaml_lst) is str:
+        [start_lst, end_lst]  = numpy.array(yaml_lst.strip().split('-'),
+                                            dtype=float)
+    else:
+        raise RuntimeError('unexpected LST value')
+    return start_lst, end_lst
 
 # find when is LST for date given, else for today
 def lst2utc(req_lst, ref_location, date=None):

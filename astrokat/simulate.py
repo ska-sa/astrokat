@@ -5,6 +5,7 @@ import sys
 
 from collections import namedtuple
 from datetime import datetime, timedelta
+from utility import get_lst
 
 global simobserver
 simobserver = ephem.Observer()
@@ -41,7 +42,7 @@ class verify_and_connect:
     def __init__(self, dummy):
         kwargs = vars(dummy)
         self.dry_run = True
-        self._lst = kwargs['yaml']['observation_loop'][0]['LST'].split('-')[0].strip()
+        self._lst, _ = get_lst(kwargs['yaml']['observation_loop'][0]['LST'])
         self._sensors = self.fake_sensors(kwargs)
         self._session_cnt = 0
         self._ants = ['m011', 'm022', 'm033', 'm044']
@@ -90,9 +91,6 @@ class start_session:
     def __init__(self, dummy_kat, **kwargs):
         self.kwargs = kwargs
         self.obs_params = kwargs
-        # self.track_ = False
-        # self.raster_scan_ = False
-        # self.scan_ = False
         self.kat = dummy_kat
         self.start_time = (datetime.now() - datetime(1970, 1, 1)).total_seconds()
         self.time = self.start_time
@@ -111,7 +109,6 @@ class start_session:
         return 'A string'
 
     def __nonzero__(self):
-        # return 1
         return True
 
     def __iter__(self):
@@ -125,13 +122,11 @@ class start_session:
             self.kat._lst = self.kwargs['yaml']['observation_loop'][self.kat._session_cnt]['LST'].split('-')[0].strip()
 
     def track(self, target, duration=0, announce=False):
-        self.track_ = True
         self.time += duration
         now = simobserver.date.datetime()
         then = now + timedelta(seconds=duration)
         simobserver.date = ephem.Date(then)
         return True
-        # return self.track_
 
     def raster_scan(self, target,
                     num_scans=3,
@@ -141,14 +136,12 @@ class start_session:
                     scan_in_azimuth=True,
                     projection='zenithal-equidistant',
                     announce=True):
-        self.raster_scan_ = True
         duration = scan_duration * num_scans
         self.time += duration
         now = simobserver.date.datetime()
         then = now + timedelta(seconds=duration)
         simobserver.date = ephem.Date(then)
         return True
-        # return self.raster_scan_
 
     def scan(self, target,
              duration=30.0,
@@ -157,12 +150,10 @@ class start_session:
              index=-1,
              projection='zenithal-equidistant',
              announce=True):
-        self.scan_ = True
         self.time += duration
         now = simobserver.date.datetime()
         then = now + timedelta(seconds=duration)
         simobserver.date = ephem.Date(then)
-        # return self.scan_
         return True
 
 # -fin-
