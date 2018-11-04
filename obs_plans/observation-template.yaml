@@ -34,8 +34,6 @@ noise_diode:
   on_frac: 0.5  # %
 ## Desired observation durations
 durations:  # if left out only single observation run through target list
-  # desired start time
-  start_time:
   # minimum observation period for science quality data in seconds
   minimum_duration: 900  # sec
   # requested observation duration in seconds
