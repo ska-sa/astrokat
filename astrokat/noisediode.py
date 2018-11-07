@@ -1,7 +1,15 @@
 # flake8: noqa
 import numpy as np
 import time
-from simulate import user_logger
+libnames = ['user_logger']
+try:
+    lib = __import__('katcorelib', globals(), locals(), libnames, -1)
+except ImportError:
+    lib = __import__('simulate', globals(), locals(), libnames, -1)
+finally:
+    for libname in libnames:
+        globals()[libname] = getattr(lib, libname)
+
 
 
 def _nd_switch_(mkat, switch):
@@ -11,6 +19,7 @@ def _nd_switch_(mkat, switch):
     mkat.ants.req.dig_noise_source(timestamp, 1)
     if not mkat.dry_run:
         time.sleep(float(lead_time))
+
 
 # switch noise-source pattern off
 def on(mkat, lead_time=2., logging=True):
@@ -22,6 +31,7 @@ def on(mkat, lead_time=2., logging=True):
     mkat.ants.req.dig_noise_source(timestamp, 1)
     if not mkat.dry_run:
         time.sleep(float(lead_time))
+    return True
 
 
 # switch noise-source pattern off
@@ -32,19 +42,21 @@ def off(mkat, lead_time=2., logging=True):
     # add a second to ensure all digitisers set at the same time
     timestamp = time.time() + lead_time
     mkat.ants.req.dig_noise_source(timestamp, 0)
-
+    return True
 
 # fire noise diode before track
-def trigger(mkat, period):
-    msg = 'Firing noise diode for {}s before track on target'.format(
-            period)
+def trigger(mkat, duration=None):
+    if duration is None:
+        return True  # nothing to do
+    msg = 'Firing noise diode for {}s before target observation'.format(
+            duration)
     user_logger.info(msg)
     on(mkat, logging=False)
     # TODO: add some overwrite func that will update the time for sims
     if not mkat.dry_run:
-        time.sleep(float(period))
+        time.sleep(float(duration))
     off(mkat, logging=False)
-
+    return True
 
 # set noise diode pattern
 def pattern(mkat,  # mkat subarray object
