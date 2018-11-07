@@ -6,6 +6,7 @@ import astrokat
 import ephem
 import katpoint
 import os
+# import time
 
 import numpy as np
 
@@ -17,6 +18,7 @@ from astrokat import (
     katpoint_target,
     noisediode,
     correlator,
+    scans,
     )
 
 libnames = ['collect_targets', 'user_logger', 'start_session', 'verify_and_connect']
@@ -122,12 +124,8 @@ def observe(
     duration = target_instructions['duration']
     obs_type = target_instructions['obs_type']
 
-    # functional overwrite of duration for system reasons
-    if 'duration' in kwargs:
-        duration = kwargs['duration']
-
     # simple way to get telescope to slew to target
-    if duration < 0:
+    if 'slewonly' in kwargs:
         return session.track(target, duration=0, announce=False)
 
     msg = '{} {} {}'.format(
@@ -138,9 +136,8 @@ def observe(
         user_logger.info(msg)
 
     # implement target specific noise diode behaviour
-    # TODO: noise diode fire should be corrected in sessions
-    # if nd_setup: noisediode.trigger(mkat.array, nd_setup)
     nd_setup = None
+    nd_period = None
     if target_instructions['noise_diode'] is not None:
         if 'off' in target_instructions['noise_diode']:
             # if pattern specified, remember settings to reset
@@ -150,61 +147,46 @@ def observe(
             # disable noise diode pattern for target
             noisediode.off(session.kat)
         else:
-            noisediode.trigger(session.kat,
-                    float(target_instructions['noise_diode']))
+            nd_period = float(target_instructions['noise_diode'])
 
-    # do the different observations depending on requested type
     # check if target is visible before doing any work
-    if 'raster_scan' in obs_type or \
-            'scan' in obs_type:  # compensating for ' and spaces around key values
+    if session.track(target, duration=0, announce=False):
+        # do the different observations depending on requested type
         session.label(obs_type.strip())
-        if 'raster_scan' in obs_type:
-            scan_func = session.raster_scan
-        else:
-            scan_func = session.scan
-        if obs_type in kwargs:  # user settings other than defaults
-            target_visible = scan_func(target, **kwargs[obs_type])
-        else:
-            target_visible = scan_func(target)
-        if target_visible:
-            target_instructions['obs_cntr'] += 1
-    else:
-        session.label('track')
-        if 'drift_scan' in obs_type and \
-                session.track(target, duration=0, announce=False):
-            session.label('drift_scan')
-            # set transit point as target
-            target = drift_pointing_offset(target, duration=duration)
-        if session.track(target, duration=duration):
-            target_visible = True
+        if 'scan' in obs_type:  # compensating for ' and spaces around key values
+            if 'drift_scan' in obs_type:
+                scan_func = scans.drift_scan
+            # TODO: fix raster scan and remove this scan hack
+            elif 'return_scan' in obs_type:
+                scan_func = scans.return_scan
+                obs_type='scan'
+            elif 'raster_scan' in obs_type:
+                scan_func = scans.raster_scan
+            else:
+                scan_func = scans.scan
+            if obs_type in kwargs:  # user settings other than defaults
+                target_visible = scan_func(session,
+                        target,
+                        nd_period=nd_period,
+                        **kwargs[obs_type])
+            else:
+                target_visible = scan_func(session,
+                        target,
+                        nd_period=nd_period)
+        else:  # track is default
+            noisediode.trigger(session.kat, duration=nd_period)
+            if session.track(target, duration=duration):
+                target_visible = True
+        if target_visible:  # if anything goes wrong and the target set fails
             target_instructions['obs_cntr'] += 1
 
     if nd_setup is not None:
         # restore pattern if programmed at setup
-        noisediode.pattern(session.kat,
-                nd_setup['antennas'],
-                nd_setup['cycle_len'],
-                nd_setup['on_frac'])
+        mkat.noisediode_setup(nd_setup)
 
     target_instructions['last_observed'] = session.time
+    # target_instructions['last_observed'] = time.time()
     return target_visible
-
-
-def drift_pointing_offset(target, duration=60):
-    try:
-        obs_start_ts = target.antenna.observer.date
-    except:
-        obs_start_ts = katpoint.Timestamp()
-    transit_time = obs_start_ts + duration / 2.0
-    # Stationary transit point becomes new target
-    antenna = target.antenna
-    az, el = target.azel(timestamp=transit_time)
-    target = katpoint.construct_azel_target(katpoint.wrap_angle(az), el)
-    # katpoint destructively set dates and times during calculation
-    # restore datetime before continuing
-    target.antenna = antenna
-    target.antenna.observer.date = obs_start_ts
-    return target
 
 
 # finding each cadence target in order of target list
@@ -215,6 +197,7 @@ def cadence_target(session, observer, target_list):
                 return target
 
             delta_time = session.time - target['last_observed']
+            # delta_time = time.time() - target['last_observed']
             if delta_time > target['cadence']:
                 return target
     return False
@@ -314,15 +297,14 @@ class telescope(object):
                     )
 
 
-
 def run_observation(opts, mkat):
 
     # extract control and observation information provided in observation file
     obs_plan_params = vars(opts)['yaml']
     # set up duration periods for observation control
     obs_duration = -1
-    if 'durations' in obs_plan_params.keys():
-        if 'obs_duration' in obs_plan_params.keys():
+    if 'durations' in obs_plan_params:
+        if 'obs_duration' in obs_plan_params['durations']:
             obs_duration = obs_plan_params['durations']['obs_duration']
 
     # Each observation loop contains a number of observation cycles over LST ranges
@@ -339,20 +321,8 @@ def run_observation(opts, mkat):
 
         # Only observe targets in valid LST range
         [start_lst, end_lst] = get_lst(observation_cycle['LST'])
-        # Verify that it is worth while continuing with the observation
-        # Only observe targets in current LST range
-        local_lst = ephem.hours(observer.sidereal_time())
-        if ephem.hours(local_lst) < ephem.hours(str(start_lst)):
-            user_logger.warning('{} to early LST start {}'.format(
-                    local_lst, start_lst))
-            continue
-        else:
-            if end_lst is not None:
-                if ephem.hours(local_lst) > ephem.hours(str(end_lst)):
-                    user_logger.warning('{} outside LST range {}-{}'.format(
-                            local_lst, start_lst, end_lst))
-                    continue
-
+        if end_lst is None:
+            end_lst = (start_lst + 12.)%24.
 
         # Verify that it is worth while continuing with the observation
         # The filter functions uses the current time as timestamps
@@ -386,13 +356,31 @@ def run_observation(opts, mkat):
 
         # Target observation loop
         with start_session(mkat.array, **vars(opts)) as session:
+            local_lst = float(observer.sidereal_time())
+            if not mkat.array.dry_run:  # TODO: need to attach this to session.time
+                # Verify that it is worth while continuing with the observation
+                # Only observe targets in current LST range
+                if start_lst < end_lst:
+                    in_range = ((local_lst > start_lst) and (local_lst < end_lst))
+                    if not in_range:
+                        user_logger.warning('Local LST {} outside LST range {}-{}'.format(
+                                local_lst, start_lst, end_lst))
+                        continue
+                else:
+                    # else assume rollover at midnight to next day
+                    out_range = ((local_lst < start_lst) and (local_lst > end_lst))
+                    if out_range:
+                        user_logger.warning('Local LST {} outside LST range {}-{}'.format(
+                                local_lst, start_lst, end_lst))
+                        continue
+
             session.standard_setup(**vars(opts))
             # Adding explicit init after "Capture-init failed" exception was encountered
             session.capture_init()
 
             # Go to first target before starting capture
             user_logger.info('Slewing to first target')
-            observe(session, catalogue, obs_targets[0], duration=-1)
+            observe(session, catalogue, obs_targets[0], slewonly=True)
             # Only start capturing once we are on target
             session.capture_start()
 
@@ -427,6 +415,7 @@ def run_observation(opts, mkat):
 
                     # loop continuation checks
                     delta_time = session.time - session.start_time
+                    # delta_time = time.time() - session.start_time
                     if obs_duration > 0:
                         if delta_time >= obs_duration or \
                                 (obs_duration-delta_time) < obs_targets[cnt]['duration']:
@@ -442,17 +431,12 @@ def run_observation(opts, mkat):
                 if not targets_visible:
                     user_logger.warning('No targets are currently visible - stopping script instead of hanging around')
                     done = True
-                # Verify the LST range is still valid
-                local_lst = ephem.hours(observer.sidereal_time())
-                if end_lst is not None:
-                    if ephem.hours(local_lst) > ephem.hours(str(end_lst)):
-                        done = True
 
         # display observation cycle statistics
-        print
         user_logger.info("Observation loop statistics")
-        user_logger.info("Total observation time {:.2f} seconds".format(
+        user_logger.info("Total observation time {:.2f} sec".format(
             (session.time-session.start_time)))
+            # (time.time()-session.start_time)))
         if len(obs_targets) > 0:
             user_logger.info("Targets observed :")
             for unique_target in np.unique(obs_targets['name']):
@@ -463,7 +447,7 @@ def run_observation(opts, mkat):
                         unique_target,
                         np.sum(cntrs)))
                 else:
-                    user_logger.info('{} observed for {} seconds'.format(
+                    user_logger.info('{} observed for {} sec'.format(
                         unique_target,
                         np.sum(cntrs*durations)))
         print
@@ -531,6 +515,14 @@ if __name__ == '__main__':
                 raise RuntimeError('Observation LST not provided, exiting')
             if 'target_list' not in obs_loop.keys():
                 raise RuntimeError('Empty target list, exiting')
+
+        if 'scan' in opts.yaml.keys():
+            if 'start' in opts.yaml['scan'].keys():
+                scan_start = opts.yaml['scan']['start'].split(',')
+                opts.yaml['scan']['start'] = np.array(scan_start, dtype=float)
+            if 'end' in opts.yaml['scan'].keys():
+                scan_end = opts.yaml['scan']['end'].split(',')
+                opts.yaml['scan']['end'] = np.array(scan_end, dtype=float)
 
     # setup and observation
     with telescope(opts, args_) as mkat:
