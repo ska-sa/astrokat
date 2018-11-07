@@ -3,7 +3,6 @@
 from __future__ import print_function
 
 import argparse
-import argcomplete
 import sys
 from astrokat import Observatory
 
@@ -106,7 +105,6 @@ minimum interval between bandpass calibrators [sec]')
         default=60,  # sec
         help='\
 minimum duration to track gain calibrator [sec]')
-    argcomplete.autocomplete(parser)
     return parser
 
 
