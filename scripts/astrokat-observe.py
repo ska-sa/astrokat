@@ -6,7 +6,7 @@ import astrokat
 import ephem
 import katpoint
 import os
-# import time
+import time
 
 import numpy as np
 
@@ -126,7 +126,7 @@ def observe(
 
     # simple way to get telescope to slew to target
     if 'slewonly' in kwargs:
-        return session.track(target, duration=0, announce=False)
+        return session.track(target, duration=0., announce=False)
 
     msg = '{} {} {}'.format(
         obs_type.capitalize(), target.tags[1], target_name)
@@ -150,7 +150,8 @@ def observe(
             nd_period = float(target_instructions['noise_diode'])
 
     # check if target is visible before doing any work
-    if session.track(target, duration=0, announce=False):
+    user_logger.info('Verifying target visibile')
+    if session.track(target, duration=0., announce=False):
         # do the different observations depending on requested type
         session.label(obs_type.strip())
         if 'scan' in obs_type:  # compensating for ' and spaces around key values
@@ -177,15 +178,15 @@ def observe(
             noisediode.trigger(session.kat, duration=nd_period)
             if session.track(target, duration=duration):
                 target_visible = True
-        if target_visible:  # if anything goes wrong and the target set fails
-            target_instructions['obs_cntr'] += 1
+        # if target_visible:  # if anything goes wrong and the target set fails
+        #     target_instructions['obs_cntr'] += 1
 
     if nd_setup is not None:
         # restore pattern if programmed at setup
         mkat.noisediode_setup(nd_setup)
 
-    target_instructions['last_observed'] = session.time
-    # target_instructions['last_observed'] = time.time()
+    # target_instructions['last_observed'] = session.time
+    # # target_instructions['last_observed'] = time.time()
     return target_visible
 
 
@@ -196,8 +197,10 @@ def cadence_target(session, observer, target_list):
             if target['last_observed'] is None:
                 return target
 
-            delta_time = session.time - target['last_observed']
-            # delta_time = time.time() - target['last_observed']
+            try:
+                delta_time = session.time - target['last_observed']
+            except AttributeError:
+                delta_time = time.time() - target['last_observed']
             if delta_time > target['cadence']:
                 return target
     return False
@@ -227,13 +230,9 @@ class telescope(object):
             self.subarray_setup(self.opts.yaml['instrument'])
 
         # TODO: noise diode implementations should be moved to sessions
-        # Set up noise diode if requested
-        if 'noise_diode' in self.opts.yaml.keys():
-            self.noisediode_setup(self.opts.yaml['noise_diode'])
-        else:
-            # Ensure default setup before starting observation
-            # switch noise-source pattern off (known setup starting observation)
-            noisediode.off(self.array)
+        # Ensure default setup before starting observation
+        # switch noise-source pattern off (known setup starting observation)
+        noisediode.off(self.array)
 
         # TODO: add part that implements noise diode fire per track
         # TODO: move this to a callable function, so do it only if worth while to observe and move back to body with session
@@ -356,25 +355,32 @@ def run_observation(opts, mkat):
 
         # Target observation loop
         with start_session(mkat.array, **vars(opts)) as session:
-            local_lst = float(observer.sidereal_time())
-            if not mkat.array.dry_run:  # TODO: need to attach this to session.time
+            # Do not use float() values, ephem.hours does not convert as expected
+            local_lst = observer.sidereal_time()
+            if not mkat.array.dry_run:
                 # Verify that it is worth while continuing with the observation
                 # Only observe targets in current LST range
                 if start_lst < end_lst:
-                    in_range = ((local_lst > start_lst) and (local_lst < end_lst))
+                    in_range = ((ephem.hours(local_lst) > ephem.hours(str(start_lst))) \
+                               and (ephem.hours(local_lst) < ephem.hours(str(end_lst))))
                     if not in_range:
                         user_logger.warning('Local LST {} outside LST range {}-{}'.format(
                                 local_lst, start_lst, end_lst))
                         continue
                 else:
                     # else assume rollover at midnight to next day
-                    out_range = ((local_lst < start_lst) and (local_lst > end_lst))
+                    out_range = ((ephem.hours(local_lst) < ephem.hours(str(start_lst))) \
+                                and (ephem.hours(local_lst) > ephem.hours(str(end_lst))))
                     if out_range:
                         user_logger.warning('Local LST {} outside LST range {}-{}'.format(
                                 local_lst, start_lst, end_lst))
                         continue
 
             session.standard_setup(**vars(opts))
+            # TODO: setup of noise diode pattern should be moved to sessions so it happens in the line above
+            if 'noise_diode' in obs_plan_params.keys():
+               mkat.noisediode_setup(obs_plan_params['noise_diode'])
+
             # Adding explicit init after "Capture-init failed" exception was encountered
             session.capture_init()
 
@@ -401,6 +407,11 @@ def run_observation(opts, mkat):
                             break
                         if observe(session, catalogue, tgt, **obs_plan_params):
                             targets_visible += True
+                            tgt['obs_cntr'] += 1
+                            try:
+                                tgt['last_observed'] = session.time
+                            except AttributeError:
+                                tgt['last_observed'] = time.time()
                         while_cntr += 1
                         if while_cntr > len(obs_targets):
                             break
@@ -412,10 +423,18 @@ def run_observation(opts, mkat):
                                 catalogue,
                                 target,
                                 **obs_plan_params)
+                        if targets_visible:
+                            target['obs_cntr'] += 1
+                            try:
+                                target['last_observed'] = session.time
+                            except AttributeError:
+                                target['last_observed'] = time.time()
 
                     # loop continuation checks
-                    delta_time = session.time - session.start_time
-                    # delta_time = time.time() - session.start_time
+                    try:
+                        delta_time = session.time - session.start_time
+                    except AttributeError:
+                        delta_time = time.time() - session.start_time
                     if obs_duration > 0:
                         if delta_time >= obs_duration or \
                                 (obs_duration-delta_time) < obs_targets[cnt]['duration']:
@@ -433,10 +452,13 @@ def run_observation(opts, mkat):
                     done = True
 
         # display observation cycle statistics
+        print
         user_logger.info("Observation loop statistics")
-        user_logger.info("Total observation time {:.2f} sec".format(
-            (session.time-session.start_time)))
-            # (time.time()-session.start_time)))
+        try:
+            total_obs_time = session.time - session.start_time
+        except AttributeError:
+            total_obs_time = time.time() - session.start_time
+        user_logger.info("Total observation time {:.2f} sec".format(total_obs_time))
         if len(obs_targets) > 0:
             user_logger.info("Targets observed :")
             for unique_target in np.unique(obs_targets['name']):
