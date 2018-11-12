@@ -92,19 +92,19 @@ maximum duration of observation [sec]')
         '--primary-cal-duration',
         type=float,
         default=300,  # sec
-        help='\
-minimum duration to track bandpass calibrator [sec]')
+        help="\
+minimum duration to track primary calibrators tagged as 'bpcal', 'fluxcal' or 'polcal' [sec]")
     group.add_argument(
         '--primary-cal-cadence',
         type=float,
         help='\
-minimum interval between bandpass calibrators [sec]')
+minimum interval between primary calibrators if required [sec]')
     group.add_argument(
         '--secondary-cal-duration',
         type=float,
         default=60,  # sec
-        help='\
-minimum duration to track gain calibrator [sec]')
+        help="\
+minimum duration to track gain calibrator, 'gaincal' [sec]")
     return parser
 
 
