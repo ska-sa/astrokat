@@ -297,8 +297,8 @@ def obs_table(ref_antenna,
         @return: <name> <tag> <risetime UTC> <settime UTC> <Separation> <Notes>
     """
     creation_time = ref_antenna.observer.date
-    observation_table = '\nObservation Table for {}\n'.format(creation_time)
-    observation_table += 'Times in UTC when target is above the default horizon = 20 degrees\n'
+    observation_table = '\nObservation Table for {} (UTC)\n'.format(creation_time)
+    observation_table += 'Times listed in UTC for target above the default horizon = 20 degrees\n'
     observation_table += '{: <16}{: <32}{: <16}{: <16}{: <16}{: <16}{: <16}{: <16}\n'.format(
             'Sources',
             'Class',
