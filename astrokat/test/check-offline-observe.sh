@@ -20,7 +20,7 @@ image-sim)
 for infile in ${INPUT[@]}
 do
     echo
-    CMD="python astrokat-observe.py --yaml test_obs/$infile.yaml"
+    CMD="python astrokat-observe.py --observer werner --yaml test_obs/$infile.yaml"
     echo -e "${YELLOW} Testing: $CMD ${NOCOLOR}"
     if $CMD
     then
