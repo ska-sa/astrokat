@@ -7,4 +7,5 @@ setup(
                       'katpoint',
                       'matplotlib<3',
                       'numpy',
-                      'pyyaml'])
+                      'pyyaml',
+                      'nose-testconfig'])
