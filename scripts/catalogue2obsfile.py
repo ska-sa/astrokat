@@ -98,7 +98,7 @@ minimum duration to track primary calibrators tagged as 'bpcal', 'fluxcal' or 'p
         '--primary-cal-cadence',
         type=float,
         help='\
-minimum interval between primary calibrators if required [sec]')
+minimum observation interval between primary calibrators if required [sec]')
     group.add_argument(
         '--secondary-cal-duration',
         type=float,
