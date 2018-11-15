@@ -76,7 +76,8 @@ def session_options(parser,
 def cli(prog,
         parser=None,
         x_short_opts=['-h'],
-        x_long_opts=['--version']):
+        x_long_opts=['--version'],
+        args=None):
 
     if parser is None:
         # Set up standard script options
@@ -124,7 +125,7 @@ def cli(prog,
                           action='store_true',
                           help='Ensure all target are above horizon before continuing')
 
-    return parser.parse_known_args()
+    return parser.parse_known_args(args=args)
 
 
 if __name__ == '__main__':
