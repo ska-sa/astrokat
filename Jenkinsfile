@@ -20,7 +20,6 @@ node('docker') {
                 timeout(time: 30, unit: 'MINUTES') {
                     try {
                         sh 'pip install . -U --pre'
-                        sh 'cd tests && ./check-offline-observe.sh'
                         sh 'python setup.py nosetests'
                     } finally {
                         step([$class: 'JUnitResultArchiver', testResults: 'nosetests.xml'])
