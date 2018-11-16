@@ -1,0 +1,1 @@
+../scripts/catalogue2obsfile.py

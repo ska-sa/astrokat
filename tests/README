@@ -1,0 +1,5 @@
+Basic bash integration tests to check that all parts of the functionality is still working after
+development.
+
+./check-cals-select.sh
+
