@@ -7,5 +7,6 @@ observation_loop:
   - LST: 18.0-20.0
     target_list:
       - name=1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, duration=20.0
+      # ability to disable the noise diode pattern for this target
       - name=1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, duration=20.0, nd=off
       - name=1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, duration=20.0
