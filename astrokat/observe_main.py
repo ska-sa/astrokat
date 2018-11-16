@@ -22,8 +22,7 @@ from astrokat import (
 
 libnames = ['collect_targets', 'user_logger', 'start_session', 'verify_and_connect']
 try:
-    lib = __import__('astrokat', globals(), locals(), libnames, -1)
-#     lib = __import__('katcorelib', globals(), locals(), libnames, -1)
+    lib = __import__('katcorelib', globals(), locals(), libnames, -1)
 except ImportError:
     lib = __import__('astrokat', globals(), locals(), libnames, -1)
 finally:
@@ -144,7 +143,6 @@ def observe(
             if 'noise_diode' in kwargs and \
                     kwargs['noise_diode'] is not None:
                 nd_setup = kwargs['noise_diode']
-                print("observe::nd_setup: {}".format(nd_setup))
             # disable noise diode pattern for target
             noisediode.off(session.kat)
         else:
@@ -380,7 +378,6 @@ def run_observation(opts, mkat):
             session.standard_setup(**vars(opts))
             # TODO: setup of noise diode pattern should be moved to sessions so it happens in the line above
             if 'noise_diode' in obs_plan_params.keys():
-                print("run_observation::nd_setup: {}".format(obs_plan_params['noise_diode']))
                 mkat.noisediode_setup(obs_plan_params['noise_diode'])
 
             # Adding explicit init after "Capture-init failed" exception was encountered
