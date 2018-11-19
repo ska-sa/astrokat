@@ -1,4 +1,3 @@
-# flake8: noqa
 import katpoint
 import noisediode
 libnames = ['user_logger']
@@ -27,6 +26,7 @@ def drift_pointing_offset(target, duration=60.):
     target.antenna.observer.date = obs_start_ts
     return target
 
+
 def drift_scan(session, target, nd_period=None, duration=60.):
     # trigger noise diode if set
     noisediode.trigger(session.kat, duration=nd_period)
@@ -53,42 +53,46 @@ def raster_scan(session, target, nd_period=None, **kwargs):
 def scan(session, target, nd_period=None, **kwargs):
     # trigger noise diode if set
     noisediode.trigger(session.kat, duration=nd_period)
-        # session.label('scan')
-        # user_logger.error(obs_type)
-        # if 'return' in obs_type:
-        #     forwardscan = dict(kwargs['scan'])
-        #     returnscan = dict(kwargs['scan'])
-        #     print 'forward', forwardscan
-        #     print 'return', returnscan
-        #     returnscan['start']=kwargs['scan']['end']
-        #     returnscan['end']=kwargs['scan']['start']
-        #     print 'forward', forwardscan
-        #     print 'return', returnscan
-        #     target_visible = session.scan(target, **forwardscan)
-        #     target_visible = session.scan(target, **returnscan)
+    # user_logger.error('scan')
+    # user_logger.error(kwargs['start'])
+    # user_logger.error(kwargs['end'])
     return session.scan(target, **kwargs)
+
+
+def forwardscan(session, target, nd_period=None, **kwargs):
+    target_visible = scan(session,
+                          target,
+                          nd_period=nd_period,
+                          **kwargs)
+    return target_visible
+
+
+def reversescan(session, target, nd_period=None, **kwargs):
+    returnscan = dict(kwargs)
+    returnscan['start'] = kwargs['end']
+    returnscan['end'] = kwargs['start']
+    target_visible = scan(session,
+                          target,
+                          nd_period=nd_period,
+                          **returnscan)
+    return target_visible
 
 
 # temporary fix until raster scan can be fixed
 def return_scan(session, target, nd_period=None, **kwargs):
     # set up 2way scan
-    forwardscan = dict(kwargs)
-    returnscan = dict(kwargs)
-    returnscan['start']=kwargs['end']
-    returnscan['end']=kwargs['start']
 
     user_logger.info('Forward scan over target')
-    target_visible = scan(session,
-            target,
-            nd_period=nd_period,
-            **forwardscan)
+    target_visible = forwardscan(session,
+                                 target,
+                                 nd_period=nd_period,
+                                 **kwargs)
 
     user_logger.info('Reverse scan over target')
-    target_visible += scan(session,
-            target,
-            nd_period=nd_period,
-            **returnscan)
+    target_visible += reversescan(session,
+                                  target,
+                                  nd_period=nd_period,
+                                  **kwargs)
     return target_visible
-
 
 # -fin-
