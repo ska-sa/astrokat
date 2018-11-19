@@ -1,4 +1,3 @@
-# flake8: noqa
 import numpy as np
 import time
 libnames = ['user_logger']
@@ -11,14 +10,13 @@ finally:
         globals()[libname] = getattr(lib, libname)
 
 
-
-def _nd_switch_(mkat, switch):
-    # Noise Diodes are triggered on all antennas in array simultaneously
-    # add a second to ensure all digitisers set at the same time
-    timestamp = time.time() + lead_time
-    mkat.ants.req.dig_noise_source(timestamp, 1)
-    if not mkat.dry_run:
-        time.sleep(float(lead_time))
+# def _nd_switch_(mkat, switch):
+#     # Noise Diodes are triggered on all antennas in array simultaneously
+#     # add a second to ensure all digitisers set at the same time
+#     timestamp = time.time() + lead_time
+#     mkat.ants.req.dig_noise_source(timestamp, 1)
+#     if not mkat.dry_run:
+#         time.sleep(float(lead_time))
 
 
 # switch noise-source pattern off
@@ -44,6 +42,7 @@ def off(mkat, lead_time=2., logging=True):
     mkat.ants.req.dig_noise_source(timestamp, 0)
     return True
 
+
 # fire noise diode before track
 def trigger(mkat, duration=None):
     if duration is None:
@@ -58,8 +57,10 @@ def trigger(mkat, duration=None):
     off(mkat, logging=False)
     return True
 
+
 # set noise diode pattern
 def pattern(mkat,  # mkat subarray object
+            # session,  # session object for correcting the time (only for now)
             nd_antennas,  # antennas the nd pattern must be set on
             cycle_length,  # nd pattern length [sec]
             on_fraction,  # on fraction of pattern lenght [%]
@@ -76,16 +77,15 @@ def pattern(mkat,  # mkat subarray object
                 actual_on_frac*actual_cycle, actual_cycle)
         user_logger.info(msg)
 
-
     if not mkat.dry_run:
         if mkat.sensor.sub_band.get_value() == 'l' and \
                 float(cycle_length) > 20.:
                     msg = 'Maximum cycle length of L-band is 20 seconds'
                     raise RuntimeError(msg)
-        # Improvement by Anton
-        # Set noise diode period to multiple of the correlator integration time.
-        dump_period = session.cbf.correlator.sensor.int_time.get_value()
-        cycle_length = (round(cycle_length / dump_period) * dump_period)
+        # # Improvement by Anton
+        # # Set noise diode period to multiple of the correlator integration time.
+        # dump_period = session.cbf.correlator.sensor.int_time.get_value()
+        # cycle_length = (round(cycle_length / dump_period) * dump_period)
 
     msg = '\
 Initialising noise diode pattern for {} sec period \
@@ -97,11 +97,11 @@ with {} on fraction and apply pattern to {}'.format(
 
     # Improvement by Anton
     # Try to trigger noise diodes on all antennas in array simultaneously.
-            # - use integer second boundary as that is most likely be an exact
-            #   time that DMC can execute at, and also fit a unix epoch time
-            #   into a double precision float accurately
-            # - add a default (2 second) lead time so enough time for all digitisers
-            #   to be set up
+    # - use integer second boundary as that is most likely be an exact
+    #   time that DMC can execute at, and also fit a unix epoch time
+    #   into a double precision float accurately
+    # - add a default (2 second) lead time so enough time for all digitisers
+    #   to be set up
     timestamp = np.ceil(time.time()) + lead_time
 
     if nd_antennas == 'all':
@@ -111,14 +111,14 @@ with {} on fraction and apply pattern to {}'.format(
         if not mkat.dry_run:
             for ant in sorted(replies):
                 reply, informs = replies[ant]
-                nd_log_msg(replies[ant])
+                nd_log_msg(reply, informs)
         else:
             msg = 'Set all noise diodes with timestamp {} ({})'.format(
                     int(timestamp), time.ctime(timestamp))
             user_logger.info(msg)
     else:
         sub_ants = [ant.name for ant in mkat.ants]
-        if not 'cycle' in nd_antennas:
+        if 'cycle' not in nd_antennas:
             sub_ants = [ant.strip() for ant in nd_antennas.split(',') if ant.strip() in sub_ants]
         # Noise Diodes are triggered for selected antennas in the array
         for ant in sub_ants:

@@ -20,3 +20,5 @@ from .observatory import (  # noqa
     Observatory,
     collect_targets,
     )
+
+# -fin-

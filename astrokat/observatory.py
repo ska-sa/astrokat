@@ -44,13 +44,15 @@ else:
 # Basic LST calculations using ephem
 class Observatory(object):
 
-    def __init__(self, location=None):
+    def __init__(self, location=None, datetime=None):
         self.location = _ref_location
         self.node_config_available = _node_config_available
         if location is not None:
             self.location = location
         self.mkat = self.get_location()
         self.observer = self.get_observer()
+        if datetime is not None:
+            self.observer.date = datetime
 
     def _ephem_risetime_(self, ephem_target, lst=True):
         try:

@@ -64,8 +64,9 @@ def session_options(parser,
     else:
         group.add_argument('-o',
                            '--observer',
+                           required=True,
                            type=str,
-                           help='Name of person doing the observation')
+                           help='Name of person responsible for the observation (**required**)')
         group.add_argument('--horizon',
                            type=float,
                            default=20,
