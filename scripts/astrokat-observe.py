@@ -114,21 +114,20 @@ def read_targets(target_items):
 # target observation functionality
 def observe(
         session,
-        catalogue,
-        target_instructions,
+        target_info,
         **kwargs):
     target_visible = False
 
-    target_name = target_instructions['name']
-    target = catalogue[target_name]
-    duration = target_instructions['duration']
-    obs_type = target_instructions['obs_type']
+    target_name = target_info['name']
+    target = target_info['target']
+    duration = target_info['duration']
+    obs_type = target_info['obs_type']
 
     # simple way to get telescope to slew to target
     if 'slewonly' in kwargs:
         return session.track(target, duration=0., announce=False)
 
-    msg = '{} {} {}'.format(
+    msg = 'Initialising {} {} {}'.format(
         obs_type.capitalize(), target.tags[1], target_name)
     if not np.isnan(duration):  # scan types do not have durations
         msg += ' for {} sec'.format(duration)
@@ -138,8 +137,8 @@ def observe(
     # implement target specific noise diode behaviour
     nd_setup = None
     nd_period = None
-    if target_instructions['noise_diode'] is not None:
-        if 'off' in target_instructions['noise_diode']:
+    if target_info['noise_diode'] is not None:
+        if 'off' in target_info['noise_diode']:
             # if pattern specified, remember settings to reset
             if 'noise_diode' in kwargs and \
                     kwargs['noise_diode'] is not None:
@@ -147,63 +146,88 @@ def observe(
             # disable noise diode pattern for target
             noisediode.off(session.kat)
         else:
-            nd_period = float(target_instructions['noise_diode'])
+            nd_period = float(target_info['noise_diode'])
 
-    # check if target is visible before doing any work
-    user_logger.info('Verifying target visibile')
-    if session.track(target, duration=0., announce=False):
-        # do the different observations depending on requested type
-        session.label(obs_type.strip())
-        if 'scan' in obs_type:  # compensating for ' and spaces around key values
-            if 'drift_scan' in obs_type:
-                scan_func = scans.drift_scan
-            # TODO: fix raster scan and remove this scan hack
-            elif 'return_scan' in obs_type:
-                scan_func = scans.return_scan
-                obs_type='scan'
-            elif 'raster_scan' in obs_type:
-                scan_func = scans.raster_scan
-            else:
-                scan_func = scans.scan
-            if obs_type in kwargs:  # user settings other than defaults
-                target_visible = scan_func(session,
-                        target,
-                        nd_period=nd_period,
-                        **kwargs[obs_type])
-            else:
-                target_visible = scan_func(session,
-                        target,
-                        nd_period=nd_period)
-        else:  # track is default
-            noisediode.trigger(session.kat, duration=nd_period)
-            if session.track(target, duration=duration):
-                target_visible = True
-        # if target_visible:  # if anything goes wrong and the target set fails
-        #     target_instructions['obs_cntr'] += 1
+    # do the different observations depending on requested type
+    session.label(obs_type.strip())
+    if 'scan' in obs_type:  # compensating for ' and spaces around key values
+        if 'drift_scan' in obs_type:
+            scan_func = scans.drift_scan
+        # TODO: fix raster scan and remove this scan hack
+        elif 'forwardscan' in obs_type:
+            scan_func = scans.forwardscan
+            obs_type='scan'
+        elif 'reversescan' in obs_type:
+            scan_func = scans.reversescan
+            obs_type='scan'
+        elif 'return_scan' in obs_type:
+            scan_func = scans.return_scan
+            obs_type='scan'
+        elif 'raster_scan' in obs_type:
+            scan_func = scans.raster_scan
+        else:
+            scan_func = scans.scan
+        if obs_type in kwargs:  # user settings other than defaults
+            target_visible = scan_func(session,
+                    target,
+                    nd_period=nd_period,
+                    **kwargs[obs_type])
+        else:
+            target_visible = scan_func(session,
+                    target,
+                    nd_period=nd_period)
+    else:  # track is default
+        noisediode.trigger(session.kat, duration=nd_period)
+        if session.track(target, duration=duration):
+            target_visible = True
 
     if nd_setup is not None:
         # restore pattern if programmed at setup
         mkat.noisediode_setup(nd_setup)
 
-    # target_instructions['last_observed'] = session.time
-    # # target_instructions['last_observed'] = time.time()
     return target_visible
 
 
 # finding each cadence target in order of target list
-def cadence_target(session, observer, target_list):
+def cadence_target(target_list):
     for target in target_list:
+        katpt_target = target['target']
+        ephem_now = katpt_target.antenna.observer.date
+        timestamp = time.mktime(ephem_now.datetime().timetuple())
         if target['cadence'] > 0:
             if target['last_observed'] is None:
                 return target
-
-            try:
-                delta_time = session.time - target['last_observed']
-            except AttributeError:
-                delta_time = time.time() - target['last_observed']
+            delta_time = timestamp - target['last_observed']
             if delta_time > target['cadence']:
                 return target
     return False
+
+
+# check target visibility
+def above_horizon(katpt_target, horizon=20.):
+    katpt_target.body.compute(katpt_target.antenna.observer)
+    elev = np.degrees(katpt_target.body.alt)
+
+    # timestamp = time.mktime(katpt_target.antenna.observer.date.datetime().timetuple())
+    # print isinstance(timestamp, float)
+    # import datetime
+    # print datetime.datetime.fromtimestamp(timestamp)
+    # print katpt_target.body
+    # print katpt_target.antenna.observer
+    # [azim, elev] = katpt_target.azel(timestamp=timestamp)
+    # print katpt_target.body
+    # print katpt_target.antenna.observer
+    # print np.degrees(elev)
+
+    return (elev >= ephem.degrees(str(horizon)))
+
+
+# figure out which time option to use
+def current_timestamp(mkat, session):
+    if mkat.array.dry_run:
+        return session.time
+    else:
+        return time.time()
 
 
 class telescope(object):
@@ -286,12 +310,21 @@ class telescope(object):
                     sensor_name, conf_param, sub_sensor))
 
     # set the noise diode pattern for the duration of the observation
-    def noisediode_setup(self, nd_setup):
+    # TODO: move this to noise diode, it has no meaning in the Telescope class
+    # def noisediode_setup(self, nd_setup):
+    def noisediode_setup(self, session, nd_setup):
+        cycle_length = nd_setup['cycle_len'],
+        if not self.array.dry_run:
+            # Improvement by Anton
+            # Set noise diode period to multiple of the correlator integration time.
+            dump_period = session.cbf.correlator.sensor.int_time.get_value()
+            cycle_length = (round(cycle_length / dump_period) * dump_period)
         if nd_setup is not None:
             noisediode.pattern(
                     self.array,
+                    session,
                     nd_setup['antennas'],
-                    nd_setup['cycle_len'],
+                    cycle_length,
                     nd_setup['on_frac'],
                     )
 
@@ -316,12 +349,12 @@ def run_observation(opts, mkat):
         obs_targets = read_targets(observation_cycle['target_list'])
         target_list = obs_targets['target'].tolist()
         catalogue = collect_targets(mkat.array, target_list)
+        for tgt in obs_targets:
+            tgt['target'] = catalogue[tgt['name']]
         observer = catalogue._antenna.observer
 
         # Only observe targets in valid LST range
         [start_lst, end_lst] = get_lst(observation_cycle['LST'])
-        if end_lst is None:
-            end_lst = (start_lst + 12.)%24.
 
         # Verify that it is worth while continuing with the observation
         # The filter functions uses the current time as timestamps
@@ -353,40 +386,41 @@ def run_observation(opts, mkat):
                 description = opts.proposal_description
             session_opts['description'] = description
 
+        # Do not use float() values, ephem.hours does not convert as expected
+        local_lst = observer.sidereal_time()
+        if not mkat.array.dry_run:
+            # Verify that it is worth while continuing with the observation
+            # Only observe targets in current LST range
+            if start_lst < end_lst:
+                in_range = ((ephem.hours(local_lst) > ephem.hours(str(start_lst))) \
+                           and (ephem.hours(local_lst) < ephem.hours(str(end_lst))))
+                if not in_range:
+                    user_logger.warning('Local LST {} outside LST range {}-{}'.format(
+                            local_lst, start_lst, end_lst))
+                    continue
+            else:
+                # else assume rollover at midnight to next day
+                out_range = ((ephem.hours(local_lst) < ephem.hours(str(start_lst))) \
+                            and (ephem.hours(local_lst) > ephem.hours(str(end_lst))))
+                if out_range:
+                    user_logger.warning('Local LST {} outside LST range {}-{}'.format(
+                            local_lst, start_lst, end_lst))
+                    continue
+
         # Target observation loop
         with start_session(mkat.array, **vars(opts)) as session:
-            # Do not use float() values, ephem.hours does not convert as expected
-            local_lst = observer.sidereal_time()
-            if not mkat.array.dry_run:
-                # Verify that it is worth while continuing with the observation
-                # Only observe targets in current LST range
-                if start_lst < end_lst:
-                    in_range = ((ephem.hours(local_lst) > ephem.hours(str(start_lst))) \
-                               and (ephem.hours(local_lst) < ephem.hours(str(end_lst))))
-                    if not in_range:
-                        user_logger.warning('Local LST {} outside LST range {}-{}'.format(
-                                local_lst, start_lst, end_lst))
-                        continue
-                else:
-                    # else assume rollover at midnight to next day
-                    out_range = ((ephem.hours(local_lst) < ephem.hours(str(start_lst))) \
-                                and (ephem.hours(local_lst) > ephem.hours(str(end_lst))))
-                    if out_range:
-                        user_logger.warning('Local LST {} outside LST range {}-{}'.format(
-                                local_lst, start_lst, end_lst))
-                        continue
-
             session.standard_setup(**vars(opts))
             # TODO: setup of noise diode pattern should be moved to sessions so it happens in the line above
             if 'noise_diode' in obs_plan_params.keys():
-               mkat.noisediode_setup(obs_plan_params['noise_diode'])
+               # mkat.noisediode_setup(obs_plan_params['noise_diode'])
+               mkat.noisediode_setup(session, obs_plan_params['noise_diode'])
 
             # Adding explicit init after "Capture-init failed" exception was encountered
             session.capture_init()
 
             # Go to first target before starting capture
             user_logger.info('Slewing to first target')
-            observe(session, catalogue, obs_targets[0], slewonly=True)
+            observe(session, obs_targets[0], slewonly=True)
             # Only start capturing once we are on target
             session.capture_start()
 
@@ -397,47 +431,50 @@ def run_observation(opts, mkat):
                 targets_visible = False
 
                 for cnt, target in enumerate(obs_targets):
-                    # TODO: add some delay for slew time
+                    print cnt, target
+                    katpt_target = target['target']
+                    # check target visible before doing anything
+                    if not above_horizon(katpt_target,
+                            horizon=opts.horizon):
+                        user_logger.warn('Target {} below horizon, continuing'.format(target['name']))
+                        continue
 
                     # check and observe all targets with cadences
                     while_cntr = 0
+                    cadence_targets = list(obs_targets)
                     while True:
-                        tgt = cadence_target(session, observer, obs_targets)
+                        tgt = cadence_target(cadence_targets)
                         if not tgt:
                             break
-                        if observe(session, catalogue, tgt, **obs_plan_params):
-                            targets_visible += True
-                            tgt['obs_cntr'] += 1
-                            try:
-                                tgt['last_observed'] = session.time
-                            except AttributeError:
-                                tgt['last_observed'] = time.time()
+                        # check target visible before doing anything
+                        if above_horizon(catalogue[tgt['name']],
+                                horizon=opts.horizon):
+                            if observe(session, tgt, **obs_plan_params):
+                                targets_visible += True
+                                tgt['obs_cntr'] += 1
+                                tgt['last_observed'] = current_timestamp(mkat, session)
+                        else:
+                            cadence_targets.remove(tgt)
                         while_cntr += 1
                         if while_cntr > len(obs_targets):
                             break
 
                     # observe non cadence target
                     if target['cadence'] < 0:
-                        targets_visible = observe(
+                        targets_visible += observe(
                                 session,
-                                catalogue,
                                 target,
                                 **obs_plan_params)
                         if targets_visible:
                             target['obs_cntr'] += 1
-                            try:
-                                target['last_observed'] = session.time
-                            except AttributeError:
-                                target['last_observed'] = time.time()
+                            target['last_observed'] = current_timestamp(mkat, session)
 
                     # loop continuation checks
-                    try:
-                        delta_time = session.time - session.start_time
-                    except AttributeError:
-                        delta_time = time.time() - session.start_time
+                    delta_time = current_timestamp(mkat, session) - session.start_time
                     if obs_duration > 0:
-                        if delta_time >= obs_duration or \
-                                (obs_duration-delta_time) < obs_targets[cnt]['duration']:
+                        time_remaining = obs_duration - delta_time
+                        if time_remaining < 1. or \
+                                time_remaining < obs_targets[(cnt+1)%len(obs_targets)]['duration']:
                             user_logger.info('Scheduled observation time lapsed - ending observation')
                             done = True
                             break
@@ -451,14 +488,15 @@ def run_observation(opts, mkat):
                     user_logger.warning('No targets are currently visible - stopping script instead of hanging around')
                     done = True
 
+
         # display observation cycle statistics
         print
         user_logger.info("Observation loop statistics")
-        try:
-            total_obs_time = session.time - session.start_time
-        except AttributeError:
-            total_obs_time = time.time() - session.start_time
-        user_logger.info("Total observation time {:.2f} sec".format(total_obs_time))
+        total_obs_time = current_timestamp(mkat, session)  - session.start_time
+        user_logger.info("Desired observation time {:.2f} sec ({:.2f} min)".format(
+            obs_duration, obs_duration/60.))
+        user_logger.info("Total observation time {:.2f} sec ({:.2f} min)".format(
+            total_obs_time, total_obs_time/60.))
         if len(obs_targets) > 0:
             user_logger.info("Targets observed :")
             for unique_target in np.unique(obs_targets['name']):
