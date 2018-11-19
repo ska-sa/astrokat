@@ -219,13 +219,15 @@ class build_observation:
         if obs_duration is not None:
             obs_plan['durations'] = {'obs_duration': obs_duration}
         start_lst = Observatory().start_obs(self.target_list)
+        start_lst = float(start_lst)%24.
         end_lst = Observatory().end_obs(self.target_list)
-        # rounding errors can cause 24 LST, which will lead to an inf loop
-        if float(end_lst) >= 24.0:
-            end_lst = 23.9
-        if (float(end_lst)-float(start_lst)) < 0.:  # targets cover 24 hrs
-            start_lst = 0.0
-            end_lst = 23.9
+        end_lst = 24.-float(end_lst)%23.9
+        # # rounding errors can cause 24 LST, which will lead to an inf loop
+        # if float(end_lst) >= 24.0:
+        #     end_lst = 23.9
+        # if (float(end_lst)-float(start_lst)) < 0.:  # targets cover 24 hrs
+        #     start_lst = 0.0
+        #     end_lst = 23.9
         if lst is None:
             lst = '{}-{}'.format(start_lst, end_lst)
         # observational setup

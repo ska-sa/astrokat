@@ -146,6 +146,9 @@ def source_elevation(catalogue, ref_antenna, report=False):
     # All times and timestamps assumed UTC, no special conversion to
     # accommodate SAST allowed to prevent confusion
     creation_date = catalogue.antenna.observer.date
+    # katpoint.Timestamps takes in SAST, observer.date is UTC
+    # now_timestamp = katpoint.Timestamp(creation_date)
+    # time_range = now_timestamp.secs + numpy.arange(0, 24. * 60. * 60., 360.)
     utc_timestamp = time.mktime(creation_date.datetime().timetuple())
     time_range = utc_timestamp + numpy.arange(0, 24. * 60. * 60., 360.)
     timestamps = [datetime.fromtimestamp(ts) for ts in time_range]
