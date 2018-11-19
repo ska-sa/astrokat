@@ -1,7 +1,5 @@
 #! /bin/bash
 
-## standard checks to run after editing to verify that the basic observations will still succeed
-
 RED="\033[1;31m"
 GREEN="\033[1;32m"
 YELLOW='\033[0;33m'
@@ -22,7 +20,7 @@ image-sim)
 for infile in ${INPUT[@]}
 do
     echo
-    CMD="python astrokat-observe.py --yaml test_obs/$infile.yaml"
+    CMD="python astrokat-observe.py --observer werner --yaml test_obs/$infile.yaml"
     echo -e "${YELLOW} Testing: $CMD ${NOCOLOR}"
     if $CMD
     then
