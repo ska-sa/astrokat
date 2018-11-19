@@ -2,4 +2,4 @@ Basic bash integration tests to check that all parts of the functionality is sti
 development.
 
 ./check-cals-select.sh
-
+./check-csv-convert.sh
