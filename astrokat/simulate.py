@@ -2,9 +2,11 @@
 import ephem
 import logging
 import sys
+import numpy
+import time
 
 from collections import namedtuple
-from datetime import datetime, timedelta
+from datetime import timedelta
 from utility import get_lst
 
 global simobserver
@@ -42,6 +44,9 @@ class verify_and_connect:
     def __init__(self, dummy):
         kwargs = vars(dummy)
         self.dry_run = True
+        # start_lst, end_lst = get_lst(kwargs['yaml']['observation_loop'][0]['LST'])
+        # print start_lst, end_lst
+        # self._lst = abs(end_lst - start_lst)/2.  # start half way
         self._lst, _ = get_lst(kwargs['yaml']['observation_loop'][0]['LST'])
         self._sensors = self.fake_sensors(kwargs)
         self._session_cnt = 0
@@ -92,8 +97,10 @@ class start_session:
         self.kwargs = kwargs
         self.obs_params = kwargs
         self.kat = dummy_kat
-        self.start_time = (datetime.now() - datetime(1970, 1, 1)).total_seconds()
+        simobserver.horizon = ephem.degrees(str(kwargs['horizon']))
+        self.start_time = time.mktime(simobserver.date.datetime().timetuple())
         self.time = self.start_time
+        self.katpt_current = None
 
     def __enter__(self):
         return self
@@ -119,13 +126,28 @@ class start_session:
         if self.track_:
             self.kat._session_cnt += 1
         if self.kat._session_cnt < len(self.kwargs['yaml']['observation_loop']):
-            self.kat._lst = self.kwargs['yaml']['observation_loop'][self.kat._session_cnt]['LST'].split('-')[0].strip()
+            # self.kat._lst =            self.kwargs['yaml']['observation_loop'][self.kat._session_cnt]['LST'].split('-')[0].strip()
+            self.kat._lst, _ = get_lst(self.kwargs['yaml']['observation_loop'][self.kat._session_cnt]['LST'])
+
+    def _update_fake_time_(self, addtime):
+        self.time += addtime
+        now = simobserver.date.datetime()
+        then = now + timedelta(seconds=addtime)
+        simobserver.date = ephem.Date(then)
+
+    def _fake_slew_(self, target):
+        slew_time = 0
+        if not (target == self.katpt_current):
+            if self.katpt_current is None:
+                slew_time = 45.  # s
+            else:
+                user_logger.info('Slewing to {}'.format(target.name))
+                slew_time = self.slew_time(target)
+        return slew_time
 
     def track(self, target, duration=0, announce=False):
-        self.time += duration
-        now = simobserver.date.datetime()
-        then = now + timedelta(seconds=duration)
-        simobserver.date = ephem.Date(then)
+        self._update_fake_time_(self._fake_slew_(target)+duration)
+        self.katpt_current = target
         return True
 
     def raster_scan(self, target,
@@ -155,5 +177,17 @@ class start_session:
         then = now + timedelta(seconds=duration)
         simobserver.date = ephem.Date(then)
         return True
+
+    def slew_time(self, target):
+        slew_speed = 2.  # degrees / sec
+        self.katpt_current.body.compute(self.katpt_current.antenna.observer)
+        target.body.compute(target.antenna.observer)
+        separation_angle = ephem.separation(self.katpt_current.body,
+                                            target.body)
+        # separation_angle = first_target.separation(second_target,
+        #                                            timestamp=timestamp,
+        #                                            antenna=antenna)
+        duration = numpy.degrees(separation_angle)/slew_speed
+        return duration
 
 # -fin-
