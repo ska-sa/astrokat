@@ -1,0 +1,1 @@
+../scripts/astrokat-observe.py
