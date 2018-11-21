@@ -15,6 +15,8 @@ from .utility import (  # noqa
     katpoint_target,
     get_lst,
     lst2utc,
+    datetime2timestamp,
+    timestamp2datetime,
     )
 from .observatory import (  # noqa
     Observatory,

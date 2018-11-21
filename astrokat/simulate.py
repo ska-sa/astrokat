@@ -7,7 +7,7 @@ import time
 
 from collections import namedtuple
 from datetime import timedelta
-from utility import get_lst
+from utility import get_lst, datetime2timestamp
 
 global simobserver
 simobserver = ephem.Observer()
@@ -44,9 +44,6 @@ class verify_and_connect:
     def __init__(self, dummy):
         kwargs = vars(dummy)
         self.dry_run = True
-        # start_lst, end_lst = get_lst(kwargs['yaml']['observation_loop'][0]['LST'])
-        # print start_lst, end_lst
-        # self._lst = abs(end_lst - start_lst)/2.  # start half way
         self._lst, _ = get_lst(kwargs['yaml']['observation_loop'][0]['LST'])
         self._sensors = self.fake_sensors(kwargs)
         self._session_cnt = 0
@@ -97,8 +94,8 @@ class start_session:
         self.kwargs = kwargs
         self.obs_params = kwargs
         self.kat = dummy_kat
-        simobserver.horizon = ephem.degrees(str(kwargs['horizon']))
-        self.start_time = time.mktime(simobserver.date.datetime().timetuple())
+        # simobserver.horizon = ephem.degrees(str(kwargs['horizon']))
+        self.start_time = datetime2timestamp(simobserver.date.datetime())
         self.time = self.start_time
         self.katpt_current = None
 
@@ -141,12 +138,15 @@ class start_session:
             if self.katpt_current is None:
                 slew_time = 45.  # s
             else:
-                user_logger.info('Slewing to {}'.format(target.name))
+                # if verbose: user_logger.info('Slewing to {}'.format(target.name))
                 slew_time = self.slew_time(target)
         return slew_time
 
     def track(self, target, duration=0, announce=False):
-        self._update_fake_time_(self._fake_slew_(target)+duration)
+        self._update_fake_time_(self._fake_slew_(target))
+        # if duration > 0:
+            # if verbose: user_logger.info('Tracking {}'.format(target.name))
+        self._update_fake_time_(duration)
         self.katpt_current = target
         return True
 

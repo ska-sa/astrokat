@@ -21,6 +21,18 @@ def read_yaml(filename):
     return data
 
 
+# Safely convert a datetime object to a timestamp
+# UTC seconds since epoch
+def datetime2timestamp(datetime_obj):
+    epoch = datetime.datetime.utcfromtimestamp(0)
+    return (datetime_obj - epoch).total_seconds()
+
+
+# Safely convert a timestamp to UTC datetime object
+def timestamp2datetime(timestamp):
+    return datetime.datetime.utcfromtimestamp(timestamp)
+
+
 # construct an expected katpoint target string
 def katpoint_target(target_item):
     coords = ['radec', 'azel', 'gal']
