@@ -1,0 +1,12 @@
+# scan observation with noise diode pattern
+instrument:
+  integration_period: 2
+# set noise diode pattern to fire every 20 seconds and only be on for 1.8s
+noise_diode:
+  antennas: m011,m022
+  cycle_len: 20.
+  on_frac: 0.09
+observation_loop:
+  - LST: 10.0
+    target_list:
+      - name=azel, azel=50.26731 43.70517, tags=target, duration=300.0
