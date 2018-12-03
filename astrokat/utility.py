@@ -1,4 +1,4 @@
-from datetime import timedelta
+# from datetime import timedelta
 import datetime
 import katpoint
 import numpy
@@ -69,20 +69,21 @@ def get_lst(yaml_lst):
     if type(yaml_lst) is float:
         start_lst = yaml_lst
     elif type(yaml_lst) is str:
-        [start_lst, end_lst]  = numpy.array(yaml_lst.strip().split('-'),
-                                            dtype=float)
+        [start_lst, end_lst] = numpy.array(yaml_lst.strip().split('-'),
+                                           dtype=float)
     else:
         raise RuntimeError('unexpected LST value')
     if end_lst is None:
-        end_lst = (start_lst + 12.)%24.
+        end_lst = (start_lst + 12.) % 24.
     return start_lst, end_lst
+
 
 # find when is LST for date given, else for today
 def lst2utc(req_lst, ref_location, date=None):
     def get_lst_range(date):
         date_timestamp = time.mktime(date.timetuple())  # this will be local time
         time_range = katpoint.Timestamp(date_timestamp).secs + \
-                numpy.arange(0, 24.*3600., 60)
+            numpy.arange(0, 24.*3600., 60)
         lst_range = numpy.degrees(target.antenna.local_sidereal_time(time_range)) / 15.
         return time_range, lst_range
 
@@ -102,7 +103,7 @@ def lst2utc(req_lst, ref_location, date=None):
     else:
         x = lst_range[lst_idx-1:lst_idx+1]
         y = time_range[lst_idx-1:lst_idx+1]
-    linefit = numpy.poly1d(numpy.polyfit(x,y,1))
+    linefit = numpy.poly1d(numpy.polyfit(x, y, 1))
     return datetime.datetime.utcfromtimestamp(linefit(req_lst))
 
 
