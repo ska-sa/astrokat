@@ -1,5 +1,6 @@
 import katpoint
 import noisediode
+import time
 libnames = ['user_logger']
 try:
     lib = __import__('katcorelib', globals(), locals(), libnames, -1)
@@ -52,14 +53,20 @@ def raster_scan(session, target, nd_period=None, **kwargs):
 
 def scan(session, target, nd_period=None, **kwargs):
     # trigger noise diode if set
-    noisediode.trigger(session.kat, duration=nd_period)
+    noisediode.trigger(session.kat, session, duration=nd_period)
     # user_logger.error('scan')
     # user_logger.error(kwargs['start'])
     # user_logger.error(kwargs['end'])
+    try:
+        timestamp = session.time
+    except AttributeError:
+        timestamp = time.time()
+    user_logger.warning('VERBOSE: Starting scan across target: {}'.format(timestamp))
     return session.scan(target, **kwargs)
 
 
 def forwardscan(session, target, nd_period=None, **kwargs):
+#     user_logger.error('forward scan')
     target_visible = scan(session,
                           target,
                           nd_period=nd_period,
@@ -68,6 +75,7 @@ def forwardscan(session, target, nd_period=None, **kwargs):
 
 
 def reversescan(session, target, nd_period=None, **kwargs):
+#     user_logger.error('return scan')
     returnscan = dict(kwargs)
     returnscan['start'] = kwargs['end']
     returnscan['end'] = kwargs['start']
