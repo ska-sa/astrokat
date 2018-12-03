@@ -1,11 +1,13 @@
-# scan observation with noise diode pattern
+#Setting up noise diode pattern before observation
 instrument:
   integration_period: 2
 # set noise diode pattern to fire every 20 seconds and only be on for 1.8s
 noise_diode:
   antennas: all
-  cycle_len: 20.
-  on_frac: 0.09
+#   cycle_len: 20.
+  cycle_len: 0.9
+#   on_frac: 0.09
+  on_frac: 0.5
 observation_loop:
   - LST: 10.0
     target_list:
