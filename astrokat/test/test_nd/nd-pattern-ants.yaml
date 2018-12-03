@@ -3,12 +3,14 @@ instrument:
   integration_period: 2
 # set noise diode pattern to fire every 20 seconds and only be on for 1.8s
 noise_diode:
-  antennas: all
+  antennas: m011,m022
 #   cycle_len: 20.
   cycle_len: 0.9
 #   on_frac: 0.09
   on_frac: 0.5
 observation_loop:
-  - LST: 10.0
+  # - LST: 10.0
+  - LST: 18.0-20.0
     target_list:
-      - name=azel, azel=50.26731 43.70517, tags=target, duration=300.0
+      # - name=azel, azel=50.26731 43.70517, tags=target, duration=300.0
+      - name=1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, duration=20.0

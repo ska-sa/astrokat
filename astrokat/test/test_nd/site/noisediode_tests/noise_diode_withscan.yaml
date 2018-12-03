@@ -1,0 +1,21 @@
+# return scan observation with noise diode trigger
+instrument:
+  integration_period: 2
+scan:
+  # achieving a scan speed of 5arcmin/sec
+  duration: 60.0
+  start: 0.0,0.0
+  end: 10.0,0.0
+  # ensuring azimuth angle remains linear
+  projection: plate-carree
+durations:
+  obs_duration: 300
+observation_loop:
+  - LST: 10.0
+    target_list:
+      # set noise diode to trigger for 1.8 seconds before track
+      - name=track_azel_with_nd_trigger, azel=-61.72413 41.93447, tags=target, type=track, duration=60., nd=3.8
+      - name=scan_azel_with_nd_trigger, azel=-61.72413 41.93447, tags=target, type=return_scan, nd=3.8
+      - name=track_azel_with_nd_trigger, azel=-61.72413 41.93447, tags=target, type=track, duration=0., nd=3.8
+
+
