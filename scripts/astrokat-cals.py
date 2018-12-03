@@ -9,9 +9,10 @@ import katpoint
 import numpy
 import os
 import sys
-import time
+# import time
 
 from astrokat import Observatory, read_yaml, katpoint_target
+from astrokat.utility import datetime2timestamp, timestamp2datetime
 from datetime import datetime
 
 text_only = False
@@ -149,9 +150,11 @@ def source_elevation(catalogue, ref_antenna, report=False):
     # katpoint.Timestamps takes in SAST, observer.date is UTC
     # now_timestamp = katpoint.Timestamp(creation_date)
     # time_range = now_timestamp.secs + numpy.arange(0, 24. * 60. * 60., 360.)
-    creation_timestamp = time.mktime(creation_date.datetime().timetuple())
+    # creation_timestamp = time.mktime(creation_date.datetime().timetuple())
+    creation_timestamp = datetime2timestamp(creation_date.datetime())
     time_range = creation_timestamp + numpy.arange(0, 24. * 60. * 60., 360.)
-    timestamps = [datetime.fromtimestamp(ts) for ts in time_range]
+    # timestamps = [datetime.fromtimestamp(ts) for ts in time_range]
+    timestamps = [timestamp2datetime(ts) for ts in time_range]
 
     lst_timestamps = []
     for timestamp in timestamps:
