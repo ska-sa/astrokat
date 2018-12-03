@@ -117,6 +117,7 @@ def observe(
         session,
         target_info,
         **kwargs):
+    verbose = True
     target_visible = False
 
     target_name = target_info['name']
@@ -179,7 +180,9 @@ def observe(
                     nd_period=nd_period)
     else:  # track is default
         noisediode.trigger(session.kat, session, duration=nd_period)
-        # if verbose: user_logger.info('Verbose: Starting track on target: {}'.format(current_timestamp(session)))
+        import time
+        if verbose: user_logger.warning('VERBOSE: Starting track on target: {} ({})'.format(
+            current_timestamp(session), time.ctime(current_timestamp(session))))
         if session.track(target, duration=duration):
             target_visible = True
 
@@ -207,11 +210,13 @@ def cadence_target(target_list, timestamp):
 # def above_horizon(katpt_target, horizon=20.):
 def above_horizon(katpt_target, timestamp, horizon=20.):
     [azim, elev] = katpt_target.azel(timestamp)
+    # print katpt_target.antenna.observer
     # print timestamp, timestamp2datetime(timestamp)
     # print elev
     return (elev >= ephem.degrees(str(horizon)))
 
 
+# TODO: add to telescope class as now()
 # figure out which time option to use
 def current_timestamp(session):
     import time
@@ -307,10 +312,11 @@ class telescope(object):
                     sensor_name, conf_param, sub_sensor))
 
 
-def run_observation(opts, mkat, debug=False):
+def run_observation(opts, mkat):
 
-    verbose=False  #True
-    debug=False  #True
+    # TODO: add to input options
+    verbose=True
+    debug=False
 
     # extract control and observation information provided in observation file
     obs_plan_params = vars(opts)['yaml']
@@ -325,7 +331,7 @@ def run_observation(opts, mkat, debug=False):
     for observation_cycle in obs_plan_params['observation_loop']:
         # Unpack all target information
         if not ('target_list' in observation_cycle.keys()):
-            user_logger.warning('No targets provided - stopping script instead of hanging around')
+            user_logger.error('No targets provided - stopping script instead of hanging around')
             continue
         obs_targets = read_targets(observation_cycle['target_list'])
         target_list = obs_targets['target'].tolist()
@@ -333,6 +339,7 @@ def run_observation(opts, mkat, debug=False):
         catalogue = collect_targets(mkat.array, target_list)
         for tgt in obs_targets:
             tgt['target'] = catalogue[tgt['name']]
+        # observer object handle to track the observation timing in a more user friendly way
         observer = catalogue._antenna.observer
 
         # Only observe targets in valid LST range
@@ -376,7 +383,8 @@ def run_observation(opts, mkat, debug=False):
             if mkat.array.dry_run:
                 start_datetime = timestamp2datetime(session.time)
                 if 'start_time' in vars(opts).keys():
-                    start_datetime = datetime.strptime(vars(opts)['start_time'], '%Y-%m-%d %H:%M:%S')
+                    if vars(opts)['start_time'] is not None:
+                        start_datetime = datetime.strptime(vars(opts)['start_time'], '%Y-%m-%d %H:%M:%S')
                 observer.date = ephem.Date(start_datetime)
                 if debug:
                     msg = 'DEBUG: requested start time ({}) {}'.format(
@@ -400,7 +408,7 @@ def run_observation(opts, mkat, debug=False):
                     in_range = ((ephem.hours(local_lst) > ephem.hours(str(start_lst))) \
                                and (ephem.hours(local_lst) < ephem.hours(str(end_lst))))
                     if not in_range:
-                        user_logger.warning('Local LST {} outside LST range {}-{}'.format(
+                        user_logger.error('Local LST {} outside LST range {}-{}'.format(
                                 local_lst, start_lst, end_lst))
                         continue
                 else:
@@ -484,11 +492,15 @@ def run_observation(opts, mkat, debug=False):
                             user_logger.warning(msg)
                             msg = 'DEBUG: observer before track\n {}'.format(observer)
                             user_logger.warning(msg)
+#                         print tgt
                         if above_horizon(catalogue[tgt['name']], timestamp=timestamp, horizon=opts.horizon):
                             if observe(session, tgt, **obs_plan_params):
                                 targets_visible += True
                                 tgt['obs_cntr'] += 1
                                 tgt['last_observed'] = current_timestamp(session)
+                            else:
+                                # target not visibile to sessions anymore
+                                cadence_targets.remove(tgt)
                             if debug:
                                 msg = 'DEBUG: observer after track\n {}'.format(observer)
                                 user_logger.warning(msg)
@@ -546,7 +558,7 @@ def run_observation(opts, mkat, debug=False):
 
                 # End if there is nothing to do
                 if not targets_visible:
-                    user_logger.warning('No targets are currently visible - stopping script instead of hanging around')
+                    user_logger.warning('No more targets to observe - stopping script instead of hanging around')
                     done = True
 
         if debug:

@@ -149,8 +149,8 @@ def source_elevation(catalogue, ref_antenna, report=False):
     # katpoint.Timestamps takes in SAST, observer.date is UTC
     # now_timestamp = katpoint.Timestamp(creation_date)
     # time_range = now_timestamp.secs + numpy.arange(0, 24. * 60. * 60., 360.)
-    utc_timestamp = time.mktime(creation_date.datetime().timetuple())
-    time_range = utc_timestamp + numpy.arange(0, 24. * 60. * 60., 360.)
+    creation_timestamp = time.mktime(creation_date.datetime().timetuple())
+    time_range = creation_timestamp + numpy.arange(0, 24. * 60. * 60., 360.)
     timestamps = [datetime.fromtimestamp(ts) for ts in time_range]
 
     lst_timestamps = []
@@ -205,7 +205,7 @@ def source_elevation(catalogue, ref_antenna, report=False):
     ax.set_xticklabels(timestamps[0::10], rotation=30, fontsize=10)
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
     ax.xaxis.set_major_locator(mdates.HourLocator(byhour=range(24), interval=1))
-    ax.set_xlabel('Time (UTC) starting from {}'.format(datetime.fromtimestamp(utc_timestamp)))
+    ax.set_xlabel('Time (UTC) starting from {}'.format(datetime.fromtimestamp(creation_timestamp)))
 
     ax2 = ax.twiny()
     box = ax2.get_position()
