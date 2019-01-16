@@ -7,4 +7,7 @@ setup(
                       'katpoint',
                       'matplotlib',
                       'numpy',
-                      'pyyaml'])
+                      'pyyaml'],
+    extras_require={
+        'live': ['katcorelib', 'katconf']
+    })
