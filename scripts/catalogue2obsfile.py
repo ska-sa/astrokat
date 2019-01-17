@@ -2,9 +2,9 @@
 
 from __future__ import print_function
 
+from astrokat import Observatory
 import argparse
 import sys
-from astrokat import Observatory
 
 
 # TODO: need to move to utility
@@ -23,7 +23,8 @@ def cli(prog):
     version = "{} 0.1".format(prog)
     usage = "{} [options] --catalogue <full_path/cat_file.csv>".format(prog)
     description = "\
-sources are specified as a catalogue of targets, with optional timing information"
+sources are specified as a catalogue of targets, \
+with optional timing information"
     parser = argparse.ArgumentParser(
         usage=usage,
         description=description,
@@ -63,8 +64,9 @@ observation band: L, UHF, X, S')
         help='\
 averaging time per dump [sec]')
 
-    description = "track a target for imaging or spectral line observations, may " \
-                  "optionally have a tag of 'target'."
+    description = "\
+track a target for imaging or spectral line observations, \
+may optionally have a tag of 'target'."
     group = parser.add_argument_group(title="target observation strategy",
                                       description=description)
     group.add_argument(
@@ -84,8 +86,9 @@ default target track duration [sec]')
         help='\
 maximum duration of observation [sec]')
 
-    description = "calibrators are identified by tags in their description strings " \
-                  "'bpcal', 'gaincal', 'fluxcal' and 'polcal' respectively"
+    description = "\
+calibrators are identified by tags in their description strings \
+'bpcal', 'gaincal', 'fluxcal' and 'polcal' respectively"
     group = parser.add_argument_group(title="calibrator observation strategy",
                                       description=description)
     group.add_argument(
@@ -93,7 +96,8 @@ maximum duration of observation [sec]')
         type=float,
         default=300,  # sec
         help="\
-minimum duration to track primary calibrators tagged as 'bpcal', 'fluxcal' or 'polcal' [sec]")
+minimum duration to track primary calibrators tagged as \
+'bpcal', 'fluxcal' or 'polcal' [sec]")
     group.add_argument(
         '--primary-cal-cadence',
         type=float,
@@ -111,7 +115,7 @@ minimum duration to track gain calibrator, 'gaincal' [sec]")
 #  Assume comma separated values
 #  No header lines are allowed, only target information
 #  Input format: name, tags, ra, dec
-class unpack_catalogue:
+class UnpackCatalogue(object):
     def __init__(self, filename):
         self.infile = filename
 
@@ -166,12 +170,11 @@ class unpack_catalogue:
                     prefix = 'radec'
                 if len(name) < 1:
                     name = 'target{}_{}'.format(idx, prefix)
-                target_items = [
-                        name,
-                        prefix,
-                        ' '.join([ra, dec]),
-                        tags[len(prefix):].strip(),
-                        ]
+                target_items = [name,
+                                prefix,
+                                ' '.join([ra, dec]),
+                                tags[len(prefix):].strip(),
+                                ]
 
                 target_spec = 'name={}, {}={}, tags={}, duration={}'
                 cadence = ', cadence={}'
@@ -201,7 +204,7 @@ class unpack_catalogue:
 #  Create a default observation config file
 #  Assume the format of a target in the list:
 #  'name=<name>, radec=<HH:MM:SS.f>,<DD:MM:SS.f>, tags=<tags>, duration=<sec>'
-class build_observation:
+class BuildObservation(object):
     def __init__(self, target_list):
         self.target_list = target_list
         self.configuration = None
@@ -219,22 +222,15 @@ class build_observation:
         if obs_duration is not None:
             obs_plan['durations'] = {'obs_duration': obs_duration}
         start_lst = Observatory().start_obs(self.target_list)
-        start_lst = float(start_lst)%24.
+        start_lst = float(start_lst) % 24.
         end_lst = Observatory().end_obs(self.target_list)
-        end_lst = 24.-float(end_lst)%23.9
-        # # rounding errors can cause 24 LST, which will lead to an inf loop
-        # if float(end_lst) >= 24.0:
-        #     end_lst = 23.9
-        # if (float(end_lst)-float(start_lst)) < 0.:  # targets cover 24 hrs
-        #     start_lst = 0.0
-        #     end_lst = 23.9
+        end_lst = 24. - float(end_lst) % 23.9
         if lst is None:
             lst = '{}-{}'.format(start_lst, end_lst)
         # observational setup
-        obs_plan['observation_loop'] = [{
-                'lst': lst,
-                'target_list': self.target_list,
-                }]
+        obs_plan['observation_loop'] = [{'lst': lst,
+                                         'target_list': self.target_list,
+                                         }]
         self.configuration = obs_plan
         return obs_plan
 
@@ -290,14 +286,14 @@ if __name__ == '__main__':
             del instrument[key]
 
     # read targets from catalogue file
-    cat_obj = unpack_catalogue(args.catalogue)
+    cat_obj = UnpackCatalogue(args.catalogue)
     header, catalogue = cat_obj.read_catalogue(
             target_duration=args.target_duration,
             gaincal_duration=args.secondary_cal_duration,
             bpcal_duration=args.primary_cal_duration,
             bpcal_interval=args.primary_cal_cadence,
             )
-    obs_plan = build_observation(catalogue)
+    obs_plan = BuildObservation(catalogue)
 
     # create observation configuration file
     obs_plan.configure(
