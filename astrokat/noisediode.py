@@ -10,6 +10,8 @@ finally:
     for libname in libnames:
         globals()[libname] = getattr(lib, libname)
 
+_DEFAULT_LEAD_TIME = 3.0
+
 
 def _nd_log_msg_(ant, reply, informs, verbose=False):
     actual_time = float(reply.arguments[1])
@@ -31,8 +33,17 @@ def _nd_log_msg_(ant, reply, informs, verbose=False):
 #         time.sleep(float(lead_time))
 
 
-# switch noise-source on
-def on(mkat, lead_time=3.):
+def on(mkat, lead_time=_DEFAULT_LEAD_TIME):
+    """Switch noise-source pattern on.
+
+    Parameters
+    ----------
+    mkat : session kat container-like object
+        Container for accessing KATCP resources allocated to schedule block.
+    lead_time : float, optional
+        Lead time before the noisediode is switched on [sec]
+    """
+
     # Noise Diodes are triggered on all antennas in array simultaneously
     # add a second to ensure all digitisers set at the same time
     timestamp = np.ceil(time.time() + lead_time)
@@ -50,8 +61,19 @@ def on(mkat, lead_time=3.):
     return timestamp
 
 
-# switch noise-source pattern off
-def off(mkat, timestamp=None, lead_time=3.):
+def off(mkat, timestamp=None, lead_time=_DEFAULT_LEAD_TIME):
+    """Switch noise-source pattern off.
+
+    Parameters
+    ----------
+    mkat : session kat container-like object
+        Container for accessing KATCP resources allocated to schedule block.
+    timestamp : float, optional
+        Time since the epoch as a floating point number [sec]
+    lead_time : float, optional
+        Lead time before the noisediode is switched off [sec]
+    """
+
     if timestamp is None:
         timestamp = np.ceil(time.time() + lead_time)
 #     else:
@@ -76,29 +98,42 @@ def off(mkat, timestamp=None, lead_time=3.):
     return timestamp
 
 
-# fire noise diode before track
 def trigger(mkat, session, duration=None):
+    """Fire the noise diode before track.
+
+    Parameters
+    ----------
+    mkat : session kat container-like object
+        Container for accessing KATCP resources allocated to schedule block.
+    session : katcorelib.CaptureSession-like object
+    duration : float, optional
+        Duration that the noisediode will be active [sec]
+    """
+
     if duration is None:
         return True  # nothing to do
     msg = 'Firing noise diode for {}s before target observation'.format(
             duration)
     user_logger.info(msg)
     timestamp_on_set = on(mkat)
-    user_logger.warning('DEBUG: on {} ({})'.format(timestamp_on_set, time.ctime(timestamp_on_set)))
+    user_logger.warning('DEBUG: on {} ({})'
+                        .format(timestamp_on_set, time.ctime(timestamp_on_set)))
     user_logger.warning('DEBUG: default sleep for {}'.format(duration))
-    time.sleep(duration) # default sleep to see if the signal gets through
+    time.sleep(duration)  # default sleep to see if the signal gets through
     timestamp = timestamp_on_set + duration
     timestamp_off_set = off(mkat, timestamp=timestamp)
     user_logger.warning('DEBUG: default sleep for {}'.format('1'))
     time.sleep(1)
-    user_logger.warning('DEBUG: off {} ({})'.format(timestamp_off_set, time.ctime(timestamp_off_set)))
+    user_logger.warning('DEBUG: off {} ({})'
+                        .format(timestamp_off_set, time.ctime(timestamp_off_set)))
     # wait for duration + lead time
     delta_time = timestamp_off_set - time.time()
     user_logger.warning('DEBUG: now {}, sleep {}'.format(time.time(), delta_time))
     if not mkat.dry_run:
         user_logger.warning('DEBUG: this is not a dry-run')
         delta_time = timestamp_off_set - time.time()
-        user_logger.warning('DEBUG: now {}, sleep {}'.format(time.time(), np.ceil(delta_time)))
+        user_logger.warning('DEBUG: now {}, sleep {}'
+                            .format(time.time(), np.ceil(delta_time)))
         time.sleep(np.ceil(delta_time))
         user_logger.warning('DEBUG: now {}, slept {}'.format(time.time(), delta_time))
     else:
@@ -107,22 +142,31 @@ def trigger(mkat, session, duration=None):
     return True
 
 
-# set noise diode pattern
-def pattern(mkat,  # mkat subarray object
-            session,  # session object for correcting the time (only for now)
-            nd_setup,  # noise diode pattern setup
-            lead_time=3.0,  # lead time [sec]
-            ):
+def pattern(mkat, session, nd_setup, lead_time=_DEFAULT_LEAD_TIME):
+    """Start background noise diode pattern controlled by digitiser hardware.
+
+    Parameters
+    ----------
+    mkat : session kat container-like object
+        Container for accessing KATCP resources allocated to schedule block.
+    session : katcorelib.CaptureSession-like object
+    nd_setup : dict
+        Noise diode pattern setup, with keys:
+            'antennas':  options are 'all', or blah, or ....,
+            'cycle_len': the cycle length [sec], must be less than 20 sec for L-band,
+            etc., etc.
+    lead_time : float, optional
+        Lead time before digitisers pattern is set [sec]
+    """
 
     nd_antennas = nd_setup['antennas']  # antennas the nd pattern must be set on
     cycle_length = nd_setup['cycle_len']  # nd pattern length [sec]
     on_fraction = nd_setup['on_frac']  # on fraction of pattern lenght [%]
-    msg = '\
-Request noise diode pattern to repeat every {} sec, \
-with {} sec on and apply pattern to {}'.format(
-            cycle_length,
-            float(cycle_length)*float(on_fraction),
-            nd_antennas)
+    msg = ('Request noise diode pattern to repeat every {} sec, '
+           'with {} sec on and apply pattern to {}'
+           .format(cycle_length,
+                   float(cycle_length) * float(on_fraction),
+                   nd_antennas))
     user_logger.info(msg)
 
     if not mkat.dry_run:
