@@ -148,12 +148,10 @@ def observe(
 
     # do the different observations depending on requested type
     session.label(obs_type.strip())
-    # user_logger.trace('TRACE: performing {} observation on {}'.format(
-    #         obs_type,
-    #         target))
+    # user_logger.trace
     print('TRACE: performing {} observation on {}'.format(
-        obs_type,
-        target))
+            obs_type,
+            target))
     if 'scan' in obs_type:  # compensating for ' and spaces around key values
         if 'drift_scan' in obs_type:
             scan_func = scans.drift_scan
@@ -181,25 +179,25 @@ def observe(
                                        target,
                                        nd_period=nd_period)
     else:  # track is default
-        # user_logger.trace('TRACE: ts before nd trigger {}'.format(
-        #         time.time()))
-        print('TRACE: ts before nd trigger {}'.format(time.time()))
-        noisediode.trigger(session.kat, session, duration=nd_period)
-        # user_logger.trace('TRACE: ts after nd trigger {}'.format(
-        #         time.time()))
-        print('TRACE: ts after nd trigger {}'.format(time.time()))
+        if nd_period is not None:
+            # user_logger.trace
+            print('TRACE: ts before nd trigger {} for {}'.format(
+                    time.time(),
+                    nd_period))
+            noisediode.trigger(session.kat, session, duration=nd_period)
+            # user_logger.trace
+            print('TRACE: ts after nd trigger {}'.format(
+                    time.time()))
         user_logger.debug('DEBUG: Starting {}s track on target: {} ({})'.format(
                 duration,
                 time.time(),
                 time.ctime(time.time())))
         if session.track(target, duration=duration):
             target_visible = True
-    # user_logger.trace('TRACE: ts after {} {}'.format(
-    #         obs_type,
-    #         time.time()))
+    # user_logger.trace
     print('TRACE: ts after {} {}'.format(
-        obs_type,
-        time.time()))
+            obs_type,
+            time.time()))
 
     if nd_setup is not None:
         # restore pattern if programmed at setup
@@ -321,7 +319,8 @@ def run_observation(opts, kat):
     for observation_cycle in obs_plan_params['observation_loop']:
         # Unpack all target information
         if not ('target_list' in observation_cycle.keys()):
-            user_logger.error('No targets provided - stopping script instead of hanging around')
+            user_logger.error('No targets provided - '
+                              'stopping script instead of hanging around')
             continue
         obs_targets = read_targets(observation_cycle['target_list'])
         target_list = obs_targets['target'].tolist()
@@ -370,17 +369,12 @@ def run_observation(opts, kat):
             session.standard_setup(**vars(opts))
             start_datetime = timestamp2datetime(time.time())
             observer.date = ephem.Date(start_datetime)
-            # user_logger.trace('TRACE: requested start time ({}) {}'.format(
-            #         datetime2timestamp(start_datetime), start_datetime))
+            # user_logger.trace
             print('TRACE: requested start time ({}) {}'.format(
-                    datetime2timestamp(start_datetime), start_datetime))
-            # user_logger.trace('TRACE: session start time {}'.format(
-            #         session.time))
-            print('TRACE: session start time {}'.format(
-                    session.time))
+                    datetime2timestamp(start_datetime),
+                    start_datetime))
 
-            # user_logger.trace('TRACE: observer at start\n {}'.format(
-            #         observer))
+            # user_logger.trace
             print('TRACE: observer at start\n {}'.format(
                     observer))
 
@@ -407,27 +401,24 @@ def run_observation(opts, kat):
                         continue
             # TODO: setup of noise diode pattern should be moved to sessions so it happens in the line above
             if 'noise_diode' in obs_plan_params.keys():
-                # kat.noisediode_setup(session, obs_plan_params['noise_diode'])
                 noisediode.pattern(kat.array, session, obs_plan_params['noise_diode'])
 
             # Adding explicit init after "Capture-init failed" exception was encountered
             session.capture_init()
-            user_logger.debug('Initialise capture start with timestamp {} ({})'.format(
-                    int(time.time()), timestamp2datetime(time.time())))
+            user_logger.debug('DEBUG: Initialise capture start with timestamp {} ({})'.format(
+                    int(time.time()),
+                    timestamp2datetime(time.time())))
 
             # Go to first target before starting capture
             user_logger.info('Slewing to first target')
             observe(session, obs_targets[0], slewonly=True)
             # Only start capturing once we are on target
             session.capture_start()
-            # user_logger.trace('TRACE: capture start time after slew ({}) {}'.format(
-            #         time.time(),
-            #         timestamp2datetime(time.time())))
+            # user_logger.trace
             print('TRACE: capture start time after slew ({}) {}'.format(
                     time.time(),
                     timestamp2datetime(time.time())))
-            # user_logger.trace('trace: observer after slew\n {}'.format(
-            #         observer))
+            # user_logger.trace
             print('TRACE: observer after slew\n {}'.format(
                     observer))
 
@@ -444,21 +435,20 @@ def run_observation(opts, kat):
 
                 # Cycle through target list in order listed
                 targets_visible = False
+                time_remaining = obs_duration
 
                 for cnt, target in enumerate(obs_targets):
                     katpt_target = target['target']
                     user_logger.debug('DEBUG: {} {}'.format(
                             cnt, target))
-                    # user_logger.trace('TRACE: initial observer for target\n {}'.format(
-                    #         observer))
+                    # user_logger.trace
                     print('TRACE: initial observer for target\n {}'.format(
                             observer))
                     # check target visible before doing anything
                     if not above_horizon(katpt_target, horizon=opts.horizon):
                         user_logger.warn('Target {} below {} deg horizon, continuing'.format(target['name'], opts.horizon))
                         continue
-                    # user_logger.trace('TRACE: observer after horizon check\n {}'.format(
-                    #         observer))
+                    # user_logger.trace
                     print('TRACE: observer after horizon check\n {}'.format(
                             observer))
 
@@ -469,19 +459,25 @@ def run_observation(opts, kat):
                         tgt = cadence_target(cadence_targets)
                         if not tgt:
                             break
+                        # check enough time remaining to continue
+                        if time_remaining < tgt['duration']:
+                            done = True
+                            break
                         # check target visible before doing anything
-                        # user_logger.trace('TRACE: cadence target\n {}\n {}'.format(
-                        #         tgt, catalogue[tgt['name']]))
+                        # user_logger.trace
                         print('TRACE: cadence target\n {}\n {}'.format(
-                                tgt, catalogue[tgt['name']]))
-                        # user_logger.trace('TRACE: initial observer for cadence target\n {}'.format(
-                        #         observer))
+                                tgt,
+                                catalogue[tgt['name']]))
+                        # user_logger.trace
                         print('TRACE: initial observer for cadence target\n {}'.format(
                                 observer))
-                        # user_logger.trace('TRACE: observer before track\n {}'.format(
-                        #         observer))
+                        # user_logger.trace
                         print('TRACE: observer before track\n {}'.format(
                                 observer))
+                        # user_logger.trace
+                        print('TRACE: target observation # {} last observed {}'.format(
+                                tgt['obs_cntr'],
+                                tgt['last_observed']))
                         if above_horizon(catalogue[tgt['name']], horizon=opts.horizon):
                             if observe(session, tgt, **obs_plan_params):
                                 targets_visible += True
@@ -490,73 +486,73 @@ def run_observation(opts, kat):
                             else:
                                 # target not visibile to sessions anymore
                                 cadence_targets.remove(tgt)
-                            # user_logger.trace('TRACE: observer after track\n {}'.format(
-                            #         observer))
+                            # user_logger.trace
                             print('TRACE: observer after track\n {}'.format(
                                     observer))
+                            # user_logger.trace
+                            print('TRACE: target observation # {} last observed {}'.format(
+                                    tgt['obs_cntr'],
+                                    tgt['last_observed']))
                         else:
                             cadence_targets.remove(tgt)
                         while_cntr += 1
                         if while_cntr > len(obs_targets):
                             break
-                    # user_logger.trace('TRACE: observer after cadence\n {}'.format(
-                    #         observer))
+                    if done:
+                        break
+                    # user_logger.trace
                     print('TRACE: observer after cadence\n {}'.format(
                             observer))
 
                     # observe non cadence target
                     if target['cadence'] < 0:
-                        # user_logger.trace('TRACE: normal target\n {}'.format(
-                        #         target))
+                        # user_logger.trace
                         print('TRACE: normal target\n {}'.format(
                                 target))
-                        # user_logger.trace('TRACE: observer before track\n {}'.format(
-                        #         observer))
+                        # user_logger.trace
                         print('TRACE: observer before track\n {}'.format(
                                 observer))
-                        # user_logger.trace('TRACE: ts before observe {}'.format(
-                        #         time.time()))
-                        print('TRACE: ts before observe {}'.format(time.time()))
-                        # user_logger.trace('TRACE: target last observed {}'.format(
-                        #         target['last_observed']))
-                        print('TRACE: target last observed {}'.format(target['last_observed']))
+                        # user_logger.trace
+                        print('TRACE: ts before observe {}'.format(
+                                time.time()))
+                        # user_logger.trace
+                        print('TRACE: target last observed {}'.format(
+                                target['last_observed']))
                         targets_visible += observe(
                                 session,
                                 target,
                                 **obs_plan_params)
-                        # user_logger.trace('TRACE: ts after observe {}'.format(
-                        #         time.time()))
-                        print('TRACE: ts after observe {}'.format(time.time()))
+                        # user_logger.trace
+                        print('TRACE: observer after track\n {}'.format(
+                                observer))
+                        # user_logger.trace
+                        print('TRACE: ts after observe {}'.format(
+                                time.time()))
                         if targets_visible:
                             target['obs_cntr'] += 1
                             target['last_observed'] = time.time()
-                            print(target['last_observed'])
-                        # user_logger.trace('TRACE: target last observed {}'.format(
-                        #         target['last_observed']))
-                        print('TRACE: target last observed {}'.format(target['last_observed']))
-                        # user_logger.trace('TRACE: observer after track\n {}'.format(
-                        #         observer))
+                        # user_logger.trace
+                        print('TRACE: target observation # {} last observed {}'.format(
+                                target['obs_cntr'],
+                                target['last_observed']))
+                        # user_logger.trace
                         print('TRACE: observer after track\n {}'.format(
                                 observer))
 
                     # loop continuation checks
                     delta_time = time.time() - session.start_time
-                    # user_logger.trace('TRACE: time elapsed {} sec'.format(
-                    #         delta_time))
+                    # user_logger.trace
                     print('TRACE: time elapsed {} sec'.format(
                             delta_time))
-                    # user_logger.trace('TRACE: total obs duration {} sec'.format(
-                    #         obs_duration))
+                    # user_logger.trace
                     print('TRACE: total obs duration {} sec'.format(
                             obs_duration))
                     if obs_duration > 0:
                         time_remaining = obs_duration - delta_time
-                        # user_logger.trace('TRACE: time remaining {} sec'.format(
-                        #         time_remaining))
+                        # user_logger.trace
                         print('TRACE: time remaining {} sec'.format(
                                 time_remaining))
-                        # user_logger.trace('TRACE: time needed for next obs {} sec'.format(
-                        #         obs_targets[(cnt+1)%len(obs_targets)]['duration']))
+                        # user_logger.trace
                         print('TRACE: time needed for next obs {} sec'.format(
                                 obs_targets[(cnt+1) % len(obs_targets)]['duration']))
                         if time_remaining < 1. or \
@@ -573,10 +569,8 @@ def run_observation(opts, kat):
                 if not targets_visible:
                     user_logger.warning('No more targets to observe - stopping script instead of hanging around')
                     done = True
-                done = True
 
-        # user_logger.trace('TRACE: observer at end\n {}'.format(
-        #         observer))
+        # user_logger.trace
         print('TRACE: observer at end\n {}'.format(
                 observer))
         # display observation cycle statistics
