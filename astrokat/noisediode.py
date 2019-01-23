@@ -53,13 +53,11 @@ def on(kat,
        lead_time=_DEFAULT_LEAD_TIME):
     # Noise Diodes are triggered on all antennas in array simultaneously
     # add some lead to ensure all digitisers set at the same time
-    # user_logger.trace('TRACE: ts on entry {}'.format(timestamp))
-    print('TRACE: ts on entry {}'.format(timestamp))
     if timestamp is None:
-        # user_logger.trace('TRACE: now + leadtime = {} + {}'.format(
+        # user_logger.trace('TRACE: ts + leadtime = {} + {}'.format(
         #         time.time(),
         #         lead_time))
-        print('TRACE: now + leadtime = {} + {}'.format(time.time(), lead_time))
+        print('TRACE: ts + leadtime = {} + {}'.format(time.time(), lead_time))
         timestamp = np.ceil(time.time() + lead_time)
     # user_logger.trace('TRACE: nd on at {} ({})'.format(
     #         timestamp,
@@ -78,13 +76,11 @@ def on(kat,
 def off(kat, timestamp=None, lead_time=_DEFAULT_LEAD_TIME):
     # Noise Diodes are triggered on all antennas in array simultaneously
     # add some lead to ensure all digitisers set at the same time
-    # user_logger.trace('TRACE: ts on entry {}'.format(timestamp))
-    print('TRACE: ts off entry {}'.format(timestamp))
     if timestamp is None:
-        # user_logger.trace('TRACE: now + leadtime = {} + {}'.format(
+        # user_logger.trace('TRACE: ts + leadtime = {} + {}'.format(
         #         time.time(),
         #         lead_time))
-        print('TRACE: now + leadtime = {} + {}'.format(time.time(), lead_time))
+        print('TRACE: ts + leadtime = {} + {}'.format(time.time(), lead_time))
         timestamp = np.ceil(time.time() + lead_time)
     # user_logger.trace('TRACE: nd on at {} ({})'.format(
     #         timestamp,
