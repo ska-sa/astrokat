@@ -1,4 +1,3 @@
-# flake8: noqa
 import numpy as np
 import time
 libnames = ['user_logger']
@@ -10,8 +9,33 @@ finally:
     for libname in libnames:
         globals()[libname] = getattr(lib, libname)
 
+_DEFAULT_LEAD_TIME = 5.0  # lead time [sec]
 
-def _nd_log_msg_(ant, reply, informs, verbose=False):
+
+def _katcp_reply_to_log_(dig_katcp_reply):
+    for ant in sorted(dig_katcp_reply):
+        reply, informs = dig_katcp_reply[ant]
+# Devcomm tests to remove indicated block
+        # # devcomm is still simm, but will not be dry-run
+        # if len(reply.arguments) > 2:
+        #     _nd_log_msg_(ant, reply, informs, verbose=False)
+# Devcomm tests to remove indicated block
+        _nd_log_msg_(ant, reply, informs, verbose=False)
+
+
+def _nd_log_msg_(ant,
+                 reply,
+                 informs,
+                 verbose=False):
+
+    user_logger.debug('DEBUG: reply = {}'.format(
+        reply))
+    user_logger.debug('DEBUG: arguments ({})= {}'.format(
+        len(reply.arguments),
+        reply.arguments))
+    user_logger.debug('DEBUG: informs = {}'.format(
+        informs))
+
     actual_time = float(reply.arguments[1])
     actual_on_frac = float(reply.arguments[2])
     actual_cycle = float(reply.arguments[3])
@@ -22,96 +46,104 @@ def _nd_log_msg_(ant, reply, informs, verbose=False):
                 actual_on_frac*actual_cycle, actual_cycle)
     user_logger.info(msg)
 
-# def _nd_switch_(mkat, switch):
-#     # Noise Diodes are triggered on all antennas in array simultaneously
-#     # add a second to ensure all digitisers set at the same time
-#     timestamp = time.time() + lead_time
-#     mkat.ants.req.dig_noise_source(timestamp, 1)
-#     if not mkat.dry_run:
-#         time.sleep(float(lead_time))
-
 
 # switch noise-source on
-def on(mkat, lead_time=3.):
+def on(kat,
+       timestamp=None,
+       lead_time=_DEFAULT_LEAD_TIME):
     # Noise Diodes are triggered on all antennas in array simultaneously
-    # add a second to ensure all digitisers set at the same time
-    timestamp = np.ceil(time.time() + lead_time)
+    # add some lead to ensure all digitisers set at the same time
+    # user_logger.trace('TRACE: ts on entry {}'.format(timestamp))
+    print('TRACE: ts on entry {}'.format(timestamp))
+    if timestamp is None:
+        # user_logger.trace('TRACE: now + leadtime = {} + {}'.format(
+        #         time.time(),
+        #         lead_time))
+        print('TRACE: now + leadtime = {} + {}'.format(time.time(), lead_time))
+        timestamp = np.ceil(time.time() + lead_time)
+    # user_logger.trace('TRACE: nd on at {} ({})'.format(
+    #         timestamp,
+    #         time.ctime(timestamp)))
+    print('TRACE: nd on at {} ({})'.format(timestamp, time.ctime(timestamp)))
     msg = 'Switch noise-diode on at {}'.format(timestamp)
     user_logger.info(msg)
 
-    replies = mkat.ants.req.dig_noise_source(timestamp, 1)
-    if not mkat.dry_run:
-        for ant in sorted(replies):
-            reply, informs = replies[ant]
-            # devcomm is still simm, but will not be dry-run
-            if len(reply.arguments) > 2:
-                _nd_log_msg_(ant, reply, informs, verbose=False)
-
+    replies = kat.ants.req.dig_noise_source(timestamp, 1)
+    if not kat.dry_run:
+        _katcp_reply_to_log_(replies)
     return timestamp
 
 
 # switch noise-source pattern off
-def off(mkat, timestamp=None, lead_time=3.):
+def off(kat, timestamp=None, lead_time=_DEFAULT_LEAD_TIME):
+    # Noise Diodes are triggered on all antennas in array simultaneously
+    # add some lead to ensure all digitisers set at the same time
+    # user_logger.trace('TRACE: ts on entry {}'.format(timestamp))
+    print('TRACE: ts off entry {}'.format(timestamp))
     if timestamp is None:
+        # user_logger.trace('TRACE: now + leadtime = {} + {}'.format(
+        #         time.time(),
+        #         lead_time))
+        print('TRACE: now + leadtime = {} + {}'.format(time.time(), lead_time))
         timestamp = np.ceil(time.time() + lead_time)
-#     else:
-#         timestamp = np.ceil(timestamp)
+    # user_logger.trace('TRACE: nd on at {} ({})'.format(
+    #         timestamp,
+    #         time.ctime(timestamp)))
+    print('TRACE: nd off at {} ({})'.format(timestamp, time.ctime(timestamp)))
     msg = 'Switch noise-diode off at {}'.format(timestamp)
     user_logger.info(msg)
 
     # Noise Diodes are triggered on all antennas in array simultaneously
     # add a second to ensure all digitisers set at the same time
-    replies = mkat.ants.req.dig_noise_source(timestamp, 0)
-#     print replies
-    if not mkat.dry_run:
-        for ant in sorted(replies):
-            reply, informs = replies[ant]
-#             print 'reply', reply
-#             print 'arguments', len(reply.arguments), reply.arguments
-#             print 'informs', informs
-            # devcomm is still simm, but will not be dry-run
-            if len(reply.arguments) > 2:
-                _nd_log_msg_(ant, reply, informs, verbose=False)
+    replies = kat.ants.req.dig_noise_source(timestamp, 0)
+    if not kat.dry_run:
+        _katcp_reply_to_log_(replies)
 
     return timestamp
 
 
 # fire noise diode before track
-def trigger(mkat, session, duration=None):
+def trigger(kat, session, duration=None):
     if duration is None:
         return True  # nothing to do
     msg = 'Firing noise diode for {}s before target observation'.format(
             duration)
     user_logger.info(msg)
-    timestamp_on_set = on(mkat)
-    user_logger.warning('DEBUG: on {} ({})'.format(timestamp_on_set, time.ctime(timestamp_on_set)))
-    user_logger.warning('DEBUG: default sleep for {}'.format(duration))
-    time.sleep(duration) # default sleep to see if the signal gets through
-    timestamp = timestamp_on_set + duration
-    timestamp_off_set = off(mkat, timestamp=timestamp)
-    user_logger.warning('DEBUG: default sleep for {}'.format('1'))
-    time.sleep(1)
-    user_logger.warning('DEBUG: off {} ({})'.format(timestamp_off_set, time.ctime(timestamp_off_set)))
-    # wait for duration + lead time
-    delta_time = timestamp_off_set - time.time()
-    user_logger.warning('DEBUG: now {}, sleep {}'.format(time.time(), delta_time))
-    if not mkat.dry_run:
-        user_logger.warning('DEBUG: this is not a dry-run')
-        delta_time = timestamp_off_set - time.time()
-        user_logger.warning('DEBUG: now {}, sleep {}'.format(time.time(), np.ceil(delta_time)))
-        time.sleep(np.ceil(delta_time))
-        user_logger.warning('DEBUG: now {}, slept {}'.format(time.time(), delta_time))
-    else:
-        delta_time = timestamp_off_set - session.time
-        session.time = np.ceil(session.time + delta_time)
+    user_logger.debug('DEBUG: issue command to switch ND on @ {}'.format(
+            time.time()))
+    # user_logger.trace('TRACE: time before issue nd on command {}'.format(
+    #         time.time()))
+    print('TRACE: ts before issue nd on command {}'.format(time.time()))
+    timestamp_on_set = on(kat)
+    user_logger.debug('DEBUG: on {} ({})'.format(
+            timestamp_on_set, time.ctime(timestamp_on_set)))
+    user_logger.debug('DEBUG: fire nd for {}'.format(
+            duration))
+    sleeptime = timestamp_on_set - time.time() + duration
+    time.sleep(sleeptime)  # default sleep to see for signal to get through
+    # user_logger.trace('TRACE: ts after issue nd on sleep {}'.format(
+    #         time.time()))
+    print('TRACE: ts after issue nd on sleep {}'.format(time.time()))
+    timestamp_off_set = off(kat)
+    user_logger.debug('DEBUG: off {} ({})'.format(
+            timestamp_off_set,
+            time.ctime(timestamp_off_set)))
+    sleeptime = timestamp_off_set - time.time()
+    user_logger.debug('DEBUG: now {}, sleep {}'.format(
+            time.time(),
+            sleeptime))
+    time.sleep(sleeptime)  # default sleep to see for signal to get through
+    user_logger.debug('DEBUG: now {}, slept {}'.format(
+            time.time(),
+            sleeptime))
     return True
 
 
 # set noise diode pattern
-def pattern(mkat,  # mkat subarray object
+def pattern(kat,  # kat subarray object
             session,  # session object for correcting the time (only for now)
             nd_setup,  # noise diode pattern setup
-            lead_time=3.0,  # lead time [sec]
+            lead_time=_DEFAULT_LEAD_TIME,  # lead time [sec]
             ):
 
     nd_antennas = nd_setup['antennas']  # antennas the nd pattern must be set on
@@ -125,12 +157,11 @@ with {} sec on and apply pattern to {}'.format(
             nd_antennas)
     user_logger.info(msg)
 
-    if not mkat.dry_run:
-        if mkat.sensor.sub_band.get_value() == 'l' and \
+    if not kat.dry_run:
+        if kat.sensor.sub_band.get_value() == 'l' and \
                 float(cycle_length) > 20.:
                     msg = 'Maximum cycle length of L-band is 20 seconds'
                     raise RuntimeError(msg)
-        # Improvement by Anton
         # Set noise diode period to multiple of the correlator integration time.
         dump_period = session.cbf.correlator.sensor.int_time.get_value()
         user_logger.warning('Correlator integration time {} [sec]'.format(1./dump_period))
@@ -139,46 +170,47 @@ with {} sec on and apply pattern to {}'.format(
         msg += ' cycle length = {} [sec]'.format(cycle_length)
         user_logger.warning(msg)
 
-    # Improvement by Anton
     # Try to trigger noise diodes on all antennas in array simultaneously.
     # - use integer second boundary as that is most likely be an exact
     #   time that DMC can execute at, and also fit a unix epoch time
     #   into a double precision float accurately
-    # - add a default (3 second) lead time so enough time for all digitisers
+    # - add a default lead time to ensure enough time for all digitisers
     #   to be set up
     timestamp = np.ceil(time.time() + lead_time)
-    msg = 'Set noise diode pattern to trigger at {}, with {} sec lead time'.format(
+    msg = 'Set noise diode pattern to activate at {}, with {} sec lead time'.format(
           timestamp, lead_time)
     user_logger.warning(msg)
 
     if nd_antennas == 'all':
         # Noise Diodes are triggered on all antennas in array simultaneously
         # add a second to ensure all digitisers set at the same time
-        replies = mkat.ants.req.dig_noise_source(timestamp, on_fraction, cycle_length)
-        if not mkat.dry_run:
-            for ant in sorted(replies):
-                reply, informs = replies[ant]
-                # devcomm is still simm, but will not be dry-run
-                if len(reply.arguments) > 2:
-                    _nd_log_msg_(ant, reply, informs, verbose=True)
+        replies = kat.ants.req.dig_noise_source(timestamp, on_fraction, cycle_length)
+        if not kat.dry_run:
+            _katcp_reply_to_log_(replies)
+            # for ant in sorted(replies):
+            #     reply, informs = replies[ant]
+            #     # devcomm is still simm, but will not be dry-run
+            #     if len(reply.arguments) > 2:
+            #         _nd_log_msg_(ant, reply, informs, verbose=True)
         else:
             msg = 'Set all noise diodes with timestamp {} ({})'.format(
                     int(timestamp), time.ctime(timestamp))
             user_logger.info(msg)
     else:
-        sub_ants = [ant.name for ant in mkat.ants]
+        sub_ants = [ant.name for ant in kat.ants]
         if 'cycle' not in nd_antennas:
             sub_ants = [ant.strip() for ant in nd_antennas.split(',') if ant.strip() in sub_ants]
             user_logger.info('Antennas found in subarray, setting ND: {}'.format(','.join(sub_ants)))
         # Noise Diodes are triggered for selected antennas in the array
         for ant in sub_ants:
-            ped = getattr(mkat, ant)
+            ped = getattr(kat, ant)
             the_reply = ped.req.dig_noise_source(timestamp, on_fraction, cycle_length)
-            if not mkat.dry_run:
-                reply, informs = the_reply
-                # devcomm is still simm, but will not be dry-run
-                if len(reply.arguments) > 2:
-                    _nd_log_msg_(ant, reply, informs, verbose=True)
+            if not kat.dry_run:
+                _katcp_reply_to_log_(the_reply)
+                # reply, informs = the_reply
+                # # devcomm is still simm, but will not be dry-run
+                # if len(reply.arguments) > 2:
+                #     _nd_log_msg_(ant, reply, informs, verbose=True)
             else:
                 msg = 'Set noise diode for antenna {} with timestamp {}'.format(
                         ant, timestamp)
@@ -187,13 +219,17 @@ with {} sec on and apply pattern to {}'.format(
                 # add time [sec] to ensure all digitisers set at the same time
                 timestamp += cycle_length * on_fraction
 
-    # wait out the time needed to set the noise diode
-#     delta_time = timestamp - time.time()
-    if not mkat.dry_run:
-        delta_time = timestamp - time.time()
-        time.sleep(np.ceil(delta_time))
-    else:
-        delta_time = timestamp - session.time
-        session.time = np.ceil(session.time + delta_time)
+    wait_time = timestamp - time.time()
+    # user_logger.trace('TRACE: set nd pattern at {} from now {}, sleep {}'.format(
+    #         timestamp,
+    #         time.time(),
+    #         wait_time))
+    print('TRACE: set nd pattern at {} from now {}, sleep {}'.format(
+        timestamp,
+        time.time(),
+        wait_time))
+    time.sleep(wait_time)
+    # user_logger.trace('TRACE: ts after wait period {}'.format(time.time()))
+    print('TRACE: ts after wait period {}'.format(time.time()))
 
 # -fin-
