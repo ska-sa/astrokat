@@ -13,8 +13,10 @@ def session_options(parser,
                     x_long_opts=[]):
     # Add options from katcorelib that is valid for all observations
     group = parser.add_argument_group(
-        title="Standard MeerKAT Options",
-        description="Default observation script options")
+        title="\
+standard MeerKAT options",
+        description="\
+default observation script options")
     if live_system:
         parser_ = standard_script_options('', '')
         # fudge parser_ class from OptionParser to Group
@@ -66,11 +68,13 @@ def session_options(parser,
                            '--observer',
                            required=True,
                            type=str,
-                           help='Name of person responsible for the observation (**required**)')
+                           help='\
+name of person responsible for the observation (**required**)')
         group.add_argument('--horizon',
                            type=float,
                            default=20,
-                           help='Lowest elevation limit in degrees')
+                           help='\
+lowest elevation limit in degrees')
     return parser
 
 
@@ -104,8 +108,8 @@ def cli(prog,
                         default=[],
                         type=str,
                         required=True,
-                        help='Observation profile represented in the configuration file,'
-                             ' obs_plan.yml (**required**)')
+                        help='\
+observation planning file, obs_plan.yaml (**required**)')
 
     # Add standard observation script options from sessions
     parser = session_options(parser,
@@ -114,17 +118,29 @@ def cli(prog,
                              )
 
     # Observation simulation for planning using observation script
-    title = "Observation Planning and Verifications"
-    description = "Basic checks and output before starting and observation to ensure expected outcome"
+    title = "\
+observation planning and verifications"
+    description = "\
+basic output of observation to verify expected outcome"
     group = parser.add_argument_group(title=title,
                                       description=description)
     ex_group = group.add_mutually_exclusive_group()
     ex_group.add_argument('--visibility',
                           action='store_true',
-                          help='Display short summary of target visibility')
+                          help='\
+display short summary of target visibility')
     ex_group.add_argument('--all-up',
                           action='store_true',
-                          help='Ensure all target are above horizon before continuing')
+                          help='\
+ensure all target are above horizon before continuing')
+    group.add_argument('--debug',
+                       action='store_true',
+                       help='\
+verbose logger output for debugging')
+    group.add_argument('--trace',
+                       action='store_true',
+                       help='\
+debug trace logger output for debugging')
 
     return parser.parse_known_args(args=args)
 
