@@ -6,8 +6,7 @@ import sys
 import time
 
 from collections import namedtuple
-from datetime import timedelta
-from utility import get_lst, datetime2timestamp
+from utility import get_lst, datetime2timestamp, timestamp2datetime
 
 global simobserver
 simobserver = ephem.Observer()
@@ -29,7 +28,7 @@ logging.addLevelName(DEBUG_LEVELV_NUM, "TRACE")
 def trace(self, message, *args, **kws):
     if self.isEnabledFor(DEBUG_LEVELV_NUM):
         # Yes, logger takes its '*args' as 'args'.
-        self._log(DEBUG_LEVELV_NUM, message, args, **kws) 
+        self._log(DEBUG_LEVELV_NUM, message, args, **kws)
 logging.Logger.trace = trace
 
 user_logger = logging.getLogger(__name__)
@@ -54,9 +53,6 @@ class verify_and_connect:
     def __init__(self, dummy):
         kwargs = vars(dummy)
         self.dry_run = True
-        # start_lst, end_lst = get_lst(kwargs['yaml']['observation_loop'][0]['LST'])
-        # print start_lst, end_lst
-        # self._lst = abs(end_lst - start_lst)/2.  # start half way
         self._lst, _ = get_lst(kwargs['yaml']['observation_loop'][0]['LST'])
         self._sensors = self.fake_sensors(kwargs)
         self._session_cnt = 0
@@ -146,14 +142,7 @@ class start_session:
         if self.track_:
             self.kat._session_cnt += 1
         if self.kat._session_cnt < len(self.kwargs['yaml']['observation_loop']):
-            # self.kat._lst =            self.kwargs['yaml']['observation_loop'][self.kat._session_cnt]['LST'].split('-')[0].strip()
             self.kat._lst, _ = get_lst(self.kwargs['yaml']['observation_loop'][self.kat._session_cnt]['LST'])
-
-    def _update_fake_time_(self, addtime):
-        self.time += addtime
-        now = simobserver.date.datetime()
-        then = now + timedelta(seconds=addtime)
-        simobserver.date = ephem.Date(then)
 
     def _fake_slew_(self, target):
         slew_time = 0
@@ -166,10 +155,9 @@ class start_session:
         return slew_time
 
     def track(self, target, duration=0, announce=False):
-        self._update_fake_time_(self._fake_slew_(target))
-        # if duration > 0:
-        #     if verbose: user_logger.info('Tracking {}'.format(target.name))
-        self._update_fake_time_(duration)
+        time.sleep(self._fake_slew_(target)+duration)
+        now = timestamp2datetime(self.time)
+        simobserver.date = ephem.Date(now)
         self.katpt_current = target
         return True
 
@@ -182,10 +170,9 @@ class start_session:
                     projection='zenithal-equidistant',
                     announce=True):
         duration = scan_duration * num_scans
-        self.time += duration
-        now = simobserver.date.datetime()
-        then = now + timedelta(seconds=duration)
-        simobserver.date = ephem.Date(then)
+        time.sleep(duration)
+        now = timestamp2datetime(self.time)
+        simobserver.date = ephem.Date(now)
         return True
 
     def scan(self, target,
@@ -195,10 +182,9 @@ class start_session:
              index=-1,
              projection='zenithal-equidistant',
              announce=True):
-        self.time += duration
-        now = simobserver.date.datetime()
-        then = now + timedelta(seconds=duration)
-        simobserver.date = ephem.Date(then)
+        time.sleep(duration)
+        now = timestamp2datetime(self.time)
+        simobserver.date = ephem.Date(now)
         return True
 
     def slew_time(self, target):
@@ -207,9 +193,6 @@ class start_session:
         target.body.compute(target.antenna.observer)
         separation_angle = ephem.separation(self.katpt_current.body,
                                             target.body)
-        # separation_angle = first_target.separation(second_target,
-        #                                            timestamp=timestamp,
-        #                                            antenna=antenna)
         duration = numpy.degrees(separation_angle)/slew_speed
         return duration
 
