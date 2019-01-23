@@ -49,7 +49,7 @@ class Observatory(object):
         self.node_config_available = _node_config_available
         if location is not None:
             self.location = location
-        self.mkat = self.get_location()
+        self.kat = self.get_location()
         self.observer = self.get_observer()
         if datetime is not None:
             self.observer.date = datetime
@@ -96,7 +96,7 @@ class Observatory(object):
 
     # MeerKAT observer
     def get_observer(self, horizon=20.):
-        observer = self.mkat.observer
+        observer = self.kat.observer
         observer.horizon = numpy.deg2rad(horizon)
         observer.date = ephem.now()
         return observer
