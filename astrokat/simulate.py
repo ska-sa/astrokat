@@ -1,8 +1,9 @@
 # Provides skeleton for faking live system
 import ephem
 import logging
-import sys
 import numpy
+import sys
+import time
 
 from collections import namedtuple
 from datetime import timedelta
@@ -23,12 +24,22 @@ def sim_time(record, datefmt=None):
 
 
 # Fake user logger prints out to screen
+DEBUG_LEVELV_NUM = 5
+logging.addLevelName(DEBUG_LEVELV_NUM, "TRACE")
+def trace(self, message, *args, **kws):
+    if self.isEnabledFor(DEBUG_LEVELV_NUM):
+        # Yes, logger takes its '*args' as 'args'.
+        self._log(DEBUG_LEVELV_NUM, message, args, **kws) 
+logging.Logger.trace = trace
+
 user_logger = logging.getLogger(__name__)
 out_hdlr = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter('%(asctime)s - %(message)s')
 formatter.formatTime = sim_time
 out_hdlr.setFormatter(formatter)
-out_hdlr.setLevel(logging.INFO)
+# out_hdlr.setLevel(logging.INFO)
+out_hdlr.setLevel(logging.DEBUG)
+# out_hdlr.setLevel(logging.TRACE)
 user_logger.addHandler(out_hdlr)
 user_logger.setLevel(logging.INFO)
 
@@ -103,6 +114,13 @@ class start_session:
                 self.start_time = datetime2timestamp(kwargs['yaml']['durations']['start_time'])
         self.time = self.start_time
         self.katpt_current = None
+
+        # Taken from mkat_session.py to ensure similar behaviour than site systems
+        self._realtime, self._realsleep = time.time, time.sleep
+        time.time = lambda: self.time
+        def simsleep(seconds):
+            self.time += seconds
+        time.sleep = simsleep
 
     def __enter__(self):
         return self
