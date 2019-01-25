@@ -8,4 +8,7 @@ setup(
                       'matplotlib<3',
                       'numpy',
                       'pyyaml',
-                      'nose-testconfig'])
+                      'nose-testconfig'],
+    extras_require={
+        'live': ['katcorelib', 'katconf']
+    })
