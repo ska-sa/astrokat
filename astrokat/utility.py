@@ -1,4 +1,3 @@
-# from datetime import timedelta
 import datetime
 import katpoint
 import numpy
