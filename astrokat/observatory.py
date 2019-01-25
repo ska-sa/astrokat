@@ -44,13 +44,13 @@ else:
 # Basic LST calculations using ephem
 class Observatory(object):
 
-    def __init__(self, location=None, datetime=None):
+    def __init__(self, location=None, horizon=20., datetime=None):
         self.location = _ref_location
         self.node_config_available = _node_config_available
         if location is not None:
             self.location = location
         self.kat = self.get_location()
-        self.observer = self.get_observer()
+        self.observer = self.get_observer(horizon=horizon)
         if datetime is not None:
             self.observer.date = datetime
 
@@ -170,7 +170,8 @@ def collect_targets(kat, args):
             if arg.find(',') < 0:
                 target = kat.sources[arg]
                 if target is None:
-                    msg = 'Unknown target or catalogue {}, skipping it'.format(arg)
+                    msg = ('Unknown target or catalogue {}, skipping it'
+                           .format(arg))
                     user_logger.warning(msg)
                 else:
                     catalogue.add(target)
@@ -181,19 +182,18 @@ def collect_targets(kat, args):
                     catalogue.add(arg)
                     from_strings += 1
                 except ValueError as err:
-                    msg = 'Invalid target {}, skipping it [{}]'.format(
-                        arg, err)
+                    msg = ('Invalid target {}, skipping it [{}]'
+                           .format(arg, err))
                     user_logger.warning(msg)
     if len(catalogue) == 0:
         raise ValueError("No known targets found in argument list")
-    msg = "\
-Found {} target(s): {} from {} catalogue(s), {} from default \
-catalogue and {} as target string(s)".format(
-                    len(catalogue),
-                    from_catalogues,
-                    num_catalogues,
-                    from_names,
-                    from_strings)
+    msg = ('Found {} target(s): {} from {} catalogue(s), '
+           '{} from default catalogue and {} as target string(s)'
+           .format(len(catalogue),
+                   from_catalogues,
+                   num_catalogues,
+                   from_names,
+                   from_strings))
     user_logger.info(msg)
     return catalogue
 
