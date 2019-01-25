@@ -32,8 +32,8 @@ def drift_scan(session, target, nd_period=None, duration=60.):
     # trigger noise diode if set
     noisediode.trigger(session.kat, duration=nd_period)
     target = drift_pointing_offset(target, duration=duration)
-    user_logger.info('Drift_scan observation for {} sec'.format(
-        duration))
+    user_logger.info('Drift_scan observation for {} sec'
+                     .format(duration))
     return session.track(target, duration=duration)
 
 
@@ -61,12 +61,13 @@ def scan(session, target, nd_period=None, **kwargs):
         timestamp = session.time
     except AttributeError:
         timestamp = time.time()
-    user_logger.warning('VERBOSE: Starting scan across target: {}'.format(timestamp))
+    user_logger.debug('DEBUG: Starting scan across target: {}'
+                      .format(timestamp))
     return session.scan(target, **kwargs)
 
 
 def forwardscan(session, target, nd_period=None, **kwargs):
-#     user_logger.error('forward scan')
+    # user_logger.error('forward scan')
     target_visible = scan(session,
                           target,
                           nd_period=nd_period,
@@ -75,7 +76,7 @@ def forwardscan(session, target, nd_period=None, **kwargs):
 
 
 def reversescan(session, target, nd_period=None, **kwargs):
-#     user_logger.error('return scan')
+    # user_logger.error('return scan')
     returnscan = dict(kwargs)
     returnscan['start'] = kwargs['end']
     returnscan['end'] = kwargs['start']
