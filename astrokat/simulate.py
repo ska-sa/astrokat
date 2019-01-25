@@ -36,7 +36,6 @@ out_hdlr = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter('%(asctime)s - %(message)s')
 formatter.formatTime = sim_time
 out_hdlr.setFormatter(formatter)
-# out_hdlr.setLevel(logging.INFO)
 out_hdlr.setLevel(logging.DEBUG)
 # out_hdlr.setLevel(logging.TRACE)
 user_logger.addHandler(out_hdlr)
@@ -103,7 +102,6 @@ class start_session:
         self.kwargs = kwargs
         self.obs_params = kwargs
         self.kat = dummy_kat
-        # simobserver.horizon = ephem.degrees(str(kwargs['horizon']))
         self.start_time = datetime2timestamp(simobserver.date.datetime())
         if 'durations' in kwargs['yaml']:
             if 'start_time' in kwargs['yaml']['durations']:
@@ -150,7 +148,7 @@ class start_session:
             if self.katpt_current is None:
                 slew_time = 45.  # s
             else:
-                # if verbose: user_logger.info('Slewing to {}'.format(target.name))
+                user_logger.debug('DEBUG: slewing to {}'.format(target.name))
                 slew_time = self.slew_time(target)
         return slew_time
 
