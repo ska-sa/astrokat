@@ -53,6 +53,16 @@ def _nd_log_msg_(ant,
 def on(kat,
        timestamp=None,
        lead_time=_DEFAULT_LEAD_TIME):
+    """Switch noise-source pattern on.
+
+    Parameters
+    ----------
+    mkat : session kat container-like object
+        Container for accessing KATCP resources allocated to schedule block.
+    lead_time : float, optional
+        Lead time before the noisediode is switched on [sec]
+    """
+
     # Noise Diodes are triggered on all antennas in array simultaneously
     # add some lead to ensure all digitisers set at the same time
     if timestamp is None:
@@ -76,7 +86,21 @@ def on(kat,
 
 
 # switch noise-source pattern off
-def off(kat, timestamp=None, lead_time=_DEFAULT_LEAD_TIME):
+def off(kat,
+        timestamp=None,
+        lead_time=_DEFAULT_LEAD_TIME):
+    """Switch noise-source pattern off.
+
+    Parameters
+    ----------
+    mkat : session kat container-like object
+        Container for accessing KATCP resources allocated to schedule block.
+    timestamp : float, optional
+        Time since the epoch as a floating point number [sec]
+    lead_time : float, optional
+        Lead time before the noisediode is switched off [sec]
+    """
+
     # Noise Diodes are triggered on all antennas in array simultaneously
     # add some lead to ensure all digitisers set at the same time
     if timestamp is None:
@@ -103,7 +127,20 @@ def off(kat, timestamp=None, lead_time=_DEFAULT_LEAD_TIME):
 
 
 # fire noise diode before track
-def trigger(kat, session, duration=None):
+def trigger(kat,
+            session,
+            duration=None):
+    """Fire the noise diode before track.
+
+    Parameters
+    ----------
+    mkat : session kat container-like object
+        Container for accessing KATCP resources allocated to schedule block.
+    session : katcorelib.CaptureSession-like object
+    duration : float, optional
+        Duration that the noisediode will be active [sec]
+    """
+
     if duration is None:
         return True  # nothing to do
     msg = ('Firing noise diode for {}s before target observation'
@@ -146,6 +183,21 @@ def pattern(kat,  # kat subarray object
             nd_setup,  # noise diode pattern setup
             lead_time=_DEFAULT_LEAD_TIME,  # lead time [sec]
             ):
+    """Start background noise diode pattern controlled by digitiser hardware.
+
+    Parameters
+    ----------
+    mkat : session kat container-like object
+        Container for accessing KATCP resources allocated to schedule block.
+    session : katcorelib.CaptureSession-like object
+    nd_setup : dict
+        Noise diode pattern setup, with keys:
+            'antennas':  options are 'all', or blah, or ....,
+            'cycle_len': the cycle length [sec], must be less than 20 sec for L-band,
+            etc., etc.
+    lead_time : float, optional
+        Lead time before digitisers pattern is set [sec]
+    """
 
     nd_antennas = nd_setup['antennas']  # antennas the nd pattern must be set on
     cycle_length = nd_setup['cycle_len']  # nd pattern length [sec]
@@ -153,7 +205,7 @@ def pattern(kat,  # kat subarray object
     msg = ('Request noise diode pattern to repeat every {} sec, '
            'with {} sec on and apply pattern to {}'
            .format(cycle_length,
-                   float(cycle_length)*float(on_fraction),
+                   float(cycle_length) * float(on_fraction),
                    nd_antennas))
     user_logger.info(msg)
 
