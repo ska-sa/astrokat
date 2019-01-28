@@ -12,10 +12,7 @@ finally:
 
 
 def drift_pointing_offset(target, duration=60.):
-    try:
-        obs_start_ts = target.antenna.observer.date
-    except:
-        obs_start_ts = katpoint.Timestamp()
+    obs_start_ts = target.antenna.observer.date
     transit_time = obs_start_ts + duration / 2.0
     # Stationary transit point becomes new target
     antenna = target.antenna
@@ -30,7 +27,7 @@ def drift_pointing_offset(target, duration=60.):
 
 def drift_scan(session, target, nd_period=None, duration=60.):
     # trigger noise diode if set
-    noisediode.trigger(session.kat, duration=nd_period)
+    noisediode.trigger(session.kat, session, duration=nd_period)
     target = drift_pointing_offset(target, duration=duration)
     user_logger.info('Drift_scan observation for {} sec'
                      .format(duration))
@@ -39,7 +36,7 @@ def drift_scan(session, target, nd_period=None, duration=60.):
 
 def raster_scan(session, target, nd_period=None, **kwargs):
     # trigger noise diode if set
-    noisediode.trigger(session.kat, duration=nd_period)
+    noisediode.trigger(session.kat, session, duration=nd_period)
 # TODO: ignoring raster_scan, not currently working robustly
 # TODO: there are errors in raster scan calculations, need some review
 #         session.raster_scan(target,num_scans=2,
