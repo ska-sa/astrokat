@@ -11,6 +11,8 @@ from utility import get_lst, datetime2timestamp, timestamp2datetime
 global simobserver
 simobserver = ephem.Observer()
 
+_DEFAULT_SLEW_TIME = 45.0  # [sec]
+
 
 def setobserver(update):
     global simobserver
@@ -48,9 +50,9 @@ class Fakr(namedtuple('Fakr', 'priv_value')):
 
 
 # Fake telescope connection
-class verify_and_connect:
-    def __init__(self, dummy):
-        kwargs = vars(dummy)
+class SimKat(object):
+    def __init__(self, opts):
+        kwargs = vars(opts)
         self.dry_run = True
         self._lst, _ = get_lst(kwargs['yaml']['observation_loop'][0]['LST'])
         self._sensors = self.fake_sensors(kwargs)
@@ -65,12 +67,6 @@ class verify_and_connect:
 
     def __call__(self, *args, **kwargs):
         return self
-
-    def __repr__(self):
-        return 'A representation'
-
-    def __str__(self):
-        return 'A string'
 
     def __iter__(self):
         Ant = namedtuple('Ant', ['name'])
@@ -96,12 +92,16 @@ class verify_and_connect:
         return _sensors
 
 
+def verify_and_connect(opts):
+    return SimKat(opts)
+
+
 # Fake observation session
-class start_session:
-    def __init__(self, dummy_kat, **kwargs):
+class SimSession(object):
+    def __init__(self, kat, **kwargs):
         self.kwargs = kwargs
         self.obs_params = kwargs
-        self.kat = dummy_kat
+        self.kat = kat
         self.start_time = datetime2timestamp(simobserver.date.datetime())
         if 'durations' in kwargs['yaml']:
             if 'start_time' in kwargs['yaml']['durations']:
@@ -126,9 +126,6 @@ class start_session:
     def __call__(self, *args, **kwargs):
         return self
 
-    def __str__(self):
-        return 'A string'
-
     def __nonzero__(self):
         return True
 
@@ -146,7 +143,7 @@ class start_session:
         slew_time = 0
         if not (target == self.katpt_current):
             if self.katpt_current is None:
-                slew_time = 45.  # s
+                slew_time = _DEFAULT_SLEW_TIME
             else:
                 user_logger.debug('DEBUG: slewing to {}'.format(target.name))
                 slew_time = self.slew_time(target)
@@ -189,9 +186,18 @@ class start_session:
         slew_speed = 2.  # degrees / sec
         self.katpt_current.body.compute(self.katpt_current.antenna.observer)
         target.body.compute(target.antenna.observer)
-        separation_angle = ephem.separation(self.katpt_current.body,
-                                            target.body)
-        duration = numpy.degrees(separation_angle)/slew_speed
-        return duration
+        try:
+            separation_angle = ephem.separation(self.katpt_current.body,
+                                                target.body)
+        except TypeError:  # TODO: need to find a clean implementation with ephem_extra.StationaryBody
+            slew_time = _DEFAULT_SLEW_TIME
+        else:
+            slew_time = numpy.degrees(separation_angle)/slew_speed
+        return slew_time
+
+
+def start_session(kat, **kwargs):
+    return SimSession(kat, **kwargs)
+
 
 # -fin-
