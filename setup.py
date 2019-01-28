@@ -1,8 +1,40 @@
-from setuptools import setup
+#!/usr/bin/env python
+
+from setuptools import setup, find_packages
+
+
+with open('README.md') as readme:
+    long_description = readme.read()
+
 setup(
     name='astrokat',
-    version='0.1',
-    py_modules=['astrokat'],
+    description='Tools for astronomy observations with the MeerKAT telescope',
+    long_description=long_description,
+    author='Ruby van Rooyen / MeerKAT CAM team',
+    author_email='cam@ska.ac.za',
+    packages=find_packages(),
+    scripts=[
+        'scripts/astrokat-cals.py',
+        'scripts/astrokat-fitflux.py',
+        'scripts/astrokat-lst.py',
+        'scripts/astrokat-observe.py',
+    ],
+    url='https://github.com/ska-sa/astrokat',
+    license='BSD 2-Clause',
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: BSD License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2.7',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+        'Topic :: Scientific/Engineering :: Astronomy',
+    ],
+    platforms=['OS Independent'],
+    keywords='meerkat ska',
+    zip_safe=False,
+    setup_requires=['katversion'],
+    use_katversion=True,
     install_requires=['pyephem',
                       'katpoint',
                       'matplotlib<3',
@@ -11,4 +43,10 @@ setup(
                       'nose-testconfig'],
     extras_require={
         'live': ['katcorelib', 'katconf']
-    })
+    },
+    tests_require=['nose',
+                   'nose-testconfig',
+                   'coverage',
+                   'nosexcover',
+                   'unittest2'],
+)
