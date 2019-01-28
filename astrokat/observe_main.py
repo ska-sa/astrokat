@@ -28,7 +28,8 @@ finally:
     for libname in libnames:
         globals()[libname] = getattr(lib, libname)
 
-TRACE = True
+global TRACE
+TRACE = False
 
 
 # unpack targets to katpoint compatible format
@@ -532,10 +533,12 @@ def run_observation(opts, kat):
                         # user_logger.trace
                         if TRACE: print('TRACE: target last observed {}'
                                         .format(target['last_observed']))
+
                         targets_visible += observe(
                                 session,
                                 target,
                                 **obs_plan_params)
+
                         # user_logger.trace
                         if TRACE: print('TRACE: observer after track\n {}'
                                         .format(observer))
@@ -700,13 +703,9 @@ def main(args):
     if opts.debug:
         user_logger.setLevel(logging.DEBUG)
     if opts.trace:
-        user_logger.setLevel(logging.TRACE)
-
-    print('TRACE log level{}'.format(user_logger.getEffectiveLevel()))
-    user_logger.warning('Starting now -- warning {} ({})'.format(time.time(), time.ctime(time.time())))
-    user_logger.info('Starting now -- info {} ({})'.format(time.time(), time.ctime(time.time())))
-    user_logger.debug('Starting now -- debug {} ({})'.format(time.time(), time.ctime(time.time())))
-    user_logger.trace('Starting now -- trace {} ({})'.format(time.time(), time.ctime(time.time())))
+        global TRACE
+        TRACE = True
+        # user_logger.setLevel(logging.TRACE)
 
     # setup and observation
     with Telescope(opts, args_) as kat:
