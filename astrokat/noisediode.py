@@ -10,16 +10,11 @@ finally:
         globals()[libname] = getattr(lib, libname)
 
 _DEFAULT_LEAD_TIME = 5.0  # lead time [sec]
-TRACE = True
+TRACE = False
 
 def _katcp_reply_to_log_(dig_katcp_reply):
     for ant in sorted(dig_katcp_reply):
         reply, informs = dig_katcp_reply[ant]
-# Devcomm tests to remove indicated block
-        # # devcomm is still simm, but will not be dry-run
-        # if len(reply.arguments) > 2:
-        #     _nd_log_msg_(ant, reply, informs, verbose=False)
-# Devcomm tests to remove indicated block
         _nd_log_msg_(ant, reply, informs, verbose=False)
 
 
@@ -242,12 +237,6 @@ def pattern(kat,  # kat subarray object
         replies = kat.ants.req.dig_noise_source(timestamp, on_fraction, cycle_length)
         if not kat.dry_run:
             _katcp_reply_to_log_(replies)
-            # remove after devcomm verification
-            # for ant in sorted(replies):
-            #     reply, informs = replies[ant]
-            #     # devcomm is still simm, but will not be dry-run
-            #     if len(reply.arguments) > 2:
-            #         _nd_log_msg_(ant, reply, informs, verbose=True)
         else:
             msg = ('Set all noise diodes with timestamp {} ({})'
                    .format(int(timestamp),
@@ -264,12 +253,7 @@ def pattern(kat,  # kat subarray object
             ped = getattr(kat, ant)
             the_reply = ped.req.dig_noise_source(timestamp, on_fraction, cycle_length)
             if not kat.dry_run:
-                _katcp_reply_to_log_(the_reply)
-                # remove after devcomm verification
-                # reply, informs = the_reply
-                # # devcomm is still simm, but will not be dry-run
-                # if len(reply.arguments) > 2:
-                #     _nd_log_msg_(ant, reply, informs, verbose=True)
+                _katcp_reply_to_log_([the_reply])
             else:
                 msg = ('Set noise diode for antenna {} with timestamp {}'
                        .format(ant,
