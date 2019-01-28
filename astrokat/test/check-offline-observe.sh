@@ -8,10 +8,6 @@ NOCOLOR="\033[0m"
 INPUT=(
 targets-sim
 two-calib-sim
-nd-pattern-sim
-nd-pattern-plus-off
-nd-pattern-cycle
-nd-pattern-ants
 drift-targets-sim
 raster-scans-sim
 image-single-sim
