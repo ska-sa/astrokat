@@ -54,7 +54,8 @@ class SimKat(object):
     def __init__(self, opts):
         kwargs = vars(opts)
         self.dry_run = True
-        self._lst, _ = get_lst(kwargs['yaml']['observation_loop'][0]['LST'])
+        self.obs_params = kwargs['obs_plan_params']
+        self._lst, _ = get_lst(self.obs_params['observation_loop'][0]['LST'])
         self._sensors = self.fake_sensors(kwargs)
         self._session_cnt = 0
         self._ants = ['m011', 'm022', 'm033', 'm044']
@@ -82,13 +83,13 @@ class SimKat(object):
 
     def fake_sensors(self, kwargs):
         _sensors = {}
-        if 'instrument' not in kwargs['yaml'].keys():
+        if 'instrument' not in self.obs_params.keys():
             return _sensors
-        if kwargs['yaml']['instrument'] is None:
+        if self.obs_params['instrument'] is None:
             return _sensors
-        for key in kwargs['yaml']['instrument'].keys():
+        for key in self.obs_params['instrument'].keys():
             fakesensor = 'sub_{}'.format(key)
-            _sensors[fakesensor] = Fakr(kwargs['yaml']['instrument'][key])
+            _sensors[fakesensor] = Fakr(self.obs_params['instrument'][key])
         return _sensors
 
 
@@ -100,12 +101,12 @@ def verify_and_connect(opts):
 class SimSession(object):
     def __init__(self, kat, **kwargs):
         self.kwargs = kwargs
-        self.obs_params = kwargs
+        self.obs_params = kat.obs_params
         self.kat = kat
         self.start_time = datetime2timestamp(simobserver.date.datetime())
-        if 'durations' in kwargs['yaml']:
-            if 'start_time' in kwargs['yaml']['durations']:
-                self.start_time = datetime2timestamp(kwargs['yaml']['durations']['start_time'])
+        if 'durations' in self.obs_params:
+            if 'start_time' in self.obs_params['durations']:
+                self.start_time = datetime2timestamp(self.obs_params['durations']['start_time'])
         self.time = self.start_time
         self.katpt_current = None
 
@@ -136,8 +137,8 @@ class SimSession(object):
     def __exit__(self, type, value, traceback):
         if self.track_:
             self.kat._session_cnt += 1
-        if self.kat._session_cnt < len(self.kwargs['yaml']['observation_loop']):
-            self.kat._lst, _ = get_lst(self.kwargs['yaml']['observation_loop'][self.kat._session_cnt]['LST'])
+        if self.kat._session_cnt < len(self.obs_params['observation_loop']):
+            self.kat._lst, _ = get_lst(self.obs_params['observation_loop'][self.kat._session_cnt]['LST'])
 
     def _fake_slew_(self, target):
         slew_time = 0
