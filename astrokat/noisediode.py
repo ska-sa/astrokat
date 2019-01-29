@@ -12,9 +12,10 @@ finally:
 _DEFAULT_LEAD_TIME = 5.0  # lead time [sec]
 TRACE = False
 
-def _katcp_reply_to_log_(dig_katcp_reply):
-    for ant in sorted(dig_katcp_reply):
-        reply, informs = dig_katcp_reply[ant]
+
+def _katcp_reply_to_log_(dig_katcp_replies):
+    for ant in sorted(dig_katcp_replies):
+        reply, informs = dig_katcp_replies[ant]
         _nd_log_msg_(ant, reply, informs, verbose=False)
 
 
@@ -253,7 +254,7 @@ def pattern(kat,  # kat subarray object
             ped = getattr(kat, ant)
             the_reply = ped.req.dig_noise_source(timestamp, on_fraction, cycle_length)
             if not kat.dry_run:
-                _katcp_reply_to_log_([the_reply])
+                _katcp_reply_to_log_({ant: the_reply})
             else:
                 msg = ('Set noise diode for antenna {} with timestamp {}'
                        .format(ant,
