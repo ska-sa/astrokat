@@ -29,7 +29,6 @@ finally:
         globals()[libname] = getattr(lib, libname)
 
 global TRACE
-TRACE = False
 
 
 # unpack targets to katpoint compatible format
@@ -704,7 +703,7 @@ def main(args):
         user_logger.setLevel(logging.DEBUG)
     if opts.trace:
         global TRACE
-        TRACE = True
+        TRACE = opts.trace
         # user_logger.setLevel(logging.TRACE)
 
     # setup and observation
