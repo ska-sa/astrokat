@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # MeerKAT LST calculation helper tools
 
 import argparse
@@ -6,12 +7,11 @@ import katpoint
 import sys
 import time
 
-from astrokat import Observatory, lst2utc
+from astrokat import Observatory, lst2utc, __version__
 from datetime import datetime
 
 
 def cli(prog):
-    version = "{} 0.1".format(prog)
     usage = "{} [options]".format(prog)
     description = 'LST calculations for MeerKAT telescope'
 
@@ -21,7 +21,7 @@ def cli(prog):
     parser.add_argument(
             '--version',
             action='version',
-            version=version)
+            version=__version__)
     parser.add_argument(
             '--date',
             type=str,

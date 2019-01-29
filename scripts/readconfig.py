@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Utility test script to verify json configuration files
 # Use after edit and before observation planning
 from pprint import pprint

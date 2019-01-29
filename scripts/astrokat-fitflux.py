@@ -1,9 +1,12 @@
+#!/usr/bin/env python
 # Scaling flux calibrator coefficient to MHz
 # Reference: Perley & Butler 2017
 
 import argparse
 import numpy
 import matplotlib.pyplot as plt
+
+from astrokat import __version__
 
 # Listed frequencies used for fitting
 fit_frequencies_mhz = numpy.array([73.8, 232, 247, 275, 296, 312, 328, 344,
@@ -87,7 +90,6 @@ def coeffs_ghz2mhz(
 # scale coefficients by refitting the polynomial:
 #   python astrokat-fitflux.py --refit
 if __name__ == '__main__':
-    version = "%%prog 0.1"
     usage = "%%prog [options]"
     description = 'Scale flux model coefficients from GHz to MHz for MeerKAT telescope'
 
@@ -97,7 +99,7 @@ if __name__ == '__main__':
     parser.add_argument(
             '--version',
             action='version',
-            version=version)
+            version=__version__)
     parser.add_argument(
             '--refit',
             action='store_true',

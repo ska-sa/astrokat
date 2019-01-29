@@ -1,4 +1,8 @@
 import argparse
+
+import astrokat
+
+
 live_system = True
 try:
     from katcorelib.observe import (standard_script_options)
@@ -86,7 +90,6 @@ def cli(prog,
 
     if parser is None:
         # Set up standard script options
-        version = "%s 0.1" % prog
         # TODO: more complex usage string in separate function
         usage = "%s [options] -o <observer>" \
                 " --yaml <YAMLfile>" \
@@ -103,7 +106,7 @@ def cli(prog,
 
     # Standard track experiment options
     parser.add_argument('--version',
-                        action='version', version=version)
+                        action='version', version=astrokat.__version__)
     parser.add_argument('--yaml',
                         default=[],
                         type=str,
