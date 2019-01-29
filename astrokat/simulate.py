@@ -54,8 +54,8 @@ class SimKat(object):
     def __init__(self, opts):
         kwargs = vars(opts)
         self.dry_run = True
-        self._obs_params = kwargs['obs_plan_params']
-        self._lst, _ = get_lst(self._obs_params['observation_loop'][0]['LST'])
+        self.obs_params = kwargs['obs_plan_params']
+        self._lst, _ = get_lst(self.obs_params['observation_loop'][0]['LST'])
         self._sensors = self.fake_sensors(kwargs)
         self._session_cnt = 0
         self._ants = ['m011', 'm022', 'm033', 'm044']
@@ -83,13 +83,13 @@ class SimKat(object):
 
     def fake_sensors(self, kwargs):
         _sensors = {}
-        if 'instrument' not in self._obs_params.keys():
+        if 'instrument' not in self.obs_params.keys():
             return _sensors
         if self.obs_params['instrument'] is None:
             return _sensors
         for key in self.obs_params['instrument'].keys():
             fakesensor = 'sub_{}'.format(key)
-            _sensors[fakesensor] = Fakr(self._obs_params['instrument'][key])
+            _sensors[fakesensor] = Fakr(self.obs_params['instrument'][key])
         return _sensors
 
 
@@ -101,7 +101,7 @@ def verify_and_connect(opts):
 class SimSession(object):
     def __init__(self, kat, **kwargs):
         self.kwargs = kwargs
-        self.obs_params = kat._obs_params
+        self.obs_params = kat.obs_params
         self.kat = kat
         self.start_time = datetime2timestamp(simobserver.date.datetime())
         if 'durations' in self.obs_params:
