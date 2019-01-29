@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Take a catalogue file and construct a basic observation configuration file
 
 from __future__ import print_function
