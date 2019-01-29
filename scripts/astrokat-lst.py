@@ -1,4 +1,5 @@
-## MeerKAT LST calculation helper tools
+#!/usr/bin/env python
+# MeerKAT LST calculation helper tools
 
 import argparse
 import ephem
@@ -6,12 +7,11 @@ import katpoint
 import sys
 import time
 
-from astrokat import Observatory, lst2utc
+from astrokat import Observatory, lst2utc, __version__
 from datetime import datetime
 
 
 def cli(prog):
-    version = "{} 0.1".format(prog)
     usage = "{} [options]".format(prog)
     description = 'LST calculations for MeerKAT telescope'
 
@@ -21,12 +21,13 @@ def cli(prog):
     parser.add_argument(
             '--version',
             action='version',
-            version=version)
+            version=__version__)
     parser.add_argument(
             '--date',
             type=str,
             help="\
-Provides the MeerKAT UTC given an LST at a given date (format 'YYYY-MM-DD')")
+Provides the MeerKAT UTC given an LST at a given date \
+(format 'YYYY-MM-DD')")
     parser.add_argument(
             '--lst',
             type=float,
@@ -44,7 +45,8 @@ HH:MM:SS DD:MM:SS')
             '--utc',
             type=str,
             help="\
-Provides the LST for MeerKAT at a given UCT datetime (format 'YYYY-MM-DD HH:MM')")
+Provides the LST for MeerKAT at a given UCT datetime \
+(format 'YYYY-MM-DD HH:MM')")
     parser.add_argument(
             '--simple',
             action='store_true',
@@ -76,7 +78,8 @@ def main(args):
             observer.sidereal_time())
 
     elif args.lst:
-        date_str = args.utc if args.utc else time.strftime('%Y-%m-%d',time.gmtime())
+        date_str = args.utc if args.utc else time.strftime('%Y-%m-%d',
+                                                           time.gmtime())
         date = datetime.strptime(date_str, '%Y-%m-%d')
         date_lst = lst2utc(args.lst, Observatory().location, date=date)
         return_str = '{} {} LST corresponds to {}Z UTC'.format(
@@ -87,7 +90,7 @@ def main(args):
     else:
         # default results is to return the current LST at MeerKAT
         return_str = 'Current clock times at MeerKAT:\n'
-        return_str +=  'Now is {}Z UTC and {} LST'.format(
+        return_str += 'Now is {}Z UTC and {} LST'.format(
                 observer.date,
                 observer.sidereal_time())
 
@@ -95,7 +98,6 @@ def main(args):
         print(ephem.hours(observer.sidereal_time()))
     else:
         print(return_str)
-
 
 
 if __name__ == '__main__':

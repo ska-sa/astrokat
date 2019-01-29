@@ -1,0 +1,7 @@
+yaml_test_list:
+   - targets-sim
+   - two-calib-sim
+   - drift-targets-sim
+   - raster-scans-sim
+   - image-single-sim
+   - image-sim

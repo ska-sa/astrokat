@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # MeerKAT calibrator selection tools
 #  Returns the closest calibrator(s) for per target
 
@@ -10,7 +11,7 @@ import numpy
 import os
 import sys
 
-from astrokat import Observatory, read_yaml, katpoint_target
+from astrokat import Observatory, read_yaml, katpoint_target, __version__
 from astrokat.utility import datetime2timestamp, timestamp2datetime
 from datetime import datetime
 
@@ -28,7 +29,6 @@ except ImportError:  # not a processing node
 
 # define command line input arguments
 def cli(prog):
-    version = "{} 0.1".format(prog)
     usage = "{} [options]".format(prog)
     description = 'calibrator selection for MeerKAT telescope'
 
@@ -39,7 +39,7 @@ def cli(prog):
     parser.add_argument(
             '--version',
             action='version',
-            version=version)
+            version=__version__)
     parser.add_argument(
             '--pi',
             type=str,
@@ -213,7 +213,6 @@ def source_elevation(catalogue,
     plt.ylabel('Elevation (deg)')
     plt.ylim(15, 90)
     plt.yticks(fontsize=10)
-
     ax_labels = lst_timestamps[0::10]
     ax.set_xticklabels(ax_labels,
                        rotation=30,

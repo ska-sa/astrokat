@@ -1,0 +1,9 @@
+# scan observation with noise diode trigger
+instrument:
+  integration_period: 2
+observation_loop:
+  - LST: 10.0
+    target_list:
+      - name=azel, azel=50.26731 43.70517, tags=target, duration=120.0, nd=0.8
+      - name=azel, azel=50.26731 43.70517, tags=target, duration=120.0, nd=3.8
+      - name=azel, azel=50.26731 43.70517, tags=target, duration=0.0, nd=20

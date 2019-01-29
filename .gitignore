@@ -1,0 +1,7 @@
+
+# /
+.eggs
+*.egg-info
+*.pyc
+*~
+nosetests.xml
