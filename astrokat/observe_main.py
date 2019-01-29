@@ -28,7 +28,7 @@ finally:
     for libname in libnames:
         globals()[libname] = getattr(lib, libname)
 
-global TRACE
+TRACE = False
 
 
 # unpack targets to katpoint compatible format
