@@ -10,7 +10,6 @@ finally:
         globals()[libname] = getattr(lib, libname)
 
 _DEFAULT_LEAD_TIME = 5.0  # lead time [sec]
-TRACE = False
 
 
 def _katcp_reply_to_log_(dig_katcp_replies):
@@ -62,15 +61,13 @@ def on(kat,
     # Noise Diodes are triggered on all antennas in array simultaneously
     # add some lead to ensure all digitisers set at the same time
     if timestamp is None:
-        # user_logger.trace
-        if TRACE: print('TRACE: ts + leadtime = {} + {}'
-                        .format(time.time(),
-                                lead_time))
+        user_logger.trace('TRACE: ts + leadtime = {} + {}'
+                          .format(time.time(),
+                                  lead_time))
         timestamp = np.ceil(time.time() + lead_time)
-    # user_logger.trace
-    if TRACE: print('TRACE: nd on at {} ({})'
-                    .format(timestamp,
-                            time.ctime(timestamp)))
+    user_logger.trace('TRACE: nd on at {} ({})'
+                      .format(timestamp,
+                              time.ctime(timestamp)))
     msg = ('Switch noise-diode on at {}'
            .format(timestamp))
     user_logger.info(msg)
@@ -100,15 +97,13 @@ def off(kat,
     # Noise Diodes are triggered on all antennas in array simultaneously
     # add some lead to ensure all digitisers set at the same time
     if timestamp is None:
-        # user_logger.trace
-        if TRACE: print('TRACE: ts + leadtime = {} + {}'
-                        .format(time.time(),
-                                lead_time))
+        user_logger.trace('TRACE: ts + leadtime = {} + {}'
+                          .format(time.time(),
+                                  lead_time))
         timestamp = np.ceil(time.time() + lead_time)
-    # user_logger.trace
-    if TRACE: print('TRACE: nd off at {} ({})'
-                    .format(timestamp,
-                            time.ctime(timestamp)))
+    user_logger.trace('TRACE: nd off at {} ({})'
+                      .format(timestamp,
+                              time.ctime(timestamp)))
     msg = ('Switch noise-diode off at {}'
            .format(timestamp))
     user_logger.info(msg)
@@ -144,9 +139,8 @@ def trigger(kat,
     user_logger.info(msg)
     user_logger.debug('DEBUG: issue command to switch ND on @ {}'
                       .format(time.time()))
-    # user_logger.trace
-    if TRACE: print('TRACE: ts before issue nd on command {}'
-                    .format(time.time()))
+    user_logger.trace('TRACE: ts before issue nd on command {}'
+                      .format(time.time()))
     timestamp_on_set = on(kat)
     user_logger.debug('DEBUG: on {} ({})'
                       .format(timestamp_on_set,
@@ -155,9 +149,8 @@ def trigger(kat,
                       .format(duration))
     sleeptime = timestamp_on_set - time.time() + duration
     time.sleep(sleeptime)  # default sleep to see for signal to get through
-    # user_logger.trace
-    if TRACE: print('TRACE: ts after issue nd on sleep {}'
-                    .format(time.time()))
+    user_logger.trace('TRACE: ts after issue nd on sleep {}'
+                      .format(time.time()))
     timestamp_off_set = off(kat)
     user_logger.debug('DEBUG: off {} ({})'
                       .format(timestamp_off_set,
@@ -265,14 +258,12 @@ def pattern(kat,  # kat subarray object
                 timestamp += cycle_length * on_fraction
 
     wait_time = timestamp - time.time()
-    # user_logger.trace
-    if TRACE: print('TRACE: set nd pattern at {} from now {}, sleep {}'
-                    .format(timestamp,
-                            time.time(),
-                            wait_time))
+    user_logger.trace('TRACE: set nd pattern at {} from now {}, sleep {}'
+                      .format(timestamp,
+                              time.time(),
+                              wait_time))
     time.sleep(wait_time)
-    # user_logger.trace
-    if TRACE: print('TRACE: ts after wait period {}'
-                    .format(time.time()))
+    user_logger.trace('TRACE: ts after wait period {}'
+                      .format(time.time()))
 
 # -fin-

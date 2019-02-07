@@ -25,12 +25,16 @@ def sim_time(record, datefmt=None):
 
 
 # Fake user logger prints out to screen
-DEBUG_LEVELV_NUM = 5
-logging.addLevelName(DEBUG_LEVELV_NUM, "TRACE")
+logging.TRACE = 5
+logging.addLevelName(logging.TRACE, "TRACE")
+
+
 def trace(self, message, *args, **kws):
-    if self.isEnabledFor(DEBUG_LEVELV_NUM):
+    if self.isEnabledFor(logging.TRACE):
         # Yes, logger takes its '*args' as 'args'.
-        self._log(DEBUG_LEVELV_NUM, message, args, **kws)
+        self._log(logging.TRACE, message, args, **kws)
+
+
 logging.Logger.trace = trace
 
 user_logger = logging.getLogger(__name__)
@@ -38,8 +42,7 @@ out_hdlr = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter('%(asctime)s - %(message)s')
 formatter.formatTime = sim_time
 out_hdlr.setFormatter(formatter)
-out_hdlr.setLevel(logging.DEBUG)
-# out_hdlr.setLevel(logging.TRACE)
+out_hdlr.setLevel(logging.TRACE)
 user_logger.addHandler(out_hdlr)
 user_logger.setLevel(logging.INFO)
 
@@ -113,6 +116,7 @@ class SimSession(object):
         # Taken from mkat_session.py to ensure similar behaviour than site systems
         self._realtime, self._realsleep = time.time, time.sleep
         time.time = lambda: self.time
+
         def simsleep(seconds):
             self.time += seconds
         time.sleep = simsleep
@@ -190,7 +194,8 @@ class SimSession(object):
         try:
             separation_angle = ephem.separation(self.katpt_current.body,
                                                 target.body)
-        except TypeError:  # TODO: need to find a clean implementation with ephem_extra.StationaryBody
+        # TODO: need to find a clean implementation with ephem_extra.StationaryBody
+        except TypeError:
             slew_time = _DEFAULT_SLEW_TIME
         else:
             slew_time = numpy.degrees(separation_angle)/slew_speed
