@@ -638,6 +638,7 @@ def main(args):
                      '--dbe-centre-freq',
                      '--no-mask',
                      '--centre-freq',
+                     '--observer',
                      '--description'],
         args=args)
 
