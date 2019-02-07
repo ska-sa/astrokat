@@ -1,0 +1,9 @@
+# AR1 mosaic NGC641
+# Catalogue needed for the AR1 mosaic tests
+NGC641_02D02, radec target, 1:39:25.01, -42:14:49.2
+NGC641_03D02, radec target, 1:37:01.49, -42:14:49.2
+NGC641_02D03, radec target, 1:40:36.77, -42:37:41.0
+NGC641_03D03, radec target calref, 1:38:13.25, -42:37:41.0
+NGC641_04D03, radec target, 1:35:49.73, -42:37:41.0
+NGC641_02D04, radec target, 1:39:25.01, -43:00:32.8
+NGC641_03D04, radec target, 1:37:01.49, -43:00:32.8
