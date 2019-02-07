@@ -65,15 +65,31 @@ def katpoint_target(target_item):
 def get_lst(yaml_lst):
     start_lst = None
     end_lst = None
-    if type(yaml_lst) is float:
+    if type(yaml_lst) is int:
+        HH = int(yaml_lst/60)
+        MM = yaml_lst - (HH*60)
+        yaml_lst = '{}:{}'.format(HH, MM)
+
+    err_msg = 'Format error reading LST range in observation file.'
+    if type(yaml_lst) is not str:
+        raise RuntimeError(err_msg)
+
+    nvals = len(yaml_lst.split('-'))
+    if nvals < 2:
         start_lst = yaml_lst
-    elif type(yaml_lst) is str:
-        [start_lst, end_lst] = numpy.array(yaml_lst.strip().split('-'),
-                                           dtype=float)
+    elif nvals > 2:
+        raise RuntimeError(err_msg)
     else:
-        raise RuntimeError('unexpected LST value')
+        start_lst, end_lst = yaml_lst.split('-')
+    time_ = datetime.datetime.strptime('{}'.format(start_lst), '%H:%M').time()
+    start_lst = time_.hour + time_.minute/60.
+
     if end_lst is None:
         end_lst = (start_lst + 12.) % 24.
+    else:
+        time_ = datetime.datetime.strptime('{}'.format(end_lst), '%H:%M').time()
+        end_lst = time_.hour + time_.minute/60.
+
     return start_lst, end_lst
 
 
