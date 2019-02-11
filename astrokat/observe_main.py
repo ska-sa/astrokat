@@ -391,30 +391,29 @@ def run_observation(opts, kat):
                             .format(observer))
 
             # Verify the observation is in a valid LST range
-            if not kat.array.dry_run:
-                # Verify that it is worth while continuing with the observation
-                # Do not use float() values, ephem.hours does not convert as expected
-                local_lst = observer.sidereal_time()
-                # Only observe targets in current LST range
-                if start_lst < end_lst:
-                    in_range = ((ephem.hours(local_lst) > ephem.hours(str(start_lst)))
-                                and (ephem.hours(local_lst) < ephem.hours(str(end_lst))))
-                    if not in_range:
-                        user_logger.error('Local LST {} outside LST range {}-{}'
-                                          .format(local_lst,
-                                                  start_lst,
-                                                  end_lst))
-                        continue
-                else:
-                    # else assume rollover at midnight to next day
-                    out_range = ((ephem.hours(local_lst) < ephem.hours(str(start_lst)))
-                                 and (ephem.hours(local_lst) > ephem.hours(str(end_lst))))
-                    if out_range:
-                        user_logger.warning('Local LST {} outside LST range {}-{}'
-                                            .format(local_lst,
-                                                    start_lst,
-                                                    end_lst))
-                        continue
+            # and that it is worth while continuing with the observation
+            # Do not use float() values, ephem.hours does not convert as expected
+            local_lst = observer.sidereal_time()
+            # Only observe targets in current LST range
+            if start_lst < end_lst:
+                in_range = ((ephem.hours(local_lst) > ephem.hours(str(start_lst)))
+                            and (ephem.hours(local_lst) < ephem.hours(str(end_lst))))
+                if not in_range:
+                    user_logger.error('Local LST {} outside LST range {}-{}'
+                                      .format(local_lst,
+                                              start_lst,
+                                              end_lst))
+                    continue
+            else:
+                # else assume rollover at midnight to next day
+                out_range = ((ephem.hours(local_lst) < ephem.hours(str(start_lst)))
+                             and (ephem.hours(local_lst) > ephem.hours(str(end_lst))))
+                if out_range:
+                    user_logger.warning('Local LST {} outside LST range {}-{}'
+                                        .format(local_lst,
+                                                start_lst,
+                                                end_lst))
+                    continue
             # TODO: setup of noise diode pattern should be moved to sessions so it happens in the line above
             if 'noise_diode' in obs_plan_params.keys():
                 noisediode.pattern(kat.array, session, obs_plan_params['noise_diode'])
