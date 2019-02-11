@@ -313,8 +313,9 @@ def source_elevation(catalogue,
                linewidth=0,
                label=label)
     ax.axhspan(15, horizon, facecolor='k', alpha=0.1)
-    box = ax.get_position()
-    ax.set_position([box.x0, box.y0, box.width * 0.9, box.height])
+    # box = ax.get_position()
+    # ax.set_position([box.x0, box.y0, box.width * 0.9, box.height])
+    plt.margins(x=0)
     plt.grid()
     plt.legend(
             loc='center left',
@@ -331,10 +332,16 @@ def source_elevation(catalogue,
     ax.xaxis.set_major_locator(mdates.HourLocator(byhour=range(24),
                                                   interval=1))
     ax.set_xlabel('Local Sidereal Time')
+    print(timestamps[0])
+    print(ephem.Date(timestamps[0]))
+    print(lst_timestamps[0])
+
+
+
 
     ax2 = ax.twiny()
-    box = ax2.get_position()
-    ax2.set_position([box.x0, box.y0, box.width * 0.9, box.height])
+    # box = ax2.get_position()
+    # ax2.set_position([box.x0, box.y0, box.width * 0.9, box.height])
     ax2.set_xlim(ax.get_xlim())
     ax2.set_xticks(ax.get_xticks())
     ax2_labels = [ts.strftime('%H:%M') for ts in timestamps[0::10]]
