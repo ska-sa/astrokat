@@ -51,10 +51,10 @@ def read_yaml(filename):
     if 'scan' in data.keys():
         if 'start' in data['scan'].keys():
             scan_start = data['scan']['start'].split(',')
-            data['scan']['start'] = np.array(scan_start, dtype=float)
+            data['scan']['start'] = numpy.array(scan_start, dtype=float)
         if 'end' in data['scan'].keys():
             scan_end = data['scan']['end'].split(',')
-            data['scan']['end'] = np.array(scan_end, dtype=float)
+            data['scan']['end'] = numpy.array(scan_end, dtype=float)
 
     return data
 
@@ -125,8 +125,7 @@ def get_lst(yaml_lst):
     elif nvals > 2:
         raise RuntimeError(err_msg)
     else:
-        start_lst, end_lst = yaml_lst.split('-')
-
+        start_lst, end_lst = [lst_val.strip() for lst_val in yaml_lst.split('-')]
     if ':' in start_lst:
         time_ = datetime.datetime.strptime('{}'.format(start_lst), '%H:%M').time()
         start_lst = time_.hour + time_.minute/60.

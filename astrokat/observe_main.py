@@ -346,6 +346,7 @@ def run_observation(opts, kat):
         # Only observe targets in valid LST range
         [start_lst, end_lst] = get_lst(observation_cycle['LST'])
 
+
         # Verify that it is worth while continuing with the observation
         # The filter functions uses the current time as timestamps
         # and thus incorrectly set the simulation timestamp
@@ -396,23 +397,21 @@ def run_observation(opts, kat):
             local_lst = observer.sidereal_time()
             # Only observe targets in current LST range
             if start_lst < end_lst:
-                in_range = ((ephem.hours(local_lst) > ephem.hours(str(start_lst)))
+                in_range = ((ephem.hours(local_lst) >= ephem.hours(str(start_lst)))
                             and (ephem.hours(local_lst) < ephem.hours(str(end_lst))))
                 if not in_range:
-                    user_logger.error('Local LST {} outside LST range {}-{}'
-                                      .format(local_lst,
-                                              start_lst,
-                                              end_lst))
+                    user_logger.error('Local LST outside LST range {}-{}'
+                                      .format(ephem.hours(str(start_lst)),
+                                              ephem.hours(str(end_lst))))
                     continue
             else:
                 # else assume rollover at midnight to next day
                 out_range = ((ephem.hours(local_lst) < ephem.hours(str(start_lst)))
                              and (ephem.hours(local_lst) > ephem.hours(str(end_lst))))
                 if out_range:
-                    user_logger.warning('Local LST {} outside LST range {}-{}'
-                                        .format(local_lst,
-                                                start_lst,
-                                                end_lst))
+                    user_logger.error('Local LST outside LST range {}-{}'
+                                      .format(ephem.hours(str(start_lst)),
+                                              ephem.hours(str(end_lst))))
                     continue
             # TODO: setup of noise diode pattern should be moved to sessions so it happens in the line above
             if 'noise_diode' in obs_plan_params.keys():
@@ -476,7 +475,8 @@ def run_observation(opts, kat):
                         if not tgt:
                             break
                         # check enough time remaining to continue
-                        if time_remaining < tgt['duration']:
+                        if obs_duration > 0 and\
+                           time_remaining < tgt['duration']:
                             done = True
                             break
                         # check target visible before doing anything
