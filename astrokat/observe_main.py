@@ -6,8 +6,6 @@ import numpy as np
 import os
 import time
 
-from datetime import datetime
-
 import astrokat
 from astrokat.utility import datetime2timestamp, timestamp2datetime
 from astrokat import (
@@ -669,48 +667,9 @@ def main(args):
                 parser.add_argument(arg)
         args_ = parser.parse_args(args)
 
-    # TODO: really need to clean this up and put it into a function and return dict
-    #       (opts.obs_plan_params = read_obs_instruction(opts.yaml))
     # unpack observation from observation plan
     if opts.yaml:
         opts.obs_plan_params = read_yaml(opts.yaml)
-        # handle mapping of user friendly keys to CAM resource keys
-        if 'instrument' in opts.obs_plan_params.keys():
-            instrument = opts.obs_plan_params['instrument']
-            if instrument is not None:
-                if 'integration_period' in instrument.keys():
-                    integration_period = float(instrument['integration_period'])
-                    instrument['dump_rate'] = 1./integration_period
-                    del instrument['integration_period']
-        # verify required information in observation loop before continuing
-        if 'durations' in opts.obs_plan_params.keys():
-            if opts.obs_plan_params['durations'] is None:
-                msg = 'durations primary key cannot be empty in observation YAML file'
-                raise RuntimeError(msg)
-            if 'start_time' in opts.obs_plan_params['durations']:
-                start_time = opts.obs_plan_params['durations']['start_time']
-                if type(start_time) is str:
-                    opts.obs_plan_params['durations']['start_time'] = \
-                            datetime.strptime(start_time, '%Y-%m-%d %H:%M')
-        if 'observation_loop' not in opts.obs_plan_params.keys():
-            raise RuntimeError('Nothing to observer, exiting')
-        if opts.obs_plan_params['observation_loop'] is None:
-            raise RuntimeError('Empty observation loop, exiting')
-        for obs_loop in opts.obs_plan_params['observation_loop']:
-            if type(obs_loop) is str:
-                raise RuntimeError('Expected observation list, got string')
-            if 'LST' not in obs_loop.keys():
-                raise RuntimeError('Observation LST not provided, exiting')
-            if 'target_list' not in obs_loop.keys():
-                raise RuntimeError('Empty target list, exiting')
-
-        if 'scan' in opts.obs_plan_params.keys():
-            if 'start' in opts.obs_plan_params['scan'].keys():
-                scan_start = opts.obs_plan_params['scan']['start'].split(',')
-                opts.obs_plan_params['scan']['start'] = np.array(scan_start, dtype=float)
-            if 'end' in opts.obs_plan_params['scan'].keys():
-                scan_end = opts.obs_plan_params['scan']['end'].split(',')
-                opts.obs_plan_params['scan']['end'] = np.array(scan_end, dtype=float)
 
     if opts.debug:
         user_logger.setLevel(logging.DEBUG)

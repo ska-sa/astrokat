@@ -17,6 +17,45 @@ class NoTargetsUpError(Exception):
 def read_yaml(filename):
     with open(filename, 'r') as stream:
         data = yaml.safe_load(stream)
+
+    # handle mapping of user friendly keys to CAM resource keys
+    if 'instrument' in data.keys():
+        instrument = data['instrument']
+        if instrument is not None:
+            if 'integration_period' in instrument.keys():
+                integration_period = float(instrument['integration_period'])
+                instrument['dump_rate'] = 1./integration_period
+                del instrument['integration_period']
+    # verify required information in observation loop before continuing
+    if 'durations' in data.keys():
+        if data['durations'] is None:
+            msg = 'durations primary key cannot be empty in observation YAML file'
+            raise RuntimeError(msg)
+        if 'start_time' in data['durations']:
+            start_time = data['durations']['start_time']
+            if type(start_time) is str:
+                data['durations']['start_time'] = \
+                        datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M')
+    if 'observation_loop' not in data.keys():
+        raise RuntimeError('Nothing to observer, exiting')
+    if data['observation_loop'] is None:
+        raise RuntimeError('Empty observation loop, exiting')
+    for obs_loop in data['observation_loop']:
+        if type(obs_loop) is str:
+            raise RuntimeError('Expected observation list, got string')
+        if 'LST' not in obs_loop.keys():
+            raise RuntimeError('Observation LST not provided, exiting')
+        if 'target_list' not in obs_loop.keys():
+            raise RuntimeError('Empty target list, exiting')
+
+    if 'scan' in data.keys():
+        if 'start' in data['scan'].keys():
+            scan_start = data['scan']['start'].split(',')
+            data['scan']['start'] = np.array(scan_start, dtype=float)
+        if 'end' in data['scan'].keys():
+            scan_end = data['scan']['end'].split(',')
+            data['scan']['end'] = np.array(scan_end, dtype=float)
+
     return data
 
 
