@@ -3,8 +3,7 @@ instrument:
   band: l
   integration_period: 8
 durations:  # if left out only single observation run through target list
-  # start_time:
-  minimum_duration: 1800
+  start_time: 2019-02-11 02:10:47
   obs_duration: 3600  # this is a required key for duration (needed for planning)
 observation_loop:
   - LST: 11.140-23.248
