@@ -6,6 +6,8 @@ import numpy as np
 import os
 import time
 
+from datetime import datetime
+
 import astrokat
 from astrokat.utility import datetime2timestamp, timestamp2datetime
 from astrokat import (
@@ -685,6 +687,11 @@ def main(args):
             if opts.obs_plan_params['durations'] is None:
                 msg = 'durations primary key cannot be empty in observation YAML file'
                 raise RuntimeError(msg)
+            if 'start_time' in opts.obs_plan_params['durations']:
+                start_time = opts.obs_plan_params['durations']['start_time']
+                if type(start_time) is str:
+                    opts.obs_plan_params['durations']['start_time'] = \
+                            datetime.strptime(start_time, '%Y-%m-%d %H:%M')
         if 'observation_loop' not in opts.obs_plan_params.keys():
             raise RuntimeError('Nothing to observer, exiting')
         if opts.obs_plan_params['observation_loop'] is None:
