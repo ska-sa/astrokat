@@ -17,6 +17,7 @@ from datetime import datetime, timedelta
 
 text_only = False
 try:
+    import matplotlib
     import matplotlib.pyplot as plt
     import matplotlib.dates as mdates
     from matplotlib.font_manager import FontProperties
@@ -280,14 +281,6 @@ def source_elevation(catalogue,
     time_range = creation_timestamp + numpy.arange(0, 24. * 60. * 60., 360.)
     timestamps = [timestamp2datetime(ts) for ts in time_range]
 
-    lst_timestamps = []
-    for timestamp in timestamps:
-        catalogue.antenna.observer.date = ephem.Date(timestamp)
-        lst_time = '{}'.format(catalogue.antenna.observer.sidereal_time())
-        lst_time_str = datetime.strptime(lst_time,
-                                         '%H:%M:%S.%f').strftime('%H:%M')
-        lst_timestamps.append(lst_time_str)
-
     fig = plt.figure(figsize=(15, 7), facecolor='white')
     ax = plt.subplot(111)
     plt.subplots_adjust(right=0.8)
@@ -313,9 +306,6 @@ def source_elevation(catalogue,
                linewidth=0,
                label=label)
     ax.axhspan(15, horizon, facecolor='k', alpha=0.1)
-    # box = ax.get_position()
-    # ax.set_position([box.x0, box.y0, box.width * 0.9, box.height])
-    plt.margins(x=0)
     plt.grid()
     plt.legend(
             loc='center left',
@@ -325,31 +315,48 @@ def source_elevation(catalogue,
     plt.ylabel('Elevation (deg)')
     plt.ylim(15, 90)
     plt.yticks(fontsize=10)
-    ax_labels = lst_timestamps[0::10]
-    ax.set_xticklabels(ax_labels,
-                       rotation=30,
-                       fontsize=10)
+
+    # fix tick positions for proper time axis display
+    utc_hrs = [timestamps[0] + timedelta(hours=hr) for hr in range(0, 25, 1)]
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.9, box.height])
+    ax.set_xlim(utc_hrs[0], utc_hrs[-1])
     ax.xaxis.set_major_locator(mdates.HourLocator(byhour=range(24),
                                                   interval=1))
+    locs = ax.get_xticks()
+    locs_labels = matplotlib.dates.num2date(locs)
+    locator = matplotlib.ticker.FixedLocator(locs)
+    ax.xaxis.set_major_locator(locator)
+    ax.margins(x=0)
+    utc_timestamps = [locs_lbl.strftime('%H:%M') for locs_lbl in locs_labels]
+
+    lst_timestamps = []
+    for locs_ts in locs_labels:
+        catalogue.antenna.observer.date = ephem.Date(locs_ts)
+        lst_time = '{}'.format(catalogue.antenna.observer.sidereal_time())
+        lst_time_str = datetime.strptime(lst_time,
+                                         '%H:%M:%S.%f').strftime('%H:%M')
+        lst_timestamps.append(lst_time_str)
+
+    ax.set_xticklabels(lst_timestamps,
+                       rotation=30,
+                       fontsize=10)
     ax.set_xlabel('Local Sidereal Time')
-    print(timestamps[0])
-    print(ephem.Date(timestamps[0]))
-    print(lst_timestamps[0])
-
-
-
 
     ax2 = ax.twiny()
-    # box = ax2.get_position()
-    # ax2.set_position([box.x0, box.y0, box.width * 0.9, box.height])
+    box = ax2.get_position()
+    ax2.set_position([box.x0, box.y0, box.width * 0.9, box.height])
     ax2.set_xlim(ax.get_xlim())
     ax2.set_xticks(ax.get_xticks())
-    ax2_labels = [ts.strftime('%H:%M') for ts in timestamps[0::10]]
-    ax2.set_xticklabels(ax2_labels,
+    ax2.margins(x=0)
+    ax2.xaxis.set_major_locator(locator)
+    ax2.set_xticklabels(utc_timestamps,
                         rotation=30,
                         fontsize=10)
     ax2.set_xlabel('Time (UTC) starting from {}'.format(
-        datetime.utcfromtimestamp(creation_timestamp).strftime('%Y-%m-%d %H:%M:%S')))
+        datetime.utcfromtimestamp(
+            creation_timestamp).strftime('%Y-%m-%d %H:%M:%S')))
+
     imfile = 'elevation_utc_lst.png'
     print('Elevation plot {}'.format(imfile))
     plt.savefig(imfile, dpi=300)
@@ -456,7 +463,8 @@ def obs_table(ref_antenna,
         date_str = 'LST'
     observation_table += 'Times listed in {} for target rise and set times\n'.format(
             date_str)
-    observation_table += 'Target visible when above {} degrees\n'.format(horizon)
+    observation_table += 'Target visible when above {} degrees\n'.format(
+            horizon)
     observation_table += '{: <16}{: <32}{: <16}{: <16}{: <16}{: <16}{: <16}{: <16}\n'.format(
             'Sources',
             'Class',
