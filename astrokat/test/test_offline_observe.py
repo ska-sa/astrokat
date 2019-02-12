@@ -9,5 +9,5 @@ class test_astrokat_yaml(unittest.TestCase):
     def run_all_tests(self):
         for test in config['yaml_test_list']:
             print('Running test: {}'.format(test))
-            observe_main.main(['--observer', 'jenkins', '--yaml',
+            observe_main.main(['--yaml',
                                'astrokat/test/test_obs/{}.yaml'.format(test)])
