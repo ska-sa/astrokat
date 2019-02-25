@@ -37,7 +37,7 @@ def read_yaml(filename):
                 data['durations']['start_time'] = \
                         datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M')
     if 'observation_loop' not in data.keys():
-        raise RuntimeError('Nothing to observer, exiting')
+        raise RuntimeError('Nothing to observe, exiting')
     if data['observation_loop'] is None:
         raise RuntimeError('Empty observation loop, exiting')
     for obs_loop in data['observation_loop']:
