@@ -13,6 +13,7 @@ import sys
 
 from astrokat import Observatory, read_yaml, katpoint_target, __version__
 from astrokat.utility import datetime2timestamp, timestamp2datetime
+from copy import deepcopy
 from datetime import datetime, timedelta
 
 text_only = False
@@ -736,7 +737,6 @@ def main(args):
                                 )
         print(obs_summary)
         if not(args.text_only or text_only):
-            from copy import deepcopy
             for view_option in args.view_tags:
                 cp_cat = deepcopy(catalogue)
                 if 'elevation' in view_option:
