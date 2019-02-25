@@ -141,9 +141,9 @@ def observe(
     if target_info['noise_diode'] is not None:
         if 'off' in target_info['noise_diode']:
             # if pattern specified, remember settings to reset
-            if 'noise_diode' in kwargs and \
-                    kwargs['noise_diode'] is not None:
-                nd_setup = kwargs['noise_diode']
+            if 'noise_diode' in kwargs:
+                if kwargs['noise_diode'] is not None:
+                    nd_setup = kwargs['noise_diode']
             # disable noise diode pattern for target
             noisediode.off(session.kat)
         else:
@@ -475,8 +475,8 @@ def run_observation(opts, kat):
                         if not tgt:
                             break
                         # check enough time remaining to continue
-                        if obs_duration > 0 and\
-                           time_remaining < tgt['duration']:
+                        if (obs_duration > 0 and
+                                time_remaining < tgt['duration']):
                             done = True
                             break
                         # check target visible before doing anything
