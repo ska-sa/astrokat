@@ -42,7 +42,9 @@ def read_yaml(filename):
         raise RuntimeError('Empty observation loop, exiting')
     for obs_loop in data['observation_loop']:
         if type(obs_loop) is str:
-            raise RuntimeError('Expected observation list, got string')
+            raise RuntimeError('Incomplete observation input: '
+                               'LST range and a minimum of one target required.')
+        # TODO: correct implementation for single and multiple observation loops -> if len(obs_loop) > 0:
         if 'LST' not in obs_loop.keys():
             raise RuntimeError('Observation LST not provided, exiting')
         if 'target_list' not in obs_loop.keys():
