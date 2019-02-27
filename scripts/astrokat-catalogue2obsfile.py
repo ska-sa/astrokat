@@ -22,7 +22,7 @@ def smart_open(filename):
 # parsing command line options and return arguments
 def cli(prog):
     version = "{} 0.1".format(prog)
-    usage = "{} [options] --catalogue <full_path/cat_file.csv>".format(prog)
+    usage = "{} [options] --infile <full_path/cat_file.csv>".format(prog)
     description = "\
 sources are specified as a catalogue of targets, \
 with optional timing information"
@@ -35,16 +35,15 @@ with optional timing information"
         action='version',
         version=version)
     parser.add_argument(
-        '--catalogue',
+        '--infile',
         type=str,
         required=True,
-        help='\
-full path and name of catalogue file to convert (**required**)')
+        help='filename of the CSV catalogue to convert (**required**)')
     parser.add_argument(
-        '--obsfile',
+        '--outfile',
         type=str,
-        help='\
-filename for output observation layout file (default outputs to screen)')
+        help='filename for output observation file '
+             '(default outputs to screen)')
 
     description = "instrument setup requirements"
     group = parser.add_argument_group(title="observation instrument setup",
@@ -52,18 +51,15 @@ filename for output observation layout file (default outputs to screen)')
     group.add_argument(
         '--product',
         type=str,
-        help='\
-observation instrument product configuration')
+        help='observation instrument product configuration')
     group.add_argument(
         '--band',
         type=str,
-        help='\
-observation band: L, UHF, X, S')
+        help='observation band: L, UHF, X, S')
     group.add_argument(
         '--integration-period',
         type=float,
-        help='\
-averaging time per dump [sec]')
+        help='averaging time per dump [sec]')
 
     description = "\
 track a target for imaging or spectral line observations, \
@@ -73,19 +69,16 @@ may optionally have a tag of 'target'."
     group.add_argument(
         '--lst',
         type=str,
-        help='\
-observation start LST or LST range (ex. 0-23 for anytime)')
+        help='observation start LST or LST range')
     group.add_argument(
         '--target-duration',
         type=float,
         default=300,  # sec
-        help='\
-default target track duration [sec]')
+        help='default target track duration [sec]')
     group.add_argument(
         '--max-duration',
         type=float,
-        help='\
-maximum duration of observation [sec]')
+        help='maximum duration of observation [sec]')
 
     description = "\
 calibrators are identified by tags in their description strings \
@@ -96,20 +89,17 @@ calibrators are identified by tags in their description strings \
         '--primary-cal-duration',
         type=float,
         default=300,  # sec
-        help="\
-minimum duration to track primary calibrators tagged as \
-'bpcal', 'fluxcal' or 'polcal' [sec]")
+        help="minimum duration to track primary calibrators tagged as "
+             "'bpcal', 'fluxcal' or 'polcal' [sec]")
     group.add_argument(
         '--primary-cal-cadence',
         type=float,
-        help='\
-minimum observation interval between primary calibrators if required [sec]')
+        help='minimum observation interval between primary calibrators [sec]')
     group.add_argument(
         '--secondary-cal-duration',
         type=float,
         default=60,  # sec
-        help="\
-minimum duration to track gain calibrator, 'gaincal' [sec]")
+        help="minimum duration to track gain calibrator, 'gaincal' [sec]")
     return parser
 
 
@@ -222,10 +212,13 @@ class BuildObservation(object):
         # set observation duration if specified
         if obs_duration is not None:
             obs_plan['durations'] = {'obs_duration': obs_duration}
-        start_lst = Observatory().start_obs(self.target_list)
-        start_lst = float(start_lst) % 24.
-        end_lst = Observatory().end_obs(self.target_list)
-        end_lst = 24. - float(end_lst) % 23.9
+        # LST times only HH:MM in OPT
+        start_lst = Observatory().start_obs(self.target_list,
+                                            str_flag=True)
+        start_lst = ':'.join(start_lst.split(':')[:-1])
+        end_lst = Observatory().end_obs(self.target_list,
+                                        str_flag=True)
+        end_lst = ':'.join(end_lst.split(':')[:-1])
         if lst is None:
             lst = '{}-{}'.format(start_lst, end_lst)
         # observational setup
@@ -287,7 +280,7 @@ if __name__ == '__main__':
             del instrument[key]
 
     # read targets from catalogue file
-    cat_obj = UnpackCatalogue(args.catalogue)
+    cat_obj = UnpackCatalogue(args.infile)
     header, catalogue = cat_obj.read_catalogue(
             target_duration=args.target_duration,
             gaincal_duration=args.secondary_cal_duration,
@@ -303,6 +296,6 @@ if __name__ == '__main__':
             lst=args.lst,
             )
     obs_plan.write_yaml(header=header,
-                        outfile=args.obsfile)
+                        outfile=args.outfile)
 
 # -fin-
