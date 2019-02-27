@@ -18,6 +18,10 @@ def read_yaml(filename):
     with open(filename, 'r') as stream:
         data = yaml.safe_load(stream)
 
+    if not isinstance(data, dict):
+        # not a yaml file, suspected csv file, returning False
+        return False
+
     # handle mapping of user friendly keys to CAM resource keys
     if 'instrument' in data.keys():
         instrument = data['instrument']
