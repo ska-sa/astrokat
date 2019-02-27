@@ -1,24 +1,32 @@
 # scan and raster scan observation
 instrument:
   band: l
-  product: bc856M4k
+  product: c856M4k
   integration_period: 2
+durations:
+  start_time: 2018-10-31 14:00
+  # > python astrokat-lst.py --lst 18.
+  # 2018-10-31 18.0 LST corresponds to 2018-10-31 13:56:00Z UTC
+  obs_duration: 120.
 scan:
   duration: 30.0
   start: -3.0,0.0
   end: 3.0,0.0
   index: -1
-  projection: default_proj
+  projection: zenithal-equidistant
 raster_scan:
   num_scans: 3
   scan_duration: 30.0
   scan_extent: 6.0
   scan_spacing: 0.5
   scan_in_azimuth: True
-  projection: default_proj
+  projection: plate-carree
 observation_loop:
-  - LST: 18.0-20.0
+  - LST: 18.0
     target_list:
+      - name=1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, duration=20.0, type=track, model=(408. 8640. -30.7667 26.4908 -7.0977 0.605334)
+      - name=1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, duration=0.0, nd=2
+      - name=1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, duration=20.0
       - name=1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, type=raster_scan
       - name=1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, type=scan
       - name=1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, duration=20.0, type=track

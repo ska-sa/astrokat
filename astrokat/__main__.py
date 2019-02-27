@@ -68,12 +68,6 @@ default observation script options")
 
             group.add_argument(*args, **kwargs)
     else:
-        group.add_argument('-o',
-                           '--observer',
-                           required=True,
-                           type=str,
-                           help='\
-name of person responsible for the observation (**required**)')
         group.add_argument('--horizon',
                            type=float,
                            default=20,

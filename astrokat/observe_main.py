@@ -141,9 +141,9 @@ def observe(
     if target_info['noise_diode'] is not None:
         if 'off' in target_info['noise_diode']:
             # if pattern specified, remember settings to reset
-            if 'noise_diode' in kwargs and \
-                    kwargs['noise_diode'] is not None:
-                nd_setup = kwargs['noise_diode']
+            if 'noise_diode' in kwargs:
+                if kwargs['noise_diode'] is not None:
+                    nd_setup = kwargs['noise_diode']
             # disable noise diode pattern for target
             noisediode.off(session.kat)
         else:
@@ -346,6 +346,7 @@ def run_observation(opts, kat):
         # Only observe targets in valid LST range
         [start_lst, end_lst] = get_lst(observation_cycle['LST'])
 
+
         # Verify that it is worth while continuing with the observation
         # The filter functions uses the current time as timestamps
         # and thus incorrectly set the simulation timestamp
@@ -391,30 +392,27 @@ def run_observation(opts, kat):
                             .format(observer))
 
             # Verify the observation is in a valid LST range
-            if not kat.array.dry_run:
-                # Verify that it is worth while continuing with the observation
-                # Do not use float() values, ephem.hours does not convert as expected
-                local_lst = observer.sidereal_time()
-                # Only observe targets in current LST range
-                if start_lst < end_lst:
-                    in_range = ((ephem.hours(local_lst) > ephem.hours(str(start_lst)))
-                                and (ephem.hours(local_lst) < ephem.hours(str(end_lst))))
-                    if not in_range:
-                        user_logger.error('Local LST {} outside LST range {}-{}'
-                                          .format(local_lst,
-                                                  start_lst,
-                                                  end_lst))
-                        continue
-                else:
-                    # else assume rollover at midnight to next day
-                    out_range = ((ephem.hours(local_lst) < ephem.hours(str(start_lst)))
-                                 and (ephem.hours(local_lst) > ephem.hours(str(end_lst))))
-                    if out_range:
-                        user_logger.warning('Local LST {} outside LST range {}-{}'
-                                            .format(local_lst,
-                                                    start_lst,
-                                                    end_lst))
-                        continue
+            # and that it is worth while continuing with the observation
+            # Do not use float() values, ephem.hours does not convert as expected
+            local_lst = observer.sidereal_time()
+            # Only observe targets in current LST range
+            if start_lst < end_lst:
+                in_range = ((ephem.hours(local_lst) >= ephem.hours(str(start_lst)))
+                            and (ephem.hours(local_lst) < ephem.hours(str(end_lst))))
+                if not in_range:
+                    user_logger.error('Local LST outside LST range {}-{}'
+                                      .format(ephem.hours(str(start_lst)),
+                                              ephem.hours(str(end_lst))))
+                    continue
+            else:
+                # else assume rollover at midnight to next day
+                out_range = ((ephem.hours(local_lst) < ephem.hours(str(start_lst)))
+                             and (ephem.hours(local_lst) > ephem.hours(str(end_lst))))
+                if out_range:
+                    user_logger.error('Local LST outside LST range {}-{}'
+                                      .format(ephem.hours(str(start_lst)),
+                                              ephem.hours(str(end_lst))))
+                    continue
             # TODO: setup of noise diode pattern should be moved to sessions so it happens in the line above
             if 'noise_diode' in obs_plan_params.keys():
                 noisediode.pattern(kat.array, session, obs_plan_params['noise_diode'])
@@ -477,7 +475,8 @@ def run_observation(opts, kat):
                         if not tgt:
                             break
                         # check enough time remaining to continue
-                        if time_remaining < tgt['duration']:
+                        if (obs_duration > 0 and
+                                time_remaining < tgt['duration']):
                             done = True
                             break
                         # check target visible before doing anything
@@ -638,6 +637,7 @@ def main(args):
                      '--dbe-centre-freq',
                      '--no-mask',
                      '--centre-freq',
+                     '--observer',
                      '--description'],
         args=args)
 
@@ -666,43 +666,9 @@ def main(args):
                 parser.add_argument(arg)
         args_ = parser.parse_args(args)
 
-    # TODO: really need to clean this up and put it into a function and return dict
-    #       (opts.obs_plan_params = read_obs_instruction(opts.yaml))
     # unpack observation from observation plan
     if opts.yaml:
         opts.obs_plan_params = read_yaml(opts.yaml)
-        # handle mapping of user friendly keys to CAM resource keys
-        if 'instrument' in opts.obs_plan_params.keys():
-            instrument = opts.obs_plan_params['instrument']
-            if instrument is not None:
-                if 'integration_period' in instrument.keys():
-                    integration_period = float(instrument['integration_period'])
-                    instrument['dump_rate'] = 1./integration_period
-                    del instrument['integration_period']
-        # verify required information in observation loop before continuing
-        if 'durations' in opts.obs_plan_params.keys():
-            if opts.obs_plan_params['durations'] is None:
-                msg = 'durations primary key cannot be empty in observation YAML file'
-                raise RuntimeError(msg)
-        if 'observation_loop' not in opts.obs_plan_params.keys():
-            raise RuntimeError('Nothing to observer, exiting')
-        if opts.obs_plan_params['observation_loop'] is None:
-            raise RuntimeError('Empty observation loop, exiting')
-        for obs_loop in opts.obs_plan_params['observation_loop']:
-            if type(obs_loop) is str:
-                raise RuntimeError('Expected observation list, got string')
-            if 'LST' not in obs_loop.keys():
-                raise RuntimeError('Observation LST not provided, exiting')
-            if 'target_list' not in obs_loop.keys():
-                raise RuntimeError('Empty target list, exiting')
-
-        if 'scan' in opts.obs_plan_params.keys():
-            if 'start' in opts.obs_plan_params['scan'].keys():
-                scan_start = opts.obs_plan_params['scan']['start'].split(',')
-                opts.obs_plan_params['scan']['start'] = np.array(scan_start, dtype=float)
-            if 'end' in opts.obs_plan_params['scan'].keys():
-                scan_end = opts.obs_plan_params['scan']['end'].split(',')
-                opts.obs_plan_params['scan']['end'] = np.array(scan_end, dtype=float)
 
     if opts.debug:
         user_logger.setLevel(logging.DEBUG)

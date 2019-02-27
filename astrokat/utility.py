@@ -17,6 +17,47 @@ class NoTargetsUpError(Exception):
 def read_yaml(filename):
     with open(filename, 'r') as stream:
         data = yaml.safe_load(stream)
+
+    # handle mapping of user friendly keys to CAM resource keys
+    if 'instrument' in data.keys():
+        instrument = data['instrument']
+        if instrument is not None:
+            if 'integration_period' in instrument.keys():
+                integration_period = float(instrument['integration_period'])
+                instrument['dump_rate'] = 1./integration_period
+                del instrument['integration_period']
+    # verify required information in observation loop before continuing
+    if 'durations' in data.keys():
+        if data['durations'] is None:
+            msg = 'durations primary key cannot be empty in observation YAML file'
+            raise RuntimeError(msg)
+        if 'start_time' in data['durations']:
+            start_time = data['durations']['start_time']
+            if type(start_time) is str:
+                data['durations']['start_time'] = \
+                        datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M')
+    if 'observation_loop' not in data.keys():
+        raise RuntimeError('Nothing to observe, exiting')
+    if data['observation_loop'] is None:
+        raise RuntimeError('Empty observation loop, exiting')
+    for obs_loop in data['observation_loop']:
+        if type(obs_loop) is str:
+            raise RuntimeError('Incomplete observation input: '
+                               'LST range and a minimum of one target required.')
+        # TODO: correct implementation for single and multiple observation loops -> if len(obs_loop) > 0:
+        if 'LST' not in obs_loop.keys():
+            raise RuntimeError('Observation LST not provided, exiting')
+        if 'target_list' not in obs_loop.keys():
+            raise RuntimeError('Empty target list, exiting')
+
+    if 'scan' in data.keys():
+        if 'start' in data['scan'].keys():
+            scan_start = data['scan']['start'].split(',')
+            data['scan']['start'] = numpy.array(scan_start, dtype=float)
+        if 'end' in data['scan'].keys():
+            scan_end = data['scan']['end'].split(',')
+            data['scan']['end'] = numpy.array(scan_end, dtype=float)
+
     return data
 
 
@@ -65,15 +106,40 @@ def katpoint_target(target_item):
 def get_lst(yaml_lst):
     start_lst = None
     end_lst = None
+    # YAML input without quotes will calc this integer
+    if type(yaml_lst) is int:
+        HH = int(yaml_lst/60)
+        MM = yaml_lst - (HH*60)
+        yaml_lst = '{}:{}'.format(HH, MM)
+    # floating point hour format
     if type(yaml_lst) is float:
+        HH = int(yaml_lst)
+        MM = int(60 * (yaml_lst - HH))
+        yaml_lst = '{}:{}'.format(HH, MM)
+
+    err_msg = 'Format error reading LST range in observation file.'
+    if type(yaml_lst) is not str:
+        raise RuntimeError(err_msg)
+
+    nvals = len(yaml_lst.split('-'))
+    if nvals < 2:
         start_lst = yaml_lst
-    elif type(yaml_lst) is str:
-        [start_lst, end_lst] = numpy.array(yaml_lst.strip().split('-'),
-                                           dtype=float)
+    elif nvals > 2:
+        raise RuntimeError(err_msg)
     else:
-        raise RuntimeError('unexpected LST value')
+        start_lst, end_lst = [lst_val.strip() for lst_val in yaml_lst.split('-')]
+    if ':' in start_lst:
+        time_ = datetime.datetime.strptime('{}'.format(start_lst), '%H:%M').time()
+        start_lst = time_.hour + time_.minute/60.
+
     if end_lst is None:
         end_lst = (start_lst + 12.) % 24.
+    elif ':' in end_lst:
+        time_ = datetime.datetime.strptime('{}'.format(end_lst), '%H:%M').time()
+        end_lst = time_.hour + time_.minute/60.
+    else:
+        end_lst = float(end_lst)
+
     return start_lst, end_lst
 
 
