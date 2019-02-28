@@ -449,8 +449,15 @@ def run_observation(opts, kat):
                                       .format(observer))
                     # check target visible before doing anything
                     if not above_horizon(katpt_target, horizon=opts.horizon):
-                        user_logger.warn('Target {} below {} deg horizon, continuing'
-                                         .format(target['name'], opts.horizon))
+                        show_horizon_status = True
+                        # warning for cadence targets only when they are due
+                        if (target['cadence'] > 0 and
+                                target['last_observed'] is not None):
+                            delta_time = time.time() - target['last_observed']
+                            show_horizon_status = (delta_time >= target['cadence'])
+                        if show_horizon_status:
+                            user_logger.warn('Target {} below {} deg horizon, continuing'
+                                             .format(target['name'], opts.horizon))
                         continue
                     user_logger.trace('TRACE: observer after horizon check\n {}'
                                       .format(observer))
