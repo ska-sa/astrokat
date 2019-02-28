@@ -720,7 +720,7 @@ def main(args):
     if args.view:
         # check if view file in CSV or YAML
         data_dict = read_yaml(args.view)
-        if isinstance(data_dict, dict):
+        if data_dict:
             catalogue = katpoint.Catalogue()
             catalogue.antenna = ref_antenna
             for observation_cycle in data_dict['observation_loop']:
