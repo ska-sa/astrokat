@@ -612,8 +612,6 @@ def main(args):
                      '--dbe-centre-freq',
                      '--no-mask',
                      '--centre-freq'],
-#                     '--observer',
-#                     '--description'],
         args=args)
 
     # suppress the sessions noise diode, which is outdated
@@ -629,11 +627,6 @@ def main(args):
         import argparse
         parser = argparse.ArgumentParser()
         for arg in args:
-            # # optsparser conversion does not handle description very well
-            # # corrections added here clears syntax errors that produce dry-run error in output
-            # if 'description' in arg:
-            #     update_opts = vars(opts)
-            #     update_opts[arg.split('=')[0].split('-')[-1]] = arg.split('=')[1]
             # catch other hidden arguments such as correlator settings
             if len(arg.split('=')[1]) > 1:
                 arg = "{}='{}'".format(arg.split('=')[0], arg.split('=')[1])
