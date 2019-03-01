@@ -562,6 +562,9 @@ def run_observation(opts, kat):
                             done = True
                             break
 
+                # during dry-run when sessions exit time is reset so will be incorrect outside the loop
+                observation_timer = time.time()
+
                 if obs_duration < 0:
                     user_logger.info('Observation list completed - ending observation')
                     done = True
@@ -576,7 +579,8 @@ def run_observation(opts, kat):
         # display observation cycle statistics
         print
         user_logger.info("Observation loop statistics")
-        total_obs_time = time.time() - session.start_time
+        # total_obs_time = time.time() - session.start_time
+        total_obs_time = observation_timer - session.start_time
         if obs_duration < 0:
             user_logger.info('Single run through observation target list')
         else:
@@ -607,9 +611,9 @@ def main(args):
         x_long_opts=['--mode',
                      '--dbe-centre-freq',
                      '--no-mask',
-                     '--centre-freq',
-                     '--observer',
-                     '--description'],
+                     '--centre-freq'],
+#                     '--observer',
+#                     '--description'],
         args=args)
 
     # suppress the sessions noise diode, which is outdated
@@ -625,11 +629,11 @@ def main(args):
         import argparse
         parser = argparse.ArgumentParser()
         for arg in args:
-            # optsparser conversion does not handle description very well
-            # corrections added here clears syntax errors that produce dry-run error in output
-            if 'description' in arg:
-                update_opts = vars(opts)
-                update_opts[arg.split('=')[0].split('-')[-1]] = arg.split('=')[1]
+            # # optsparser conversion does not handle description very well
+            # # corrections added here clears syntax errors that produce dry-run error in output
+            # if 'description' in arg:
+            #     update_opts = vars(opts)
+            #     update_opts[arg.split('=')[0].split('-')[-1]] = arg.split('=')[1]
             # catch other hidden arguments such as correlator settings
             if len(arg.split('=')[1]) > 1:
                 arg = "{}='{}'".format(arg.split('=')[0], arg.split('=')[1])
