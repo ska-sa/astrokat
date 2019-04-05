@@ -43,9 +43,9 @@ pipeline {
         }
 
         stage('Archive build artifact: .whl & .deb'){
-             steps {
+            steps {
                 archiveArtifacts 'dist/*'
-             }
+            }
         }
 
         stage('Trigger downstream publish') {
