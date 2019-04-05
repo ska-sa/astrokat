@@ -5,14 +5,16 @@ pipeline {
 
     stages {
         stage('Checkout SCM') {
-            checkout([
-                $class: 'GitSCM',
-                branches: [[name: "refs/heads/${env.BRANCH_NAME}"]],
-                extensions: [[$class: 'LocalBranch']],
-                userRemoteConfigs: scm.userRemoteConfigs,
-                doGenerateSubmoduleConfigurations: false,
-                submoduleCfg: []
-            ])
+            steps{
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: "refs/heads/${env.BRANCH_NAME}"]],
+                    extensions: [[$class: 'LocalBranch']],
+                    userRemoteConfigs: scm.userRemoteConfigs,
+                    doGenerateSubmoduleConfigurations: false,
+                    submoduleCfg: []
+                ])
+            }
         }
 
         stage('Install & Unit Tests') {
