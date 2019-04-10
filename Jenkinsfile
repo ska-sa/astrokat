@@ -24,7 +24,7 @@ pipeline {
             }
             steps
                 {
-                        sh 'pip install . -U --pre'
+                        sh 'pip install . -U --pre --user'
                         sh 'python setup.py nosetests'
                 } 
                 
