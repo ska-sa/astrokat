@@ -17,6 +17,17 @@ pipeline {
             }
         }
 
+        stage ('Static analysis') {
+            steps {
+                sh 'pylint katcomp --output-format=parseable --exit-zero > pylint.out'
+            }
+            post {
+                always {
+                    recordIssues(tool: pyLint(pattern: 'pylint.out'))
+                }
+            }
+        }
+
         stage('Install & Unit Tests') {
             options {
                 timestamps()
@@ -25,13 +36,14 @@ pipeline {
             steps
                 {
                         sh 'pip install . -U --pre --user'
-                        sh 'python setup.py nosetests'
+                        sh 'python setup.py nosetests --with-xunit --with-xcoverage --xcoverage-file=coverage.xml --cover-package=katcomp --cover-inclusive'
                 } 
                 
                 post {
                     always {
                         junit 'nosetests.xml'
-                        archiveArtifacts 'nosetests.xml'
+                        cobertura coberturaReportFile: 'coverage.xml'
+                        archiveArtifacts '*.xml'
                     }
                 }
             }
@@ -51,10 +63,13 @@ pipeline {
         }
 
         stage('Trigger downstream publish') {
+            when {
+                branch 'master'
+            }
             steps {
-                build job: 'publish-local', parameters: [
-                    string(name: 'artifact_source', value: "${currentBuild.absoluteUrl}/artifact/dist/*zip*/dist.zip"),
-                    string(name: 'source_branch', value: "${env.BRANCH_NAME}")]
+                build job: 'ci.publish-artifacts', parameters: [
+                    string(name: 'job_name', value: "${env.JOB_NAME}"),
+                    string(name: 'build_number', value: "${env.BUILD_NUMBER}")]
             }
         }
     }
