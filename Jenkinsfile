@@ -3,6 +3,10 @@ pipeline {
         label 'cambuilder'
     }
 
+    environment {
+        KATPACKAGE = "${(env.JOB_NAME - env.JOB_BASE_NAME) - '-multibranch/'}"
+    }
+
     stages {
         stage('Checkout SCM') {
             steps{
@@ -19,7 +23,7 @@ pipeline {
 
         stage ('Static analysis') {
             steps {
-                sh 'pylint ./astrokat --output-format=parseable --exit-zero > pylint.out'
+                sh "pylint ./${KATPACKAGE} --output-format=parseable --exit-zero > pylint.out"
             }
             post {
                 always {
