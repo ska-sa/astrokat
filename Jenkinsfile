@@ -52,28 +52,21 @@ pipeline {
                 }
             }
 
-        stage('Build .whl & .deb') {
+        stage('Build & publish packages') {
+            when {
+                branch 'master'
+            }
+
             steps {
                 sh 'fpm -s python -t deb .'
                 sh 'python setup.py bdist_wheel'
                 sh 'mv *.deb dist/'
-            }
-        }
-
-        stage('Archive build artifact: .whl & .deb'){
-            steps {
                 archiveArtifacts 'dist/*'
-            }
-        }
 
-        stage('Trigger downstream publish') {
-            when {
-                branch 'master'
-            }
-            steps {
+                // Trigger downstream publish job
                 build job: 'ci.publish-artifacts', parameters: [
-                    string(name: 'job_name', value: "${env.JOB_NAME}"),
-                    string(name: 'build_number', value: "${env.BUILD_NUMBER}")]
+                        string(name: 'job_name', value: "${env.JOB_NAME}"),
+                        string(name: 'build_number', value: "${env.BUILD_NUMBER}")]
             }
         }
     }
