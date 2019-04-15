@@ -19,7 +19,7 @@ pipeline {
 
         stage ('Static analysis') {
             steps {
-                sh 'pylint katcomp --output-format=parseable --exit-zero > pylint.out'
+                sh 'pylint ./astrokat --output-format=parseable --exit-zero > pylint.out'
             }
             post {
                 always {
@@ -36,7 +36,7 @@ pipeline {
             steps
                 {
                         sh 'pip install . -U --pre --user'
-                        sh 'python setup.py nosetests --with-xunit --with-xcoverage --xcoverage-file=coverage.xml --cover-package=katcomp --cover-inclusive'
+                        sh 'python setup.py nosetests --with-xunit --with-xcoverage --xcoverage-file=coverage.xml --cover-package=astrokat --cover-inclusive'
                 } 
                 
                 post {
