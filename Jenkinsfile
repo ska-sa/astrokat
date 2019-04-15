@@ -40,7 +40,7 @@ pipeline {
             steps
                 {
                         sh 'pip install . -U --pre --user'
-                        sh 'python setup.py nosetests --with-xunit --with-xcoverage --xcoverage-file=coverage.xml --cover-package=astrokat --cover-inclusive'
+                        sh "python setup.py nosetests --with-xunit --with-xcoverage --cover-package=${KATPACKAGE} --cover-inclusive"
                 } 
                 
                 post {
