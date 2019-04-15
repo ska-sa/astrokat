@@ -39,7 +39,7 @@ pipeline {
             }
             steps
                 {
-                        sh 'pip install . -U --pre --user'
+                        sh 'pip install . -U --user'
                         sh "python setup.py nosetests --with-xunit --with-xcoverage --cover-package=${KATPACKAGE} --cover-inclusive"
                 } 
                 
