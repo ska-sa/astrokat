@@ -1,10 +1,12 @@
 # Setting correlator configuration values different from default values
 
+
 def set_fengines(session,
-        requant_gains=None,
-        fft_shift=None):
+                 requant_gains=None,
+                 fft_shift=None):
+    msg = 'Failed to get correlator input labels: '
     if not session.cbf.fengine.inputs:
-        msg = 'Failed to get correlator input labels, cannot set the F-engine gains'
+        msg += 'cannot set the F-engine gains'
         raise RuntimeError(msg)
 
     for inp in session.cbf.fengine.inputs:
@@ -23,4 +25,4 @@ def set_fengines(session,
             user_logger.info(msg)
     # TODO: return input values
 
-
+# -fin-
