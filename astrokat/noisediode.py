@@ -206,7 +206,7 @@ def pattern(kat,  # kat subarray object
         dump_period = session.cbf.correlator.sensor.int_time.get_value()
         user_logger.warning('Correlator integration time {} [sec]'
                             .format(1./dump_period))
-        cycle_length = ((cycle_length / dump_period) * dump_period)
+        cycle_length = (cycle_length / dump_period) * dump_period
         msg = 'Set noise diode period to multiple of correlator integration time:'
         msg += ' cycle length = {} [sec]'.format(cycle_length)
         user_logger.warning(msg)
