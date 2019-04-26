@@ -137,7 +137,9 @@ def get_lst(yaml_lst):
         start_lst = time_.hour + time_.minute/60.
 
     if end_lst is None:
-        end_lst = (start_lst + 12.) % 24.
+        end_lst = (start_lst + 24.) % 24.
+        if numpy.abs(end_lst - start_lst) < 1.:
+            end_lst = 24.
     elif ':' in end_lst:
         time_ = datetime.datetime.strptime('{}'.format(end_lst), '%H:%M').time()
         end_lst = time_.hour + time_.minute/60.
