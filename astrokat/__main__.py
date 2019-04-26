@@ -91,7 +91,7 @@ def cli(prog,
     if parser is None:
         # Set up standard script options
         # TODO: more complex usage string in separate function
-        usage = "%s [options] -o <observer>" \
+        usage = "%s [options]" \
                 " --yaml <YAMLfile>" \
                 " [<'YAMLfile'> ...]" % prog
         description = \
@@ -130,7 +130,7 @@ def cli(prog,
                           help='display short summary of target visibility')
     ex_group.add_argument('--all-up',
                           action='store_true',
-                          help='ensure all target are above horizon before continuing')
+                          help='ensure all target horizon before continuing')
     group.add_argument('--debug',
                        action='store_true',
                        help='verbose logger output for debugging')
