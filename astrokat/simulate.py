@@ -106,7 +106,7 @@ class SimSession(object):
         self.kwargs = kwargs
         self.obs_params = kat.obs_params
         self.kat = kat
-        # self.track_ = False
+        self.track_ = False
         self.start_time = datetime2timestamp(simobserver.date.datetime())
         if 'durations' in self.obs_params:
             if 'start_time' in self.obs_params['durations']:
@@ -140,7 +140,7 @@ class SimSession(object):
         raise StopIteration
 
     def __exit__(self, type, value, traceback):
-        # TODO: what is self.track_ used for again?
+        # TODO: self.track_ cleanup for multiple obs loops
         if self.track_:
             self.kat._session_cnt += 1
         if self.kat._session_cnt < len(self.obs_params['observation_loop']):
@@ -157,13 +157,12 @@ class SimSession(object):
         return slew_time
 
     def track(self, target, duration=0, announce=False):
-        # self.track_ = True
+        self.track_ = True
         time.sleep(self._fake_slew_(target)+duration)
         now = timestamp2datetime(self.time)
         simobserver.date = ephem.Date(now)
         self.katpt_current = target
         return True
-        # return self.track_
 
     def raster_scan(self, target,
                     num_scans=3,

@@ -15,7 +15,6 @@ from astrokat import (
     get_lst,
     katpoint_target,
     noisediode,
-    # correlator,
     scans,
     )
 
@@ -251,15 +250,8 @@ class Telescope(object):
 
         # TODO: add part that implements noise diode fire per track
         # TODO: move this to a callable function, so do it only if worth while to observe and move back to body with session
-#         # Update correlator settings
-#         if self.feng is not None:
-#             set_fengines(self.session,
-#                          requant_gains=self.feng['requant_gain'],
-#                          fft_shift=self.feng['fft_shift'],
-#                          )
-# #         # Names of antennas to use for beamformer if not all is desirable
-# #         set_bf_weights(self.array, opts.bf_ants, opts.bf_weights)
-#         # keep restore_values
+        # TODO: update correlator settings
+        # TODO: names of antennas to use for beamformer if not all is desirable
         return self
 
     def __exit__(self, type, value, traceback):
@@ -579,7 +571,6 @@ def run_observation(opts, kat):
         # display observation cycle statistics
         print
         user_logger.info("Observation loop statistics")
-        # total_obs_time = time.time() - session.start_time
         total_obs_time = observation_timer - session.start_time
         if obs_duration < 0:
             user_logger.info('Single run through observation target list')
