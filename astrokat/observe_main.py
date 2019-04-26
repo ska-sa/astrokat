@@ -270,11 +270,18 @@ class Telescope(object):
                 # dump_rate,      # dumprate
                 # band,           # band
                 # ]
+        user_logger.trace(self.opts.obs_plan_params['instrument'])
         if self.opts.obs_plan_params['instrument'] is None:
             return
         for key in instrument.keys():
             conf_param = instrument[key]
+            if key == 'integration_time':
+                key = 'dump_rate'
+                instrument[key] = 1./float(conf_param)
+                conf_param = instrument[key]
+            user_logger.trace('{}: {}'.format(key, conf_param))
             sensor_name = 'sub_{}'.format(key)
+            user_logger.trace('{}'.format(sensor_name))
             sub_sensor = self.array.sensor.get(sensor_name).get_value()
             if type(conf_param) is list:
                 conf_param = set(conf_param)
@@ -283,6 +290,8 @@ class Telescope(object):
             if key == 'product' and conf_param in sub_sensor:
                 continue
             elif key == 'pool_resources':
+                if conf_param == 'available':
+                    continue
                 pool_params = [str_.strip() for str_ in conf_param.split(',')]
                 for param in pool_params:
                     if param not in sub_sensor:
@@ -331,7 +340,6 @@ def run_observation(opts, kat):
 
         # Only observe targets in valid LST range
         [start_lst, end_lst] = get_lst(observation_cycle['LST'])
-
 
         # Verify that it is worth while continuing with the observation
         # The filter functions uses the current time as timestamps
