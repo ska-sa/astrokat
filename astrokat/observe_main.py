@@ -15,7 +15,7 @@ from astrokat import (
     get_lst,
     katpoint_target,
     noisediode,
-    correlator,
+    # correlator,
     scans,
     )
 
