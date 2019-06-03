@@ -6,7 +6,7 @@ import sys
 import time
 
 from collections import namedtuple
-from utility import get_lst, datetime2timestamp, timestamp2datetime
+from astrokat.utility import get_lst, datetime2timestamp, timestamp2datetime
 
 global simobserver
 simobserver = ephem.Observer()
