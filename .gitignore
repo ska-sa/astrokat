@@ -5,3 +5,5 @@
 *.pyc
 *~
 nosetests.xml
+.idea/
+.pyenv/
