@@ -36,11 +36,11 @@ def _nd_log_msg_(ant,
     msg = ('Noise diode for antenna {} set at {}. '
            .format(ant,
                    actual_time))
-    user_logger.info(msg)
+    user_logger.debug(msg)
     msg = ('Pattern set as {} sec ON for {} sec cycle length'
            .format(actual_on_frac*actual_cycle,
                    actual_cycle))
-    user_logger.info(msg)
+    user_logger.debug(msg)
 
 
 # switch noise-source on
