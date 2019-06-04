@@ -18,7 +18,10 @@ from astrokat import (
     scans,
     )
 
-libnames = ['collect_targets', 'user_logger', 'start_session', 'verify_and_connect']
+libnames = ['collect_targets',
+            'user_logger',
+            'start_session',
+            'verify_and_connect']
 try:
     lib = __import__('katcorelib', globals(), locals(), libnames, -1)
 except ImportError:
@@ -249,7 +252,9 @@ class Telescope(object):
         noisediode.off(self.array)
 
         # TODO: add part that implements noise diode fire per track
-        # TODO: move this to a callable function, so do it only if worth while to observe and move back to body with session
+        # TODO: move this to a callable function,
+        # do it only if worth while to observe
+        # move back to body with session
         # TODO: update correlator settings
         # TODO: names of antennas to use for beamformer if not all is desirable
         return self
@@ -314,6 +319,7 @@ def run_observation(opts, kat):
     obs_plan_params = opts.obs_plan_params
     # remove observation specific instructions housed in YAML file
     del opts.obs_plan_params
+    local_horizon = obs_plan_params['instrument']['horizon']
 
     # set up duration periods for observation control
     obs_duration = -1
@@ -346,11 +352,11 @@ def run_observation(opts, kat):
         # and thus incorrectly set the simulation timestamp
         if not kat.array.dry_run:
             # Quit early if there are no sources to observe
-            if len(catalogue.filter(el_limit_deg=opts.horizon)) == 0:
+            if len(catalogue.filter(el_limit_deg=local_horizon)) == 0:
                 raise NoTargetsUpError('No targets are currently visible - '
                                        'please re-run the script later')
             # Quit early if the observation requires all targets to be visible
-            if opts.all_up and (len(catalogue.filter(el_limit_deg=opts.horizon)) != len(catalogue)):
+            if opts.all_up and (len(catalogue.filter(el_limit_deg=local_horizon)) != len(catalogue)):
                 raise NotAllTargetsUpError('Not all targets are currently visible - '
                                            'please re-run the script with --visibility for information')
         user_logger.info('Imaging targets are [{}]'.format(
@@ -448,7 +454,7 @@ def run_observation(opts, kat):
                     user_logger.trace('TRACE: initial observer for target\n {}'
                                       .format(observer))
                     # check target visible before doing anything
-                    if not above_horizon(katpt_target, horizon=opts.horizon):
+                    if not above_horizon(katpt_target, horizon=local_horizon):
                         show_horizon_status = True
                         # warning for cadence targets only when they are due
                         if (target['cadence'] > 0 and
@@ -457,7 +463,7 @@ def run_observation(opts, kat):
                             show_horizon_status = (delta_time >= target['cadence'])
                         if show_horizon_status:
                             user_logger.warn('Target {} below {} deg horizon, continuing'
-                                             .format(target['name'], opts.horizon))
+                                             .format(target['name'], local_horizon))
                         continue
                     user_logger.trace('TRACE: observer after horizon check\n {}'
                                       .format(observer))
@@ -485,7 +491,7 @@ def run_observation(opts, kat):
                         user_logger.trace('TRACE: target observation # {} last observed {}'
                                           .format(tgt['obs_cntr'],
                                                   tgt['last_observed']))
-                        if above_horizon(catalogue[tgt['name']], horizon=opts.horizon):
+                        if above_horizon(catalogue[tgt['name']], horizon=local_horizon):
                             if observe(session, tgt, **obs_plan_params):
                                 targets_visible += True
                                 tgt['obs_cntr'] += 1
@@ -607,10 +613,10 @@ def main(args):
     (opts, args) = astrokat.cli(
         os.path.basename(__file__),
         # remove redundant KAT-7 options
-        x_long_opts=['--mode',
-                     '--dbe-centre-freq',
-                     '--no-mask',
-                     '--centre-freq'],
+        long_opts_to_remove=['--mode',
+                             '--dbe-centre-freq',
+                             '--no-mask',
+                             '--centre-freq'],
         args=args)
 
     # suppress the sessions noise diode, which is outdated
