@@ -21,11 +21,11 @@ def read_yaml(filename):
         try:
             data = yaml.safe_load(stream)
         except yaml.parser.ParserError:
-            return False
+            return {}
 
     if not isinstance(data, dict):
         # not a yaml file, suspected csv file, returning False
-        return False
+        return {}
 
     # set default horizon or read user specified horizon
     if 'instrument' not in data.keys():
