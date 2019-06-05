@@ -26,10 +26,10 @@ def read_yaml(filename):
     if 'instrument' in data.keys():
         instrument = data['instrument']
         if instrument is not None:
-            if 'integration_period' in instrument.keys():
-                integration_period = float(instrument['integration_period'])
-                instrument['dump_rate'] = 1./integration_period
-                del instrument['integration_period']
+            if 'integration_time' in instrument.keys():
+                integration_time = float(instrument['integration_time'])
+                instrument['dump_rate'] = 1./integration_time
+                del instrument['integration_time']
     # verify required information in observation loop before continuing
     if 'durations' in data.keys():
         if data['durations'] is None:

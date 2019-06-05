@@ -1,6 +1,6 @@
 # observation with noise diode trigger
 instrument:
-  integration_period: 2
+  integration_time: 2
 durations:
   obs_duration: 300
 observation_loop:

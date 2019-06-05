@@ -2,7 +2,7 @@
 instrument:
   band: l
   product: c856M4k
-  integration_period: 2
+  integration_time: 2
 durations:
   start_time: 2018-10-31 14:00
   # > python astrokat-lst.py --lst 18.
