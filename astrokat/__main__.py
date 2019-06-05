@@ -16,10 +16,10 @@ def session_options(parser,
                     long_opts_to_remove=[]):
     # Add options from katcorelib that is valid for all observations
     dryrun = False
+    group = parser.add_argument_group(
+        title="standard MeerKAT options",
+        description="default observation script options")
     if live_system:
-        group = parser.add_argument_group(
-            title="standard MeerKAT options",
-            description="default observation script options")
         parser_ = standard_script_options('', '')
         # fudge parser_ class from OptionParser to Group
         for opt in parser_.option_list:
@@ -69,6 +69,11 @@ def session_options(parser,
 
             group.add_argument(*args, **kwargs)
 
+    else:
+        group.add_argument('--horizon',
+                           type=float,
+                           default=20,
+                           help='lowest elevation limit in degrees')
     # something goes wrong in this conversion for opts to args
     # adding this manually
     if dryrun:
