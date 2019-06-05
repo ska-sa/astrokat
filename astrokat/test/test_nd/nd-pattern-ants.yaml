@@ -1,6 +1,6 @@
 #Setting up noise diode pattern before observation
 instrument:
-  integration_period: 2
+  integration_time: 2
 noise_diode:
   # set pattern with one or list of antennas
   antennas: m011,m022

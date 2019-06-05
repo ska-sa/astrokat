@@ -1,7 +1,7 @@
 instrument:
   product: c856M4k
   band: l
-  integration_period: 8
+  integration_time: 8
 durations:
   start_time: 2019-02-11 02:10:47
 observation_loop:

@@ -2,7 +2,7 @@
 # 
 # # # plain scan observation no noise diode
 # # instrument:
-# #   integration_period: 2
+# #   integration_time: 2
 # # scan:
 # #   # achieving a scan speed of 5arcmin/sec
 # #   duration: 60.0
@@ -20,7 +20,7 @@
 
 # scan observation with noise diode pattern
 instrument:
-  integration_period: 2
+  integration_time: 2
 # # set noise diode pattern to fire every 20 seconds and only be on for 1.8s
 # noise_diode:
 #   antennas: all
@@ -41,7 +41,7 @@ observation_loop:
 
 # # scan observation with noise diode pattern
 # instrument:
-#   integration_period: 2
+#   integration_time: 2
 # # set noise diode pattern to fire every 20 seconds and only be on for 1.8s
 # noise_diode:
 # #   antennas: all
@@ -70,7 +70,7 @@ observation_loop:
 # # 
 # # # scan observation with noise diode trigger before each scan
 # # instrument:
-# #   integration_period: 2
+# #   integration_time: 2
 # # scan:
 # #   # achieving a scan speed of 5arcmin/sec
 # #   duration: 120.0
@@ -88,7 +88,7 @@ observation_loop:
 # 
 # # # scan observation with noise diode trigger before each scan + nd tracks before and after
 # # instrument:
-# #   integration_period: 2
+# #   integration_time: 2
 # # scan:
 # #   # achieving a scan speed of 5arcmin/sec
 # #   duration: 120.0
@@ -108,7 +108,7 @@ observation_loop:
 # 
 # # # scan observation with noise diode trigger before each scan + nd tracks before and after
 # # instrument:
-# #   integration_period: 2
+# #   integration_time: 2
 # # scan:
 # #   # achieving a scan speed of 5arcmin/sec
 # #   duration: 120.0
