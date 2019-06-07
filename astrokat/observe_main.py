@@ -319,12 +319,6 @@ def run_observation(opts, kat):
     # remove observation specific instructions housed in YAML file
     del opts.obs_plan_params
 
-    # set local horizon
-    if 'horizon' in obs_plan_params:
-        local_horizon = obs_plan_params['horizon']
-    else:
-        local_horizon = 20.  # deg above horizon default
-
     # set up duration periods for observation control
     obs_duration = -1
     if 'durations' in obs_plan_params:
@@ -365,11 +359,11 @@ def run_observation(opts, kat):
         # and thus incorrectly set the simulation timestamp
         if not kat.array.dry_run:
             # Quit early if there are no sources to observe
-            if len(catalogue.filter(el_limit_deg=local_horizon)) == 0:
+            if len(catalogue.filter(el_limit_deg=opts.horizon)) == 0:
                 raise NoTargetsUpError('No targets are currently visible - '
                                        'please re-run the script later')
             # Quit early if the observation requires all targets to be visible
-            if opts.all_up and (len(catalogue.filter(el_limit_deg=local_horizon)) != len(catalogue)):
+            if opts.all_up and (len(catalogue.filter(el_limit_deg=opts.horizon)) != len(catalogue)):
                 raise NotAllTargetsUpError('Not all targets are currently visible - '
                                            'please re-run the script with --visibility for information')
         user_logger.info('Imaging targets are [{}]'.format(
@@ -468,7 +462,7 @@ def run_observation(opts, kat):
                     user_logger.trace('TRACE: initial observer for target\n {}'
                                       .format(observer))
                     # check target visible before doing anything
-                    if not above_horizon(katpt_target, horizon=local_horizon):
+                    if not above_horizon(katpt_target, horizon=opts.horizon):
                         show_horizon_status = True
                         # warning for cadence targets only when they are due
                         if (target['cadence'] > 0 and
@@ -477,7 +471,7 @@ def run_observation(opts, kat):
                             show_horizon_status = (delta_time >= target['cadence'])
                         if show_horizon_status:
                             user_logger.warn('Target {} below {} deg horizon, continuing'
-                                             .format(target['name'], local_horizon))
+                                             .format(target['name'], opts.horizon))
                         continue
                     user_logger.trace('TRACE: observer after horizon check\n {}'
                                       .format(observer))
@@ -505,7 +499,7 @@ def run_observation(opts, kat):
                         user_logger.trace('TRACE: target observation # {} last observed {}'
                                           .format(tgt['obs_cntr'],
                                                   tgt['last_observed']))
-                        if above_horizon(catalogue[tgt['name']], horizon=local_horizon):
+                        if above_horizon(catalogue[tgt['name']], horizon=opts.horizon):
                             if observe(session, tgt, **obs_plan_params):
                                 targets_visible += True
                                 tgt['obs_cntr'] += 1
@@ -644,18 +638,24 @@ def main(args):
     # astrokat does not support observational command line parameters
     # all observational parameters must be in the YAML file
     # command line arguments will be dropped to unknown arguments
-    unknown_args = [arg for arg in args if '--' in arg]
-    if '--horizon' in unknown_args:
+    unknown_args = [arg for arg in args if arg.startswith('--')]
+    if any('horizon' in arg for arg in unknown_args):
         raise RuntimeError('Command line option {} not supported. '
                            'Please specify parameters in YAML file.'.format(
                                'horizon'))
-
-   # TODO: add correlator settings YAML option for config file
+    # TODO: add correlator settings YAML option for config file
 
     # unpack observation from observation plan
     if opts.yaml:
         opts.obs_plan_params = read_yaml(opts.yaml)
 
+    # ensure sessions has the YAML horizon value if given
+    if 'horizon' in opts.obs_plan_params:
+        opts.horizon = opts.obs_plan_params['horizon']
+    else:
+        opts.horizon = 20.  # deg above horizon default
+
+    # set log level
     if opts.debug:
         user_logger.setLevel(logging.DEBUG)
     if opts.trace:
