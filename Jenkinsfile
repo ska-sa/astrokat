@@ -41,8 +41,8 @@ pipeline {
                 {
                         sh 'pip install . -U --user'
                         sh "python setup.py nosetests --with-xunit --with-xcoverage --cover-package=${KATPACKAGE} --cover-inclusive"
-                }
-
+                } 
+                
                 post {
                     always {
                         junit 'nosetests.xml'
