@@ -1,9 +1,10 @@
-# Observation catalogue for proposal ID: SCI-20180516-PW-01 
+# Observation catalogue for proposal ID: SCI-20180516-PW-01
 # PI:Rob Fender
 # Contact details: None
 durations:
   start_time: 2018-12-07 05:00:00
   obs_duration: 7200.0
+horizon: 17.
 observation_loop:
   - LST: 11.006-1.5
     target_list:

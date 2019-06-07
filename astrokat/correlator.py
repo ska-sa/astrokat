@@ -4,9 +4,8 @@
 def set_fengines(session,
                  requant_gains=None,
                  fft_shift=None):
-    msg = 'Failed to get correlator input labels: '
     if not session.cbf.fengine.inputs:
-        msg += 'cannot set the F-engine gains'
+        msg = 'Cannot set the F-engine gains'
         raise RuntimeError(msg)
 
     for inp in session.cbf.fengine.inputs:

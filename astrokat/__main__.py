@@ -12,8 +12,8 @@ except ImportError:
 
 # Add standard observation script options from sessions
 def session_options(parser,
-                    x_short_opts=[],
-                    x_long_opts=[]):
+                    short_opts_to_remove=[],
+                    long_opts_to_remove=[]):
     # Add options from katcorelib that is valid for all observations
     dryrun = False
     group = parser.add_argument_group(
@@ -28,12 +28,12 @@ def session_options(parser,
             if 'dry-run' in long_:
                 dryrun = True
                 continue
-            if long_ in x_long_opts:
+            if long_ in long_opts_to_remove:
                 continue
             args = opt.__dict__['_long_opts']
             if opt.__dict__['_short_opts']:
                 short = opt.__dict__['_short_opts'][0]
-                if short in x_short_opts:
+                if short in short_opts_to_remove:
                     continue
                 args = opt.__dict__['_short_opts'] + args
 
@@ -68,11 +68,7 @@ def session_options(parser,
                       }
 
             group.add_argument(*args, **kwargs)
-    else:
-        group.add_argument('--horizon',
-                           type=float,
-                           default=20,
-                           help='lowest elevation limit in degrees')
+
     # something goes wrong in this conversion for opts to args
     # adding this manually
     if dryrun:
@@ -82,16 +78,15 @@ def session_options(parser,
 
 def cli(prog,
         parser=None,
-        x_short_opts=['-h'],
-        x_long_opts=['--version'],
+        short_opts_to_remove=['-h'],
+        long_opts_to_remove=['--version'],
         args=None):
 
     if parser is None:
         # Set up standard script options
         # TODO: more complex usage string in separate function
         usage = "%s [options]" \
-                " --yaml <YAMLfile>" \
-                " [<'YAMLfile'> ...]" % prog
+                " --yaml <YAMLfile>" % prog
         description = \
             "Sources are specified either as part of an observation profile." \
             " Track one or more sources for a specified time." \
@@ -106,15 +101,14 @@ def cli(prog,
     parser.add_argument('--version',
                         action='version', version=astrokat.__version__)
     parser.add_argument('--yaml',
-                        default=[],
                         type=str,
                         required=True,
                         help='observation file, obs_plan.yaml (**required**)')
 
     # Add standard observation script options from sessions
     parser = session_options(parser,
-                             x_short_opts=x_short_opts,
-                             x_long_opts=x_long_opts,
+                             short_opts_to_remove=short_opts_to_remove,
+                             long_opts_to_remove=long_opts_to_remove,
                              )
 
     # Observation simulation for planning using observation script

@@ -6,7 +6,9 @@ import yaml
 
 
 class NotAllTargetsUpError(Exception):
-    """Not all targets are above the horizon at the start of the observation."""
+    """
+    Not all targets are above the horizon at the start of the observation.
+    """
 
 
 class NoTargetsUpError(Exception):
@@ -16,11 +18,14 @@ class NoTargetsUpError(Exception):
 # Read config .yaml file
 def read_yaml(filename):
     with open(filename, 'r') as stream:
-        data = yaml.safe_load(stream)
+        try:
+            data = yaml.safe_load(stream)
+        except yaml.parser.ParserError:
+            return {}
 
     if not isinstance(data, dict):
         # not a yaml file, suspected csv file, returning False
-        return False
+        return {}
 
     # handle mapping of user friendly keys to CAM resource keys
     if 'instrument' in data.keys():
@@ -30,16 +35,18 @@ def read_yaml(filename):
                 integration_time = float(instrument['integration_time'])
                 instrument['dump_rate'] = 1./integration_time
                 del instrument['integration_time']
+
     # verify required information in observation loop before continuing
     if 'durations' in data.keys():
         if data['durations'] is None:
-            msg = 'durations primary key cannot be empty in observation YAML file'
+            msg = 'durations primary key cannot be empty in YAML file'
             raise RuntimeError(msg)
         if 'start_time' in data['durations']:
             start_time = data['durations']['start_time']
             if type(start_time) is str:
                 data['durations']['start_time'] = \
-                        datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M')
+                        datetime.datetime.strptime(start_time,
+                                                   '%Y-%m-%d %H:%M')
     if 'observation_loop' not in data.keys():
         raise RuntimeError('Nothing to observe, exiting')
     if data['observation_loop'] is None:
@@ -47,8 +54,9 @@ def read_yaml(filename):
     for obs_loop in data['observation_loop']:
         if type(obs_loop) is str:
             raise RuntimeError('Incomplete observation input: '
-                               'LST range and a minimum of one target required.')
-        # TODO: correct implementation for single and multiple observation loops -> if len(obs_loop) > 0:
+                               'LST range and at least one target required.')
+        # TODO: correct implementation for single vs multiple observation loops
+        # -> if len(obs_loop) > 0:
         if 'LST' not in obs_loop.keys():
             raise RuntimeError('Observation LST not provided, exiting')
         if 'target_list' not in obs_loop.keys():
