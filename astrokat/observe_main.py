@@ -344,7 +344,16 @@ def run_observation(opts, kat):
         # build katpoint catalogues for tidy handling of targets
         catalogue = collect_targets(kat.array, target_list)
         for tgt in obs_targets:
-            tgt['target'] = catalogue[tgt['name']]
+            # catalogue names are no longer unique
+            name = tgt['name']
+            # add tag evaluation to identify catalogue targets
+            tags = tgt['target'].split(',')[1].strip()
+            for cat_tgt in catalogue:
+                if (name == cat_tgt.name and
+                        tags == ' '.join(cat_tgt.tags)):
+                    tgt['target'] = cat_tgt
+                    break
+
         # observer object handle to track the observation timing in a more user friendly way
         observer = catalogue._antenna.observer
 
