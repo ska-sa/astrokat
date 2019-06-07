@@ -7,8 +7,6 @@ try:
     lib = __import__('katcorelib', globals(), locals(), libnames)
 except ImportError:
     lib = __import__('astrokat.simulate', globals(), locals(), libnames)
-except Exception as e:
-    lib = __import__('astrokat.simulate', globals(), locals(), libnames)
 
 finally:
     for libname in libnames:
