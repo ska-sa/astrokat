@@ -69,11 +69,6 @@ def session_options(parser,
 
             group.add_argument(*args, **kwargs)
 
-    else:
-        group.add_argument('--horizon',
-                           type=float,
-                           default=20,
-                           help='lowest elevation limit in degrees')
     # something goes wrong in this conversion for opts to args
     # adding this manually
     if dryrun:

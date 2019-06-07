@@ -224,18 +224,17 @@ def above_horizon(katpt_target, horizon=20.):
 
 
 class Telescope(object):
-    def __init__(self, opts, args=None):
+    def __init__(self, opts, correlator=None):
         user_logger.info('Setting up telescope for observation')
         self.opts = opts
         # unpack user specified correlator setup values
-        try:
-            correlator_config = read_yaml(args.correlator)
-        except AttributeError:
-            self.feng = self.xeng = self.beng = None
-        else:
+        if correlator is not None:
+            correlator_config = read_yaml(correlator)
             self.feng = correlator_config['Fengine']
             self.xeng = correlator_config['Xengine']
             self.beng = correlator_config['Bengine']
+        else:
+            self.feng = self.xeng = self.beng = None
         # Check options and build KAT configuration,
         # connecting to proxies and devices
         # create single kat object, cannot repeatedly recreate
@@ -319,7 +318,12 @@ def run_observation(opts, kat):
     obs_plan_params = opts.obs_plan_params
     # remove observation specific instructions housed in YAML file
     del opts.obs_plan_params
-    local_horizon = obs_plan_params['instrument']['horizon']
+
+    # set local horizon
+    if 'horizon' in obs_plan_params:
+        local_horizon = obs_plan_params['horizon']
+    else:
+        local_horizon = 20.  # deg above horizon default
 
     # set up duration periods for observation control
     obs_duration = -1
@@ -616,6 +620,7 @@ def main(args):
         long_opts_to_remove=['--mode',
                              '--dbe-centre-freq',
                              '--no-mask',
+                             '--horizon',
                              '--centre-freq'],
         args=args)
 
@@ -626,18 +631,16 @@ def main(args):
     # implementation, and this default setting then removed.
     opts.nd_params = 'off'
 
-    # get correlator settings from config files
-    args_ = None
-    if args:
-        import argparse
-        parser = argparse.ArgumentParser()
-        for arg in args:
-            # catch other hidden arguments such as correlator settings
-            if len(arg.split('=')[1]) > 1:
-                arg = "{}='{}'".format(arg.split('=')[0], arg.split('=')[1])
-            if arg.startswith(("-", "--")):
-                parser.add_argument(arg)
-        args_ = parser.parse_args(args)
+    # astrokat does not support observational command line parameters
+    # all observational parameters must be in the YAML file
+    # command line arguments will be dropped to unknown arguments
+    unknown_args = [arg for arg in args if '--' in arg]
+    if '--horizon' in unknown_args:
+        raise RuntimeError('Command line option {} not supported. '
+                           'Please specify parameters in YAML file.'.format(
+                               'horizon'))
+
+   # TODO: add correlator settings YAML option for config file
 
     # unpack observation from observation plan
     if opts.yaml:
@@ -649,7 +652,7 @@ def main(args):
         user_logger.setLevel(logging.TRACE)
 
     # setup and observation
-    with Telescope(opts, args_) as kat:
+    with Telescope(opts) as kat:
         run_observation(opts, kat)
 
 
