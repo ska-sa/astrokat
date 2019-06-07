@@ -459,6 +459,7 @@ def run_observation(opts, kat):
                 # Cycle through target list in order listed
                 targets_visible = False
                 time_remaining = obs_duration
+                observation_timer = time.time()
 
                 for cnt, target in enumerate(obs_targets):
                     katpt_target = target['target']
