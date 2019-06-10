@@ -17,7 +17,7 @@ nd-trigger)
 for infile in ${INPUT[@]}
 do
     echo
-    CMD="astrokat-observe.py -o ruby --yaml test_nd/$infile.yaml --trace"
+    CMD="astrokat-observe.py --yaml test_nd/$infile.yaml --trace"
     echo -e "${YELLOW} Testing: $CMD ${NOCOLOR}"
     if $CMD
     then

@@ -37,23 +37,20 @@ def drift_scan(session, target, nd_period=None, duration=60.):
 def raster_scan(session, target, nd_period=None, **kwargs):
     # trigger noise diode if set
     noisediode.trigger(session.kat, session, duration=nd_period)
-# TODO: ignoring raster_scan, not currently working robustly
-# TODO: there are errors in raster scan calculations, need some review
-#         session.raster_scan(target,num_scans=2,
-#                                 scan_duration=120,
-#                                 scan_extent=10,
-#                                 scan_spacing=0.5,
-#                                 scan_in_azimuth=True)#,
-#                                 #projection='plate-carree')
+    # TODO: ignoring raster_scan, not currently working robustly
+    # TODO: there are errors in raster scan calculations, need some review
+    #     session.raster_scan(target,num_scans=2,
+    #                             scan_duration=120,
+    #                             scan_extent=10,
+    #                             scan_spacing=0.5,
+    #                             scan_in_azimuth=True,
+    #                             projection='plate-carree')
     return session.raster_scan(target, **kwargs)
 
 
 def scan(session, target, nd_period=None, **kwargs):
     # trigger noise diode if set
     noisediode.trigger(session.kat, session, duration=nd_period)
-    # user_logger.error('scan')
-    # user_logger.error(kwargs['start'])
-    # user_logger.error(kwargs['end'])
     try:
         timestamp = session.time
     except AttributeError:
@@ -64,7 +61,6 @@ def scan(session, target, nd_period=None, **kwargs):
 
 
 def forwardscan(session, target, nd_period=None, **kwargs):
-    # user_logger.error('forward scan')
     target_visible = scan(session,
                           target,
                           nd_period=nd_period,
@@ -73,7 +69,6 @@ def forwardscan(session, target, nd_period=None, **kwargs):
 
 
 def reversescan(session, target, nd_period=None, **kwargs):
-    # user_logger.error('return scan')
     returnscan = dict(kwargs)
     returnscan['start'] = kwargs['end']
     returnscan['end'] = kwargs['start']
@@ -87,7 +82,6 @@ def reversescan(session, target, nd_period=None, **kwargs):
 # temporary fix until raster scan can be fixed
 def return_scan(session, target, nd_period=None, **kwargs):
     # set up 2way scan
-
     user_logger.info('Forward scan over target')
     target_visible = forwardscan(session,
                                  target,

@@ -1,5 +1,5 @@
 instrument:
-  integration_period: 2
+  integration_time: 2
 observation_loop:
   - LST: 0.0-23.9
     target_list:

@@ -3,7 +3,7 @@
 # trigger noise diode before track with 3.8 sec
 # dummy track with noise diode
 instrument:
-  integration_period: 2
+  integration_time: 2
 observation_loop:
   - LST: 10.0
     target_list:

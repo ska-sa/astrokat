@@ -36,11 +36,11 @@ def _nd_log_msg_(ant,
     msg = ('Noise diode for antenna {} set at {}. '
            .format(ant,
                    actual_time))
-    user_logger.info(msg)
+    user_logger.debug(msg)
     msg = ('Pattern set as {} sec ON for {} sec cycle length'
            .format(actual_on_frac*actual_cycle,
                    actual_cycle))
-    user_logger.info(msg)
+    user_logger.debug(msg)
 
 
 # switch noise-source on
@@ -206,7 +206,7 @@ def pattern(kat,  # kat subarray object
         dump_period = session.cbf.correlator.sensor.int_time.get_value()
         user_logger.warning('Correlator integration time {} [sec]'
                             .format(1./dump_period))
-        cycle_length = ((cycle_length / dump_period) * dump_period)
+        cycle_length = (cycle_length / dump_period) * dump_period
         msg = 'Set noise diode period to multiple of correlator integration time:'
         msg += ' cycle length = {} [sec]'.format(cycle_length)
         user_logger.warning(msg)

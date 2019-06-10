@@ -1,6 +1,6 @@
 # return scan observation with noise diode trigger
 instrument:
-  integration_period: 2
+  integration_time: 2
 scan:
   # achieving a scan speed of 5arcmin/sec
   duration: 60.0

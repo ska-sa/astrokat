@@ -328,7 +328,6 @@ def source_elevation(catalogue,
     locs_labels = matplotlib.dates.num2date(locs)
     locator = matplotlib.ticker.FixedLocator(locs)
     ax.xaxis.set_major_locator(locator)
-    ax.margins(x=0)
     utc_timestamps = [locs_lbl.strftime('%H:%M') for locs_lbl in locs_labels]
 
     lst_timestamps = []
@@ -349,7 +348,6 @@ def source_elevation(catalogue,
     ax2.set_position([box.x0, box.y0, box.width * 0.9, box.height])
     ax2.set_xlim(ax.get_xlim())
     ax2.set_xticks(ax.get_xticks())
-    ax2.margins(x=0)
     ax2.xaxis.set_major_locator(locator)
     ax2.set_xticklabels(utc_timestamps,
                         rotation=30,
@@ -720,7 +718,7 @@ def main(args):
     if args.view:
         # check if view file in CSV or YAML
         data_dict = read_yaml(args.view)
-        if isinstance(data_dict, dict):
+        if data_dict:
             catalogue = katpoint.Catalogue()
             catalogue.antenna = ref_antenna
             for observation_cycle in data_dict['observation_loop']:
