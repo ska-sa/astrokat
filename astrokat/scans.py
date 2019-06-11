@@ -1,5 +1,5 @@
 import katpoint
-import astrokat.noisediode
+import noisediode
 
 import time
 
@@ -7,7 +7,7 @@ libnames = ['user_logger']
 try:
     lib = __import__('katcorelib', globals(), locals(), libnames)
 except ImportError:
-    lib = __import__('astrokat.simulate', globals(), locals(), libnames)
+    lib = __import__('simulate', globals(), locals(), libnames)
 finally:
     for libname in libnames:
         globals()[libname] = getattr(lib, libname)
@@ -29,7 +29,7 @@ def drift_pointing_offset(target, duration=60.):
 
 def drift_scan(session, target, nd_period=None, duration=60.):
     # trigger noise diode if set
-    astrokat.noisediode.trigger(session.kat, session, duration=nd_period)
+    noisediode.trigger(session.kat, session, duration=nd_period)
     target = drift_pointing_offset(target, duration=duration)
     user_logger.info('Drift_scan observation for {} sec'
                      .format(duration))
@@ -38,7 +38,7 @@ def drift_scan(session, target, nd_period=None, duration=60.):
 
 def raster_scan(session, target, nd_period=None, **kwargs):
     # trigger noise diode if set
-    astrokat.noisediode.trigger(session.kat, session, duration=nd_period)
+    noisediode.trigger(session.kat, session, duration=nd_period)
     # TODO: ignoring raster_scan, not currently working robustly
     # TODO: there are errors in raster scan calculations, need some review
     #     session.raster_scan(target,num_scans=2,
@@ -52,7 +52,7 @@ def raster_scan(session, target, nd_period=None, **kwargs):
 
 def scan(session, target, nd_period=None, **kwargs):
     # trigger noise diode if set
-    astrokat.noisediode.trigger(session.kat, session, duration=nd_period)
+    noisediode.trigger(session.kat, session, duration=nd_period)
     try:
         timestamp = session.time
     except AttributeError:

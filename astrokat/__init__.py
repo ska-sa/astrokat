@@ -1,7 +1,7 @@
 from .__main__ import cli  # noqa
-import astrokat.noisediode  # noqa
-import astrokat.correlator  # noqa
-import astrokat.scans # noqa
+import noisediode  # noqa
+import correlator  # noqa
+import scans # noqa
 
 from .simulate import (  # noqa
     user_logger,

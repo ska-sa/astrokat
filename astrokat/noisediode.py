@@ -6,7 +6,7 @@ libnames = ['user_logger']
 try:
     lib = __import__('katcorelib', globals(), locals(), libnames)
 except ImportError:
-    lib = __import__('astrokat.simulate', globals(), locals(), libnames)
+    lib = __import__('simulate', globals(), locals(), libnames)
 finally:
     for libname in libnames:
         globals()[libname] = getattr(lib, libname)

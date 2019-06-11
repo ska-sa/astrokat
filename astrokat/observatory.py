@@ -5,8 +5,8 @@ import numpy
 import katpoint
 
 from datetime import datetime
-from astrokat.simulate import user_logger, setobserver
-from astrokat.utility import katpoint_target, lst2utc
+from simulate import user_logger, setobserver
+from utility import katpoint_target, lst2utc
 
 try:
     import katconf
