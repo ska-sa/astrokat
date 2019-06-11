@@ -1,5 +1,11 @@
 import katpoint
-import noisediode
+import sys
+
+if sys.version_info[0] == 3:
+    import astrokat.noisediode as noisediode
+else:
+    import noisediode
+
 
 import time
 
@@ -7,7 +13,10 @@ libnames = ['user_logger']
 try:
     lib = __import__('katcorelib', globals(), locals(), libnames)
 except ImportError:
-    lib = __import__('simulate', globals(), locals(), libnames)
+    if sys.version_info[0] == 3:
+        lib = __import__('astrokat.simulate', globals(), locals(), libnames)
+    else:
+        lib = __import__('simulate', globals(), locals(), libnames)
 finally:
     for libname in libnames:
         globals()[libname] = getattr(lib, libname)

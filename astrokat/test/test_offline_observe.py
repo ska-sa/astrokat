@@ -1,10 +1,14 @@
 from __future__ import print_function
 import unittest2 as unittest
+import sys
 
 from astrokat import observe_main, simulate
 
 import logging
-from StringIO import StringIO
+if sys.version_info[0] == 3:
+    from io import StringIO
+else:
+    from StringIO import StringIO
 
 
 class test_strokat_yaml(unittest.TestCase):
