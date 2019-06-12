@@ -40,13 +40,11 @@ setup(
                       'katpoint',
                       'matplotlib<3',
                       'numpy',
-                      'pyyaml',
-                      'nose-testconfig'],
+                      'pyyaml'],
     extras_require={
         'live': ['katcorelib', 'katconf']
     },
     tests_require=['nose',
-                   'nose-testconfig',
                    'coverage',
                    'nosexcover',
                    'unittest2'],

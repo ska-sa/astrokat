@@ -1,11 +1,9 @@
+from __future__ import division
+from __future__ import absolute_import
+
 import katpoint
-import sys
 
-if sys.version_info[0] == 3:
-    import astrokat.noisediode as noisediode
-else:
-    import noisediode
-
+from .noisediode import trigger
 
 import time
 
@@ -13,10 +11,7 @@ libnames = ['user_logger']
 try:
     lib = __import__('katcorelib', globals(), locals(), libnames)
 except ImportError:
-    if sys.version_info[0] == 3:
-        lib = __import__('astrokat.simulate', globals(), locals(), libnames)
-    else:
-        lib = __import__('simulate', globals(), locals(), libnames)
+    lib = __import__('astrokat.simulate', globals(), locals(), libnames)
 finally:
     for libname in libnames:
         globals()[libname] = getattr(lib, libname)
@@ -38,7 +33,7 @@ def drift_pointing_offset(target, duration=60.):
 
 def drift_scan(session, target, nd_period=None, duration=60.):
     # trigger noise diode if set
-    noisediode.trigger(session.kat, session, duration=nd_period)
+    trigger(session.kat, session, duration=nd_period)
     target = drift_pointing_offset(target, duration=duration)
     user_logger.info('Drift_scan observation for {} sec'
                      .format(duration))

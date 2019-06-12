@@ -1,16 +1,15 @@
+from __future__ import division
+from __future__ import absolute_import
+
 import numpy as np
 import time
-import sys
 
 libnames = ['user_logger']
 
 try:
     lib = __import__('katcorelib', globals(), locals(), libnames)
 except ImportError:
-    if sys.version_info[0] == 3:
-        lib = __import__('astrokat.simulate', globals(), locals(), libnames)
-    else:
-        lib = __import__('simulate', globals(), locals(), libnames)
+    lib = __import__('astrokat.simulate', globals(), locals(), libnames)
 finally:
     for libname in libnames:
         globals()[libname] = getattr(lib, libname)

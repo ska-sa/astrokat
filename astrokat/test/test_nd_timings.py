@@ -19,7 +19,7 @@ else:
 # - nd-pattern-plus-off
 # - nd-trigger
 
-class test_strokat_yaml(unittest.TestCase):
+class test_astrokat_yaml(unittest.TestCase):
 
     def setUp(self):
         user_logger = logging.getLogger('astrokat.simulate')
@@ -39,9 +39,11 @@ class test_strokat_yaml(unittest.TestCase):
 
     def test_nd_pattern_sim(self):
         observe_main.main(['--yaml',
-                           'astrokat/test/test_nd/{}.yaml'.format('nd-pattern-sim')])
+                           'astrokat/test/test_nd/nd-pattern-sim.yaml'])
 
-        # get result and make sure everything ran properly
+        # TODO: restore this check after working out an appropriate start-time
+        # in UTC with Ruby
+
         result = self.string_stream.getvalue()
         # self.assertIn('Single run through observation target list', result, 'Single run')
         # self.assertIn('azel observed for 300.0 sec',

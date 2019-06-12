@@ -1,18 +1,17 @@
+from __future__ import division
+from __future__ import absolute_import
+
 import os
 import json
 import ephem
 import numpy
 import katpoint
-import sys
+
 
 from datetime import datetime
 
-if sys.version_info[0] == 3:
-    from astrokat.simulate import user_logger, setobserver
-    from astrokat.utility import katpoint_target, lst2utc
-else:
-    from simulate import user_logger, setobserver
-    from utility import katpoint_target, lst2utc
+from .simulate import user_logger, setobserver
+from .utility import katpoint_target, lst2utc
 
 try:
     import katconf

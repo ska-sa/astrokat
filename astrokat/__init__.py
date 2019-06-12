@@ -1,15 +1,11 @@
-import sys
+from __future__ import division
+from __future__ import absolute_import
+
 from .__main__ import cli  # noqa
 
-if sys.version_info[0] == 3:
-    import astrokat.noisediode  # noqa
-    import astrokat.correlator  # noqa
-    import astrokat.scans # noqa
-else:
-    import noisediode  # noqa
-    import correlator  # noqa
-    import scans # noqa
-
+from .noisediode  import * # noqa
+from .correlator  import * # noqa
+from .scans import * # noqa
 
 from .simulate import (  # noqa
     user_logger,
