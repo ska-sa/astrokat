@@ -1,7 +1,7 @@
 instrument:
   integration_time: 2
 observation_loop:
-  - LST: 0.0-23.9
+  - LST: 0:00-23:50
     target_list:
       - name=1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, duration=180.0, type=drift_scan, nd=10
       - name=0408-65, radec=04:08:20.38 -65:45:09.1, tags=target, duration=180.0, type=drift_scan
