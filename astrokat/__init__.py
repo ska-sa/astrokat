@@ -3,9 +3,9 @@ from __future__ import absolute_import
 
 from .__main__ import cli  # noqa
 
-from .noisediode  import * # noqa
-from .correlator  import * # noqa
-from .scans import * # noqa
+from . import noisediode # noqa
+from . import correlator # noqa
+from . import scans # noqa
 
 from .simulate import (  # noqa
     user_logger,
