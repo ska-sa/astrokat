@@ -18,17 +18,10 @@ from astrokat import (
     scans,
     )
 
-libnames = ['collect_targets',
-            'user_logger',
-            'start_session',
-            'verify_and_connect']
 try:
-    lib = __import__('katcorelib', globals(), locals(), libnames)
+    from katcorelib import collect_targets, user_logger, start_session, verify_and_connect
 except ImportError:
-    lib = __import__('astrokat', globals(), locals(), libnames)
-finally:
-    for libname in libnames:
-        globals()[libname] = getattr(lib, libname)
+    from astrokat import collect_targets, user_logger, start_session, verify_and_connect
 
 
 # unpack targets to katpoint compatible format

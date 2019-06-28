@@ -4,15 +4,11 @@ from __future__ import absolute_import
 import numpy as np
 import time
 
-libnames = ['user_logger']
-
 try:
-    lib = __import__('katcorelib', globals(), locals(), libnames)
+    from katcorelib import user_logger
 except ImportError:
-    lib = __import__('astrokat.simulate', globals(), locals(), libnames)
-finally:
-    for libname in libnames:
-        globals()[libname] = getattr(lib, libname)
+    from .simulate import user_logger
+
 
 _DEFAULT_LEAD_TIME = 5.0  # lead time [sec]
 

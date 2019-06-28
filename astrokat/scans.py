@@ -7,14 +7,10 @@ from .noisediode import trigger
 
 import time
 
-libnames = ['user_logger']
 try:
-    lib = __import__('katcorelib', globals(), locals(), libnames)
+    from katcorelib import user_logger
 except ImportError:
-    lib = __import__('astrokat.simulate', globals(), locals(), libnames)
-finally:
-    for libname in libnames:
-        globals()[libname] = getattr(lib, libname)
+    from .simulate import user_logger
 
 
 def drift_pointing_offset(target, duration=60.):
