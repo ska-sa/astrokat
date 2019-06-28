@@ -1,12 +1,16 @@
+from __future__ import division
+from __future__ import absolute_import
+
 # Provides skeleton for faking live system
 import ephem
 import logging
 import numpy
-import sys
 import time
+import sys
 
 from collections import namedtuple
-from utility import get_lst, datetime2timestamp, timestamp2datetime
+
+from .utility import get_lst, datetime2timestamp, timestamp2datetime
 
 global simobserver
 simobserver = ephem.Observer()

@@ -1,5 +1,5 @@
 instrument:
-  product: c856M4k
+  product: c856M32k
   band: l
   integration_time: 8
 durations:  # if left out only single observation run through target list

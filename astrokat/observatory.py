@@ -1,12 +1,17 @@
+from __future__ import division
+from __future__ import absolute_import
+
 import os
 import json
 import ephem
 import numpy
 import katpoint
 
+
 from datetime import datetime
-from simulate import user_logger, setobserver
-from utility import katpoint_target, lst2utc
+
+from .simulate import user_logger, setobserver
+from .utility import katpoint_target, lst2utc
 
 try:
     import katconf

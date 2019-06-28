@@ -37,20 +37,33 @@ pipeline {
                 timestamps()
                 timeout(time: 30, unit: 'MINUTES') 
             }
-            steps
-                {
-                        sh 'pip install . -U --user'
-                        sh "python setup.py nosetests --with-xunit --with-xcoverage --cover-package=${KATPACKAGE} --cover-inclusive"
-                } 
-                
-                post {
-                    always {
-                        junit 'nosetests.xml'
-                        cobertura coberturaReportFile: 'coverage.xml'
-                        archiveArtifacts '*.xml'
+
+	    environment {
+                test_flags = "--with-xunit --with-xcoverage --cover-package=${KATPACKAGE} --cover-inclusive"
+            }
+
+            parallel {
+                stage('Running test under Python 2.7') {
+                    steps {
+                        sh 'tox -e py27'
+                    }
+                }
+
+                stage('Running test under Python 3.6') {
+                    steps {
+                        sh 'tox -e py36'
                     }
                 }
             }
+
+            post {
+                always {
+                    junit 'nosetests_*.xml'
+                    cobertura coberturaReportFile: 'coverage.xml'
+                    archiveArtifacts '*.xml'
+                }
+            }
+        }
 
         stage('Build & publish packages') {
             when {

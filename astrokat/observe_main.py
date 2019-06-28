@@ -18,17 +18,10 @@ from astrokat import (
     scans,
     )
 
-libnames = ['collect_targets',
-            'user_logger',
-            'start_session',
-            'verify_and_connect']
 try:
-    lib = __import__('katcorelib', globals(), locals(), libnames, -1)
+    from katcorelib import collect_targets, user_logger, start_session, verify_and_connect
 except ImportError:
-    lib = __import__('astrokat', globals(), locals(), libnames, -1)
-finally:
-    for libname in libnames:
-        globals()[libname] = getattr(lib, libname)
+    from astrokat import collect_targets, user_logger, start_session, verify_and_connect
 
 
 # unpack targets to katpoint compatible format
@@ -70,7 +63,7 @@ def read_targets(target_items):
         # name, or the name with the '*' if given. This unpacking mimics that
         # expected behaviour to ensure the target can be easily called by name
         name_list = [name.strip() for name in name_list.split('|')]
-        prefered_name = filter(lambda x: x.startswith('*'), name_list)
+        prefered_name = list(filter(lambda x: x.startswith('*'), name_list))
         if prefered_name:
             target_name = prefered_name[0][1:]
         else:
@@ -401,7 +394,7 @@ def run_observation(opts, kat):
             # Do not use float() values, ephem.hours does not convert as expected
             local_lst = observer.sidereal_time()
             # Only observe targets in current LST range
-            if start_lst < end_lst:
+            if float(start_lst) < end_lst:
                 in_range = ((ephem.hours(local_lst) >= ephem.hours(str(start_lst)))
                             and (ephem.hours(local_lst) < ephem.hours(str(end_lst))))
                 if not in_range:

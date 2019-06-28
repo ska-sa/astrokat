@@ -1,14 +1,16 @@
+from __future__ import division
+from __future__ import absolute_import
+
 import katpoint
-import noisediode
+
+from .noisediode import trigger
+
 import time
-libnames = ['user_logger']
+
 try:
-    lib = __import__('katcorelib', globals(), locals(), libnames, -1)
+    from katcorelib import user_logger
 except ImportError:
-    lib = __import__('simulate', globals(), locals(), libnames, -1)
-finally:
-    for libname in libnames:
-        globals()[libname] = getattr(lib, libname)
+    from .simulate import user_logger
 
 
 def drift_pointing_offset(target, duration=60.):
@@ -27,7 +29,7 @@ def drift_pointing_offset(target, duration=60.):
 
 def drift_scan(session, target, nd_period=None, duration=60.):
     # trigger noise diode if set
-    noisediode.trigger(session.kat, session, duration=nd_period)
+    trigger(session.kat, session, duration=nd_period)
     target = drift_pointing_offset(target, duration=duration)
     user_logger.info('Drift_scan observation for {} sec'
                      .format(duration))
