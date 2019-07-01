@@ -86,7 +86,7 @@ class SimKat(object):
         pass
 
     def get(self, sensorname):
-        return self._sensors[sensorname]
+        return self._sensors.get(sensorname)
 
     def fake_sensors(self, kwargs):
         _sensors = {}
