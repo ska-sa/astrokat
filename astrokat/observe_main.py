@@ -270,6 +270,17 @@ class Telescope(object):
         user_logger.trace(self.opts.obs_plan_params['instrument'])
         if self.opts.obs_plan_params['instrument'] is None:
             return
+
+        approved_sb_sensor = self.array.sched.sensor.get('approved_schedule')
+        if not approved_sb_sensor:
+            user_logger.info('Skipping instrument checks - approved_schedule does not exist')
+            return
+        approved_sb_sensor_value = approved_sb_sensor.get_value()
+        if self.array.sb_id_code not in approved_sb_sensor_value:
+            user_logger.info('Skipping instrument checks - {} not in approved_schedule'
+                                .format(self.array.sb_id_code))
+            return
+
         for key in instrument.keys():
             conf_param = instrument[key]
             if key == 'integration_time':
