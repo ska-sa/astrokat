@@ -241,7 +241,7 @@ def pattern(kat,  # kat subarray object
     #   to be set up
     timestamp = np.ceil(time.time() + lead_time)
     msg = ('Request: Set noise diode pattern to activate at {} '
-           'with {} sec lead time'
+           '(includes {} sec lead time)'
            .format(timestamp,
                    lead_time))
     user_logger.warning(msg)
