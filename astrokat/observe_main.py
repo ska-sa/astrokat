@@ -193,7 +193,9 @@ def observe(
 
     if nd_setup is not None:
         # restore pattern if programmed at setup
-        noisediode.pattern(session.kat, session, nd_setup)
+        noisediode.pattern(session.kat,
+                           session,
+                           nd_setup)
 
     return target_visible
 
@@ -220,6 +222,8 @@ class Telescope(object):
     def __init__(self, opts, correlator=None):
         user_logger.info('Setting up telescope for observation')
         self.opts = opts
+        self.nd_lead_time = opts.obs_plan_params['noise_diode']['lead_time']
+
         # unpack user specified correlator setup values
         if correlator is not None:
             correlator_config = read_yaml(correlator)
@@ -241,7 +245,7 @@ class Telescope(object):
         # TODO: noise diode implementations should be moved to sessions
         # Ensure default setup before starting observation
         # switch noise-source pattern off (known setup starting observation)
-        noisediode.off(self.array)
+        noisediode.off(self.array, lead_time=self.nd_lead_time)
 
         # TODO: add part that implements noise diode fire per track
         # TODO: move this to a callable function,
@@ -256,7 +260,7 @@ class Telescope(object):
         # Ensure known exit state before quitting
         # TODO: Return correlator settings to entry values
         # switch noise-source pattern off (ensure this after each observation)
-        noisediode.off(self.array)
+        noisediode.off(self.array, lead_time=self.nd_lead_time)
         self.array.disconnect()
 
     def subarray_setup(self, instrument):
@@ -278,7 +282,7 @@ class Telescope(object):
         approved_sb_sensor_value = approved_sb_sensor.get_value()
         if self.array.sb_id_code not in approved_sb_sensor_value:
             user_logger.info('Skipping instrument checks - {} not in approved_schedule'
-                                .format(self.array.sb_id_code))
+                             .format(self.array.sb_id_code))
             return
 
         for key in instrument.keys():
@@ -424,7 +428,10 @@ def run_observation(opts, kat):
                     continue
             # TODO: setup of noise diode pattern should be moved to sessions so it happens in the line above
             if 'noise_diode' in obs_plan_params.keys():
-                noisediode.pattern(kat.array, session, obs_plan_params['noise_diode'])
+                noisediode.pattern(kat.array,
+                                   session,
+                                   obs_plan_params['noise_diode'],
+                                   lead_time=kat.nd_lead_time)
 
             # Adding explicit init after "Capture-init failed" exception was encountered
             session.capture_init()
@@ -658,6 +665,10 @@ def main(args):
         opts.horizon = opts.obs_plan_params['horizon']
     else:
         opts.horizon = 20.  # deg above horizon default
+    # check for noise diode setup parameters
+    if 'noise_diode' in opts.obs_plan_params:
+        if 'lead_time' not in opts.obs_plan_params['noise_diode']:
+            opts.obs_plan_params['noise_diode']['lead_time'] = noisediode._DEFAULT_LEAD_TIME
 
     # set log level
     if opts.debug:
