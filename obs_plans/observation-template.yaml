@@ -12,7 +12,7 @@ instrument:
   # user product
   product: c856M4k
   # Data capture averaging or integration period in seconds
-  integration_period: 8
+  integration_time: 8
 ## Subarray antenna layout related to PSF calculation
 configuration:
   # size of the array required before observation can continue (minimum number of antennas)

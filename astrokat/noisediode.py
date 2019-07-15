@@ -1,28 +1,27 @@
+from __future__ import division
+from __future__ import absolute_import
+
 import numpy as np
 import time
-libnames = ['user_logger']
+
 try:
-    lib = __import__('katcorelib', globals(), locals(), libnames, -1)
+    from katcorelib import user_logger
 except ImportError:
-    lib = __import__('simulate', globals(), locals(), libnames, -1)
-finally:
-    for libname in libnames:
-        globals()[libname] = getattr(lib, libname)
+    from .simulate import user_logger
+
 
 _DEFAULT_LEAD_TIME = 5.0  # lead time [sec]
-TRACE = False
 
 
 def _katcp_reply_to_log_(dig_katcp_replies):
     for ant in sorted(dig_katcp_replies):
         reply, informs = dig_katcp_replies[ant]
-        _nd_log_msg_(ant, reply, informs, verbose=False)
+        _nd_log_msg_(ant, reply, informs)
 
 
 def _nd_log_msg_(ant,
                  reply,
-                 informs,
-                 verbose=False):
+                 informs):
 
     user_logger.debug('DEBUG: reply = {}'
                       .format(reply))
@@ -38,11 +37,11 @@ def _nd_log_msg_(ant,
     msg = ('Noise diode for antenna {} set at {}. '
            .format(ant,
                    actual_time))
-    if verbose:
-        msg += ('Pattern set as {} sec ON for {} sec cycle length'
-                .format(actual_on_frac*actual_cycle,
-                        actual_cycle))
-    user_logger.info(msg)
+    user_logger.debug(msg)
+    msg = ('Pattern set as {} sec ON for {} sec cycle length'
+           .format(actual_on_frac*actual_cycle,
+                   actual_cycle))
+    user_logger.debug(msg)
 
 
 # switch noise-source on
@@ -62,15 +61,13 @@ def on(kat,
     # Noise Diodes are triggered on all antennas in array simultaneously
     # add some lead to ensure all digitisers set at the same time
     if timestamp is None:
-        # user_logger.trace
-        if TRACE: print('TRACE: ts + leadtime = {} + {}'
-                        .format(time.time(),
-                                lead_time))
+        user_logger.trace('TRACE: ts + leadtime = {} + {}'
+                          .format(time.time(),
+                                  lead_time))
         timestamp = np.ceil(time.time() + lead_time)
-    # user_logger.trace
-    if TRACE: print('TRACE: nd on at {} ({})'
-                    .format(timestamp,
-                            time.ctime(timestamp)))
+    user_logger.trace('TRACE: nd on at {} ({})'
+                      .format(timestamp,
+                              time.ctime(timestamp)))
     msg = ('Switch noise-diode on at {}'
            .format(timestamp))
     user_logger.info(msg)
@@ -100,15 +97,13 @@ def off(kat,
     # Noise Diodes are triggered on all antennas in array simultaneously
     # add some lead to ensure all digitisers set at the same time
     if timestamp is None:
-        # user_logger.trace
-        if TRACE: print('TRACE: ts + leadtime = {} + {}'
-                        .format(time.time(),
-                                lead_time))
+        user_logger.trace('TRACE: ts + leadtime = {} + {}'
+                          .format(time.time(),
+                                  lead_time))
         timestamp = np.ceil(time.time() + lead_time)
-    # user_logger.trace
-    if TRACE: print('TRACE: nd off at {} ({})'
-                    .format(timestamp,
-                            time.ctime(timestamp)))
+    user_logger.trace('TRACE: nd off at {} ({})'
+                      .format(timestamp,
+                              time.ctime(timestamp)))
     msg = ('Switch noise-diode off at {}'
            .format(timestamp))
     user_logger.info(msg)
@@ -144,9 +139,8 @@ def trigger(kat,
     user_logger.info(msg)
     user_logger.debug('DEBUG: issue command to switch ND on @ {}'
                       .format(time.time()))
-    # user_logger.trace
-    if TRACE: print('TRACE: ts before issue nd on command {}'
-                    .format(time.time()))
+    user_logger.trace('TRACE: ts before issue nd on command {}'
+                      .format(time.time()))
     timestamp_on_set = on(kat)
     user_logger.debug('DEBUG: on {} ({})'
                       .format(timestamp_on_set,
@@ -155,9 +149,8 @@ def trigger(kat,
                       .format(duration))
     sleeptime = timestamp_on_set - time.time() + duration
     time.sleep(sleeptime)  # default sleep to see for signal to get through
-    # user_logger.trace
-    if TRACE: print('TRACE: ts after issue nd on sleep {}'
-                    .format(time.time()))
+    user_logger.trace('TRACE: ts after issue nd on sleep {}'
+                      .format(time.time()))
     timestamp_off_set = off(kat)
     user_logger.debug('DEBUG: off {} ({})'
                       .format(timestamp_off_set,
@@ -214,7 +207,7 @@ def pattern(kat,  # kat subarray object
         dump_period = session.cbf.correlator.sensor.int_time.get_value()
         user_logger.warning('Correlator integration time {} [sec]'
                             .format(1./dump_period))
-        cycle_length = (round(cycle_length / dump_period) * dump_period)
+        cycle_length = (cycle_length / dump_period) * dump_period
         msg = 'Set noise diode period to multiple of correlator integration time:'
         msg += ' cycle length = {} [sec]'.format(cycle_length)
         user_logger.warning(msg)
@@ -265,14 +258,12 @@ def pattern(kat,  # kat subarray object
                 timestamp += cycle_length * on_fraction
 
     wait_time = timestamp - time.time()
-    # user_logger.trace
-    if TRACE: print('TRACE: set nd pattern at {} from now {}, sleep {}'
-                    .format(timestamp,
-                            time.time(),
-                            wait_time))
+    user_logger.trace('TRACE: set nd pattern at {} from now {}, sleep {}'
+                      .format(timestamp,
+                              time.time(),
+                              wait_time))
     time.sleep(wait_time)
-    # user_logger.trace
-    if TRACE: print('TRACE: ts after wait period {}'
-                    .format(time.time()))
+    user_logger.trace('TRACE: ts after wait period {}'
+                      .format(time.time()))
 
 # -fin-

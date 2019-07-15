@@ -1,12 +1,17 @@
+from __future__ import division
+from __future__ import absolute_import
+
 import os
 import json
 import ephem
 import numpy
 import katpoint
 
+
 from datetime import datetime
-from simulate import user_logger, setobserver
-from utility import katpoint_target, lst2utc
+
+from .simulate import user_logger, setobserver
+from .utility import katpoint_target, lst2utc
 
 try:
     import katconf
@@ -124,20 +129,24 @@ class Observatory(object):
                  (time_.second+time_.microsecond/1e6)/3600.)
         return '%.3f' % time_
 
-    def start_obs(self, target_list):
+    def start_obs(self, target_list, str_flag=False):
         start_lst = []
         for target in target_list:
             target_ = self.get_target(target).body
             start_lst.append(self._ephem_risetime_(target_))
         start_lst = start_lst[numpy.asarray(start_lst, dtype=float).argmin()]
+        if str_flag:
+            return str(start_lst)
         return self.lst2hours(start_lst)
 
-    def end_obs(self, target_list):
+    def end_obs(self, target_list, str_flag=False):
         end_lst = []
         for target in target_list:
             target_ = self.get_target(target).body
             end_lst.append(self._ephem_settime_(target_))
         end_lst = end_lst[numpy.asarray(end_lst, dtype=float).argmax()]
+        if str_flag:
+            return str(end_lst)
         return self.lst2hours(end_lst)
 
 

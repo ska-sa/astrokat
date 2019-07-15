@@ -15,6 +15,7 @@ setup(
     packages=find_packages(),
     scripts=[
         'scripts/astrokat-cals.py',
+        'scripts/astrokat-catalogue2obsfile.py',
         'scripts/astrokat-fitflux.py',
         'scripts/astrokat-lst.py',
         'scripts/astrokat-observe.py',
@@ -39,13 +40,11 @@ setup(
                       'katpoint',
                       'matplotlib<3',
                       'numpy',
-                      'pyyaml',
-                      'nose-testconfig'],
+                      'pyyaml'],
     extras_require={
         'live': ['katcorelib', 'katconf']
     },
     tests_require=['nose',
-                   'nose-testconfig',
                    'coverage',
                    'nosexcover',
                    'unittest2'],

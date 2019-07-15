@@ -1,0 +1,13 @@
+# Observation catalogue for proposal ID: SCI-20180516-PW-01
+# PI:Rob Fender
+# Contact details: None
+durations:
+  start_time: 2018-12-07 05:00:00
+  obs_duration: 7200.0
+horizon: 17.
+observation_loop:
+  - LST: 11.006-1.5
+    target_list:
+      - name=J0408-6545 | 0408-658, radec=4:08:20.38 -65:45:09.6, tags=bpcal fluxcal, duration=600.0, cadence=3600.0, model=(145.0 18000.0 -0.979 3.366 -1.122 0.0861)
+      - name=J1744-5144 | 1740-517, radec=17:44:25.47 -51:44:43.1, tags=gaincal, duration=120.0, model=(145.0 99000.0 -3.694 2.745 -0.3655 -0.015)
+      - name=J1939-6342 | 1934-638, radec=19:39:25.05 -63:42:43.6, tags=bpcal fluxcal, duration=600.0, cadence=3600.0, model=(408.0 8640.0 -30.77 26.49 -7.098 0.6053)

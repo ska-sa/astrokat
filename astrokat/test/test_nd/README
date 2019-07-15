@@ -1,8 +1,0 @@
-set pattern with one or list of antennas
-python astrokat-observe.py -o ruby --yaml ../tests/test_nd/nd-pattern-ants.yam
-set pattern with all antennas
-python astrokat-observe.py -o ruby --yaml ../tests/test_nd/nd-pattern-sim.yaml
-trigger noise diode before track for 0.8 sec as with pattern
-trigger noise diode before track with 3.8 sec
-dummy track with noise diode
-python astrokat-observe.py -o ruby --yaml ../tests/test_nd/nd-trigger.yaml

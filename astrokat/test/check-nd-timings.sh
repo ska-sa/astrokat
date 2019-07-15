@@ -1,23 +1,23 @@
 #! /bin/bash
 
+## standard checks to run after editing to verify that the basic observations will still succeed
+
 RED="\033[1;31m"
 GREEN="\033[1;32m"
 YELLOW='\033[0;33m'
 NOCOLOR="\033[0m"
 
 INPUT=(
-targets-sim
-two-calib-sim
-drift-targets-sim
-raster-scans-sim
-image-single-sim
-image-sim
-image-cals-sim)
+nd-pattern-sim
+nd-pattern-ants
+nd-pattern-cycle
+nd-pattern-plus-off
+nd-trigger)
 
 for infile in ${INPUT[@]}
 do
     echo
-    CMD="astrokat-observe.py --yaml test_obs/$infile.yaml"
+    CMD="astrokat-observe.py --yaml test_nd/$infile.yaml --trace"
     echo -e "${YELLOW} Testing: $CMD ${NOCOLOR}"
     if $CMD
     then

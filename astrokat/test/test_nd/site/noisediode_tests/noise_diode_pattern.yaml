@@ -1,6 +1,6 @@
 # observation with noise diode pattern
 instrument:
-  integration_period: 2
+  integration_time: 2
 # set noise diode pattern to fire every 20 seconds and only be on for 1.8s
 noise_diode:
   antennas: all
