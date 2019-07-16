@@ -379,7 +379,10 @@ def run_observation(opts, kat):
         target_tags = []
         for cal_type in cal_tags.keys():
             target_tags.append('~{}'.format(cal_tags[cal_type]))
-            cal_list = ', '.join([repr(cal.name) for cal in catalogue.filter(cal_tags[cal_type])])
+            cal_array = [repr(cal.name) for cal in catalogue.filter(cal_tags[cal_type])]
+            if len(cal_array) < 1:
+                continue  # do not display empty tags
+            cal_list = ', '.join(cal_array)
             user_logger.info("{} calibrators are [{}]".format(
                              cal_type,
                              cal_list))
