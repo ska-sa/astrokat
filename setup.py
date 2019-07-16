@@ -40,7 +40,7 @@ setup(
     install_requires=['pyephem',
                       'katpoint',
                       'matplotlib<3',
-                      'numpy<1.17',
+                      'numpy>=1.17' if sys.version_info >= (3, 5) else 'numpy<1.17',
                       'pyyaml'],
     extras_require={
         'live': ['katcorelib', 'katconf']
