@@ -5,6 +5,7 @@ import logging
 import numpy as np
 import os
 import time
+import katversion
 
 import astrokat
 from astrokat.utility import datetime2timestamp, timestamp2datetime
@@ -676,6 +677,8 @@ def main(args):
         user_logger.setLevel(logging.DEBUG)
     if opts.trace:
         user_logger.setLevel(logging.TRACE)
+
+    user_logger.warn('Running astrokat version - {}'.format(katversion.get_version()))
 
     # setup and observation
     with Telescope(opts) as kat:
