@@ -238,6 +238,7 @@ class Telescope(object):
 
     def __enter__(self):
         # Verify subarray setup correct for observation before doing any work
+        user_logger.warn('Running astrokat version - {}'.format(katversion.get_version()))
         if 'instrument' in self.opts.obs_plan_params.keys():
             self.subarray_setup(self.opts.obs_plan_params['instrument'])
 
@@ -677,8 +678,6 @@ def main(args):
         user_logger.setLevel(logging.DEBUG)
     if opts.trace:
         user_logger.setLevel(logging.TRACE)
-
-    user_logger.warn('Running astrokat version - {}'.format(katversion.get_version()))
 
     # setup and observation
     with Telescope(opts) as kat:
