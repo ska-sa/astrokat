@@ -407,6 +407,8 @@ def run_observation(opts, kat):
             # and that it is worth while continuing with the observation
             # Do not use float() values, ephem.hours does not convert as expected
             local_lst = observer.sidereal_time()
+            user_logger.trace('TRACE: Local LST {}'
+                              .format(ephem.hours(local_lst)))
             # Only observe targets in current LST range
             if float(start_lst) < end_lst:
                 in_range = ((ephem.hours(local_lst) >= ephem.hours(str(start_lst)))
@@ -571,15 +573,23 @@ def run_observation(opts, kat):
                         time_remaining = obs_duration - delta_time
                         user_logger.trace('TRACE: time remaining {} sec'
                                           .format(time_remaining))
+
                         next_target = obs_targets[(cnt+1) % len(obs_targets)]
-                        for next_tgt_idx in range(cnt+1, len(obs_targets)):
-                            next_target = obs_targets[next_tgt_idx % len(obs_targets)]
-                            user_logger.trace('TRACE: time needed for next obs {} sec'
-                                              .format(next_target['cadence']))
-                            if next_target['cadence'] > 0:
+                        user_logger.trace('TRACE: next target before cadence check:\n{}'.format(
+                            next_target))
+                        # check if there is a cadence target that must be run
+                        # instead of next target
+                        for next_cadence_tgt_idx in range(cnt+1, len(obs_targets)):
+                            next_cadence_target = obs_targets[next_cadence_tgt_idx % len(obs_targets)]
+                            if next_cadence_target['cadence'] > 0:
+                                user_logger.trace('TRACE: time needed for next obs {} sec'
+                                                  .format(next_cadence_target['cadence']))
+                                next_target = obs_targets[next_cadence_tgt_idx % len(obs_targets)]
                                 continue
-                            user_logger.trace('TRACE: time needed for next obs {} sec'
-                                              .format(next_target['duration']))
+                        user_logger.trace('TRACE: next target after cadence check:\n{}'.format(
+                            next_target))
+                        user_logger.trace('TRACE: time needed for next obs {} sec'
+                                          .format(next_target['duration']))
                         if time_remaining < 1. or \
                                 time_remaining < next_target['duration']:
                             user_logger.info('Scheduled observation time lapsed - ending observation')
