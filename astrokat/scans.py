@@ -38,7 +38,7 @@ def drift_scan(session, target, nd_period=None, duration=60.):
 
 def raster_scan(session, target, nd_period=None, **kwargs):
     # trigger noise diode if set
-    noisediode.trigger(session.kat, session, duration=nd_period)
+    trigger(session.kat, session, duration=nd_period)
     # TODO: ignoring raster_scan, not currently working robustly
     # TODO: there are errors in raster scan calculations, need some review
     #     session.raster_scan(target,num_scans=2,
@@ -52,7 +52,7 @@ def raster_scan(session, target, nd_period=None, **kwargs):
 
 def scan(session, target, nd_period=None, **kwargs):
     # trigger noise diode if set
-    noisediode.trigger(session.kat, session, duration=nd_period)
+    trigger(session.kat, session, duration=nd_period)
     try:
         timestamp = session.time
     except AttributeError:

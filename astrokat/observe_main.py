@@ -193,7 +193,9 @@ def observe(
 
     if nd_setup is not None:
         # restore pattern if programmed at setup
-        noisediode.pattern(session.kat, session, nd_setup)
+        noisediode.pattern(session.kat,
+                           session,
+                           nd_setup)
 
     return target_visible
 
@@ -220,6 +222,7 @@ class Telescope(object):
     def __init__(self, opts, correlator=None):
         user_logger.info('Setting up telescope for observation')
         self.opts = opts
+
         # unpack user specified correlator setup values
         if correlator is not None:
             correlator_config = read_yaml(correlator)
@@ -278,7 +281,7 @@ class Telescope(object):
         approved_sb_sensor_value = approved_sb_sensor.get_value()
         if self.array.sb_id_code not in approved_sb_sensor_value:
             user_logger.info('Skipping instrument checks - {} not in approved_schedule'
-                                .format(self.array.sb_id_code))
+                             .format(self.array.sb_id_code))
             return
 
         for key in instrument.keys():
@@ -424,7 +427,10 @@ def run_observation(opts, kat):
                     continue
             # TODO: setup of noise diode pattern should be moved to sessions so it happens in the line above
             if 'noise_diode' in obs_plan_params.keys():
-                noisediode.pattern(kat.array, session, obs_plan_params['noise_diode'])
+                noisediode.pattern(kat.array,
+                                   session,
+                                   obs_plan_params['noise_diode'],
+                                   )
 
             # Adding explicit init after "Capture-init failed" exception was encountered
             session.capture_init()

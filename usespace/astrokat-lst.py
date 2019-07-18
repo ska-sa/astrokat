@@ -1,1 +1,0 @@
-../scripts/astrokat-lst.py
