@@ -375,7 +375,9 @@ def run_observation(opts, kat):
         cal_tags = {'Polarisation': 'polcal',
                     'Flux': 'fluxcal',
                     'Bandpass': 'bpcal',
-                    'Gain': 'gaincal'}
+                    'Gain': 'gaincal',
+                    'Delay': 'delaycal',
+                    }
         target_tags = []
         for cal_type in cal_tags.keys():
             target_tags.append('~{}'.format(cal_tags[cal_type]))
