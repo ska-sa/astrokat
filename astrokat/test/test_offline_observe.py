@@ -1,15 +1,22 @@
 from __future__ import print_function
-import unittest2 as unittest
-import sys
-
-from astrokat import observe_main, simulate
 
 import logging
+import os
+import sys
+
+import unittest2 as unittest
+from astrokat import observe_main, simulate
+
 if sys.version_info[0] == 3:
     from io import StringIO
 else:
     from StringIO import StringIO
 
+
+PROPOSAL_ID = 'CAM_AstroKAT_UnitTest'
+OBSERVER = "KAT Tester"
+
+TESTS_PATH = os.path.abspath(os.path.dirname(__file__))
 
 class test_astrokat_yaml(unittest.TestCase):
 
@@ -29,9 +36,21 @@ class test_astrokat_yaml(unittest.TestCase):
         user_logger.addHandler(out_hdlr)
         user_logger.setLevel(logging.INFO)
 
+    def yaml_path(self, file_path):
+        yaml_file = os.path.abspath(os.path.join(TESTS_PATH, file_path))
+        self.assertTrue(os.path.isfile(yaml_file))
+        return yaml_file
+
     def test_targets_sim(self):
-        observe_main.main(['--yaml',
-                           'astrokat/test/test_obs/targets-sim.yaml'])
+        yaml_file = self.yaml_path('test_obs/targets-sim.yaml')
+        observe_main.main([
+            '--yaml', yaml_file,
+            '--observer', OBSERVER,
+            '--proposal-id', PROPOSAL_ID,
+            '--start-time', os.getenv('START_TIME', '2019-07-15 23:35:00'),
+            '--sb-id-code', os.getenv('SB_ID_CODE', '20190718-0001'),
+            '--dry-run',
+           ])
 
         # get result and make sure everything ran properly
         result = self.string_stream.getvalue()
@@ -48,8 +67,16 @@ class test_astrokat_yaml(unittest.TestCase):
         #               result, 'target2_gal observed for 10.0 sec')
 
     def test_two_calib_sim(self):
-        observe_main.main(['--yaml',
-                           'astrokat/test/test_obs/two-calib-sim.yaml'])
+        yaml_file = self.yaml_path('test_obs/two-calib-sim.yaml')
+        observe_main.main([
+            '--yaml', yaml_file,
+            '--observer', OBSERVER,
+            '--proposal-id', PROPOSAL_ID,
+            '--start-time', os.getenv('START_TIME', '2019-07-15 23:35:00'),
+            '--sb-id-code', os.getenv('SB_ID_CODE', '20190718-0001'),
+            '--dry-run',
+       ])
+
 
         # get result and make sure everything ran properly
         result = self.string_stream.getvalue()
@@ -60,8 +87,16 @@ class test_astrokat_yaml(unittest.TestCase):
         self.assertIn('0408-65 observed', result)
 
     def test_drift_targets_sim(self):
-        observe_main.main(['--yaml',
-                           'astrokat/test/test_obs/drift-targets-sim.yaml'])
+        yaml_file = self.yaml_path('test_obs/drift-targets-sim.yaml')
+        observe_main.main([
+            '--yaml', yaml_file,
+            '--observer', OBSERVER,
+            '--proposal-id', PROPOSAL_ID,
+            '--start-time', os.getenv('START_TIME', '2019-07-15 23:35:00'),
+            '--sb-id-code', os.getenv('SB_ID_CODE', '20190718-0001'),
+            '--dry-run',
+       ])
+
 
         # get result and make sure everything ran properly
         result = self.string_stream.getvalue()
@@ -84,8 +119,15 @@ class test_astrokat_yaml(unittest.TestCase):
     #     self.assertEqual(result.count('Drift_scan observation for'), 2, 'two drift scans')
 
     def test_image_single_sim(self):
-        observe_main.main(['--yaml',
-                           'astrokat/test/test_obs/image-single-sim.yaml'])
+        yaml_file = self.yaml_path('test_obs/image-single-sim.yaml')
+        observe_main.main([
+            '--yaml', yaml_file,
+            '--observer', OBSERVER,
+            '--proposal-id', PROPOSAL_ID,
+            '--start-time', os.getenv('START_TIME', '2019-07-15 23:35:00'),
+            '--sb-id-code', os.getenv('SB_ID_CODE', '20190718-0001'),
+            '--dry-run',
+       ])
 
         # get result and make sure everything ran properly
         result = self.string_stream.getvalue()
@@ -117,8 +159,15 @@ class test_astrokat_yaml(unittest.TestCase):
         self.assertIn('T4R02C04 observed for 180.0 sec', result)
 
     def test_image_sim(self):
-        observe_main.main(['--yaml',
-                           'astrokat/test/test_obs/image-sim.yaml'])
+        yaml_file = self.yaml_path('test_obs/image-sim.yaml')
+        observe_main.main([
+            '--yaml', yaml_file,
+            '--observer', OBSERVER,
+            '--proposal-id', PROPOSAL_ID,
+            '--start-time', os.getenv('START_TIME', '2019-07-15 23:35:00'),
+            '--sb-id-code', os.getenv('SB_ID_CODE', '20190718-0001'),
+            '--dry-run',
+       ])
 
         # get result and make sure everything ran properly
         result = self.string_stream.getvalue()
