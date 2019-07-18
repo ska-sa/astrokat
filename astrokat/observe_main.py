@@ -122,7 +122,9 @@ def observe(
         return session.track(target, duration=0., announce=False)
 
     msg = 'Initialising {} {} {}'.format(
-        obs_type.capitalize(), target.tags[1], target_name)
+        obs_type.capitalize(),
+        ', '.join(target.tags[1:]),
+        target_name)
     if not np.isnan(duration):  # scan types do not have durations
         msg += ' for {} sec'.format(duration)
     if np.isnan(duration) or duration > 1:
@@ -373,12 +375,24 @@ def run_observation(opts, kat):
             if opts.all_up and (len(catalogue.filter(el_limit_deg=opts.horizon)) != len(catalogue)):
                 raise NotAllTargetsUpError('Not all targets are currently visible - '
                                            'please re-run the script with --visibility for information')
+        cal_tags = {'Polarisation': 'polcal',
+                    'Flux': 'fluxcal',
+                    'Bandpass': 'bpcal',
+                    'Gain': 'gaincal',
+                    'Delay': 'delaycal',
+                    }
+        target_tags = []
+        for cal_type in cal_tags.keys():
+            target_tags.append('~{}'.format(cal_tags[cal_type]))
+            cal_array = [repr(cal.name) for cal in catalogue.filter(cal_tags[cal_type])]
+            if len(cal_array) < 1:
+                continue  # do not display empty tags
+            cal_list = ', '.join(cal_array)
+            user_logger.info("{} calibrators are [{}]".format(
+                             cal_type,
+                             cal_list))
         user_logger.info('Imaging targets are [{}]'.format(
-                         ', '.join([repr(target.name) for target in catalogue.filter(['~bpcal', '~gaincal'])])))
-        user_logger.info("Bandpass calibrators are [{}]".format(
-                         ', '.join([repr(bpcal.name) for bpcal in catalogue.filter('bpcal')])))
-        user_logger.info("Gain calibrators are [{}]".format(
-                         ', '.join([repr(gaincal.name) for gaincal in catalogue.filter('gaincal')])))
+                         ', '.join([repr(target.name) for target in catalogue.filter(target_tags)])))
 
         # TODO: the description requirement in sessions should be re-evaluated
         # since the schedule block has the description
