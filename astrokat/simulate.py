@@ -156,7 +156,7 @@ class SimSession(object):
             if self.katpt_current is None:
                 slew_time = _DEFAULT_SLEW_TIME
             else:
-                user_logger.debug('DEBUG: slewing to {}'.format(target.name))
+                user_logger.info('DEBUG: slewing to {}'.format(target.name))
                 slew_time = self.slew_time(target)
         return slew_time
 
