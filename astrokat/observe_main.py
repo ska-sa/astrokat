@@ -5,7 +5,6 @@ import logging
 import numpy as np
 import os
 import time
-import katversion
 
 import astrokat
 from astrokat.utility import datetime2timestamp, timestamp2datetime
@@ -238,7 +237,7 @@ class Telescope(object):
 
     def __enter__(self):
         # Verify subarray setup correct for observation before doing any work
-        user_logger.warn('Running astrokat version - {}'.format(katversion.get_version()))
+        user_logger.warn('Running astrokat version - {}'.format(astrokat.__version__))
         if 'instrument' in self.opts.obs_plan_params.keys():
             self.subarray_setup(self.opts.obs_plan_params['instrument'])
 
