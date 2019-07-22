@@ -7,6 +7,7 @@
 # WRITTEN PERMISSION OF SKA SA.                                               #
 ###############################################################################
 
+from __future__ import absolute_import
 from __future__ import print_function
 
 import os
@@ -14,7 +15,7 @@ import unittest2 as unittest
 from mock import patch
 
 from astrokat import observe_main
-from astrokat_testutils import yaml_path, LoggedTelescope
+from .astrokat_testutils import yaml_path, LoggedTelescope
 
 # - nd-pattern-sim
 # - nd-pattern-ants
