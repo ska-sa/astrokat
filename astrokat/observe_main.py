@@ -642,7 +642,7 @@ def main(args):
     # astrokat does not support observational command line parameters
     # all observational parameters must be in the YAML file
     # command line arguments will be dropped to unknown arguments
-    unknown_args = [arg for arg in args if arg.startswith('--')]
+    unknown_args = [arg for arg in args if arg and arg.startswith('--')]
     if any('horizon' in arg for arg in unknown_args):
         raise RuntimeError('Command line option {} not supported. '
                            'Please specify parameters in YAML file.'.format(
