@@ -165,11 +165,11 @@ class SimSession(object):
         time.sleep(self._fake_slew_(target))
         now = timestamp2datetime(self.time)
         simobserver.date = ephem.Date(now)
-        user_logger.info('Slewed to {}'.format(target.name))
+        user_logger.info('Slewed to %s', target.name)
         time.sleep(duration)
         now = timestamp2datetime(self.time)
         simobserver.date = ephem.Date(now)
-        user_logger.info('Tracked {} for {}'.format(target.name, duration))
+        user_logger.info('Tracked %s for %d seconds', target.name, duration)
         self.katpt_current = target
         return True
 
