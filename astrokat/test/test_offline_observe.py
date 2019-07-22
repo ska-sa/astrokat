@@ -78,6 +78,7 @@ class TestAstrokatYAML(unittest.TestCase):
         self.assertIn('Single run through observation target list', result, 'Single run')
         self.assertIn('0408-65 observed', result)
         self.assertIn('1934-638 observed', result)
+        result = '\n'.join(set(result.strip().split('\n')))
         self.assertEqual(result.count('Drift_scan observation for'), 2, 'two drift scans')
 
     # TODO: restore this check after working out an appropriate start-time
