@@ -1,5 +1,8 @@
+# at least one bpcal should be up. Except for a few minutes around 12 lst. But if we
+# move horizon to 17, there should be 1 that is always up
 instrument:
   product: c856M4k
+horizon: 17.
 observation_loop:
   - LST: 0.0-23.9
     target_list:

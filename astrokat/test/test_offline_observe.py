@@ -1,17 +1,14 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-import os
+
 import unittest2 as unittest
 from mock import patch
 
+
+from .testutils import LoggedTelescope, execute_observe_main
+
 from six.moves import StringIO
-
-from astrokat import observe_main
-from .testutils import yaml_path, LoggedTelescope
-
-PROPOSAL_ID = "CAM_AstroKAT_UnitTest"
-OBSERVER = "KAT Tester"
 
 
 @patch('astrokat.observe_main.Telescope', LoggedTelescope)
@@ -20,66 +17,46 @@ class TestAstrokatYAML(unittest.TestCase):
     def setUp(self):
         LoggedTelescope.user_logger_stream = StringIO()
 
+
     def test_targets_sim(self):
-        yaml_file = yaml_path('test_obs/targets-sim.yaml')
-        observe_main.main([
-            '--yaml', yaml_file,
-            '--observer', OBSERVER,
-            '--proposal-id', PROPOSAL_ID,
-            '--start-time', os.getenv('START_TIME', '2019-07-15 23:35:00'),
-            '--sb-id-code', os.getenv('SB_ID_CODE'),
-            '--dry-run',
-        ])
+        execute_observe_main('test_obs/targets-sim.yaml')
+
         # get result and make sure everything ran properly
         result = LoggedTelescope.user_logger_stream.getvalue()
-        # TODO: restore this check after working out an appropriate start-time
-        # in UTC with Ruby
         self.assertIn('Single run through observation target list', result, 'Single run')
-        # self.assertIn('target0_radec observed for 10.0 sec',
-        #               result, 'target0_radec observed for 10.0 sec')
-        # self.assertIn('target1_azel observed for 10.0 sec',
-        #               result, 'target1_azel observed for 10.0 sec')
-        # self.assertIn('target2_gal observed for 10.0 sec',
-        #               result, 'target2_gal observed for 10.0 sec')
+        self.assertIn('target0_radec observed for 10.0 sec',
+                      result, 'target0_radec observed for 10.0 sec')
+        self.assertIn('target1_azel observed for 10.0 sec',
+                      result, 'target1_azel observed for 10.0 sec')
+        self.assertIn('target2_gal observed for 10.0 sec',
+                      result, 'target2_gal observed for 10.0 sec')
 
     def test_two_calib_sim(self):
-        yaml_file = yaml_path('test_obs/two-calib-sim.yaml')
-        observe_main.main([
-            '--yaml', yaml_file,
-            '--observer', OBSERVER,
-            '--proposal-id', PROPOSAL_ID,
-            '--start-time', os.getenv('START_TIME', '2019-07-15 23:35:00'),
-            '--sb-id-code', os.getenv('SB_ID_CODE'),
-            '--dry-run',
-        ])
+        execute_observe_main('test_obs/two-calib-sim.yaml')
+
         # get result and make sure everything ran properly
         result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn('Single run through observation target list', result, 'Single run')
         self.assertIn('Bandpass calibrators are [\'1934-638\', \'0408-65\']', result,
                       'two Bandpass calibrators')
-        self.assertIn('0408-65 observed', result)
-        self.assertIn('0408-65 observed', result)
+
+        cal1 = result.count('0408-65 observed for 30.0 sec')
+        cal2 = result.count('1934-638 observed for 30.0 sec')
+
+        self.assertGreaterEqual(cal1+cal2, 1, 'At least one bpcal was observed')
+        self.assertLessEqual(cal1+cal2, 2, 'At most 2 bpcals were observed')
 
     def test_drift_targets_sim(self):
-        yaml_file = yaml_path('test_obs/drift-targets-sim.yaml')
-        observe_main.main([
-            '--yaml', yaml_file,
-            '--observer', OBSERVER,
-            '--proposal-id', PROPOSAL_ID,
-            '--start-time', os.getenv('START_TIME', '2019-07-15 23:35:00'),
-            '--sb-id-code', os.getenv('SB_ID_CODE'),
-            '--dry-run',
-        ])
+        execute_observe_main('test_obs/drift-targets-sim.yaml')
+
         # get result and make sure everything ran properly
         result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn('Single run through observation target list', result, 'Single run')
-        self.assertIn('0408-65 observed', result)
-        self.assertIn('1934-638 observed', result)
-        result = '\n'.join(set(result.strip().split('\n')))
+        self.assertIn('0408-65 observed for 180.0 sec', result)
+        self.assertIn('1934-638 observed for 180.0 sec', result)
         self.assertEqual(result.count('Drift_scan observation for'), 2, 'two drift scans')
 
-    # TODO: restore this check after working out an appropriate start-time
-    # in UTC with Ruby
+    # TODO: not sure how raster scan works. Will work out correct test with Ruby
     # def test_raster_scans_sim(self):
     #     observe_main.main(['--yaml',
     #                        'astrokat/test/test_obs/{}.yaml'.format('raster-scans-sim')])
@@ -92,16 +69,8 @@ class TestAstrokatYAML(unittest.TestCase):
     #     self.assertEqual(result.count('Drift_scan observation for'), 2, 'two drift scans')
 
     def test_image_single_sim(self):
-        yaml_file = yaml_path('test_obs/image-single-sim.yaml')
-        observe_main.main([
-            '--yaml', yaml_file,
-            '--observer', OBSERVER,
-            '--proposal-id', PROPOSAL_ID,
-            # Start-time extracted from yaml file.
-            '--start-time', '2019-02-11 02:10:47',
-            '--sb-id-code', os.getenv('SB_ID_CODE'),
-            '--dry-run',
-       ])
+        execute_observe_main('test_obs/image-single-sim.yaml')
+
         # get result and make sure everything ran properly
         result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn('Single run through observation target list', result, 'Single run')
@@ -129,16 +98,7 @@ class TestAstrokatYAML(unittest.TestCase):
         self.assertIn('T4R02C04 observed for 180.0 sec', result)
 
     def test_image_sim(self):
-        yaml_file = yaml_path('test_obs/image-sim.yaml')
-        observe_main.main([
-            '--yaml', yaml_file,
-            '--observer', OBSERVER,
-            '--proposal-id', PROPOSAL_ID,
-            # Start-time extracted from yaml file.
-            '--start-time', '2019-02-11 02:10:47',
-            '--sb-id-code', os.getenv('SB_ID_CODE'),
-            '--dry-run',
-       ])
+        execute_observe_main('test_obs/image-sim.yaml')
 
         # get result and make sure everything ran properly
         result = LoggedTelescope.user_logger_stream.getvalue()

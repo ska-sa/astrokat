@@ -2,14 +2,17 @@ import logging
 import os
 from six.moves import StringIO
 
-from astrokat import observe_main, simulate
+from astrokat import observe_main, simulate, utility
 
 
 __all__ = ['yaml_path', 'LoggedTelescope']
 
+PROPOSAL_ID = "CAM_AstroKAT_UnitTest"
+OBSERVER = "KAT Tester"
+
 
 def yaml_path(file_path):
-    """Convenience method for finding the yaml's file absolute path.
+    """Convenient method for finding the yaml's file absolute path.
 
     Args:
         file_path (str): YAML file path
@@ -21,6 +24,40 @@ def yaml_path(file_path):
     yaml_file = os.path.abspath(os.path.join(tests_path, file_path))
     assert os.path.isfile(yaml_file)
     return yaml_file
+
+
+def extract_start_time(yaml_file):
+    """ Convenient method to extract start_time from yaml
+
+    :param yaml_file: full path file name to yaml file
+    :return: start_time if it exists in yaml file
+    """
+    yaml = utility.read_yaml(yaml_file)
+    if yaml and yaml.get('durations') and yaml.get('durations').get('start_time'):
+        return yaml['durations']['start_time']
+
+
+def execute_observe_main(file_name):
+    """ Convenient method to run observer_main with correct parameters
+
+    :param file_name: relative path to yaml file
+    """
+    yaml_file = yaml_path(file_name)
+    start_time = extract_start_time(yaml_file)
+
+    params = [
+        '--yaml', yaml_file,
+        '--observer', OBSERVER,
+        '--proposal-id', PROPOSAL_ID,
+        '--dry-run',
+        '--sb-id-code', os.getenv('SB_ID_CODE'),
+    ]
+
+    if start_time:
+        params.append('--start-time')
+        params.append(str(start_time))
+
+    observe_main.main(params)
 
 
 class LoggedTelescope(observe_main.Telescope):
