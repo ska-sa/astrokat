@@ -156,15 +156,20 @@ class SimSession(object):
             if self.katpt_current is None:
                 slew_time = _DEFAULT_SLEW_TIME
             else:
-                user_logger.debug('DEBUG: slewing to {}'.format(target.name))
+                user_logger.debug('Slewing to {}'.format(target.name))
                 slew_time = self.slew_time(target)
         return slew_time
 
     def track(self, target, duration=0, announce=False):
         self.track_ = True
-        time.sleep(self._fake_slew_(target)+duration)
+        time.sleep(self._fake_slew_(target))
         now = timestamp2datetime(self.time)
         simobserver.date = ephem.Date(now)
+        user_logger.info('Slewed to %s', target.name)
+        time.sleep(duration)
+        now = timestamp2datetime(self.time)
+        simobserver.date = ephem.Date(now)
+        user_logger.info('Tracked %s for %d seconds', target.name, duration)
         self.katpt_current = target
         return True
 
