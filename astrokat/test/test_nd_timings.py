@@ -1,12 +1,3 @@
-###############################################################################
-# SKA South Africa (http://ska.ac.za/)                                        #
-# Author: cam@ska.ac.za                                                       #
-# Copyright @ 2019 SKA SA. All rights reserved.                               #
-#                                                                             #
-# THIS SOFTWARE MAY NOT BE COPIED OR DISTRIBUTED IN ANY FORM WITHOUT THE      #
-# WRITTEN PERMISSION OF SKA SA.                                               #
-###############################################################################
-
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -15,7 +6,7 @@ import unittest2 as unittest
 from mock import patch
 
 from astrokat import observe_main
-from .astrokat_testutils import yaml_path, LoggedTelescope
+from .testutils import yaml_path, LoggedTelescope
 
 # - nd-pattern-sim
 # - nd-pattern-ants
@@ -44,7 +35,7 @@ class test_astrokat_yaml(unittest.TestCase):
         # TODO: restore this check after working out an appropriate start-time
         # in UTC with Ruby
 
-        result = LoggedTelescope.string_stream.getvalue()
+        result = LoggedTelescope.user_logger_stream.getvalue()
         # self.assertIn('Single run through observation target list', result, 'Single run')
         # self.assertIn('azel observed for 300.0 sec',
         #               result, 'azel observed for 300.0 sec')

@@ -1,11 +1,3 @@
-###############################################################################
-# SKA South Africa (http://ska.ac.za/)                                        #
-# Author: cam@ska.ac.za                                                       #
-# Copyright @ 2019 SKA SA. All rights reserved.                               #
-#                                                                             #
-# THIS SOFTWARE MAY NOT BE COPIED OR DISTRIBUTED IN ANY FORM WITHOUT THE      #
-# WRITTEN PERMISSION OF SKA SA.                                               #
-###############################################################################
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -13,8 +5,10 @@ import os
 import unittest2 as unittest
 from mock import patch
 
+from six.moves import StringIO
+
 from astrokat import observe_main
-from .astrokat_testutils import yaml_path, LoggedTelescope
+from .testutils import yaml_path, LoggedTelescope
 
 PROPOSAL_ID = "CAM_AstroKAT_UnitTest"
 OBSERVER = "KAT Tester"
@@ -22,6 +16,9 @@ OBSERVER = "KAT Tester"
 
 @patch('astrokat.observe_main.Telescope', LoggedTelescope)
 class TestAstrokatYAML(unittest.TestCase):
+
+    def setUp(self):
+        LoggedTelescope.user_logger_stream = StringIO()
 
     def test_targets_sim(self):
         yaml_file = yaml_path('test_obs/targets-sim.yaml')
@@ -34,7 +31,7 @@ class TestAstrokatYAML(unittest.TestCase):
             '--dry-run',
         ])
         # get result and make sure everything ran properly
-        result = LoggedTelescope.string_stream.getvalue()
+        result = LoggedTelescope.user_logger_stream.getvalue()
         # TODO: restore this check after working out an appropriate start-time
         # in UTC with Ruby
         self.assertIn('Single run through observation target list', result, 'Single run')
@@ -56,7 +53,7 @@ class TestAstrokatYAML(unittest.TestCase):
             '--dry-run',
         ])
         # get result and make sure everything ran properly
-        result = LoggedTelescope.string_stream.getvalue()
+        result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn('Single run through observation target list', result, 'Single run')
         self.assertIn('Bandpass calibrators are [\'1934-638\', \'0408-65\']', result,
                       'two Bandpass calibrators')
@@ -74,7 +71,7 @@ class TestAstrokatYAML(unittest.TestCase):
             '--dry-run',
         ])
         # get result and make sure everything ran properly
-        result = LoggedTelescope.string_stream.getvalue()
+        result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn('Single run through observation target list', result, 'Single run')
         self.assertIn('0408-65 observed', result)
         self.assertIn('1934-638 observed', result)
@@ -88,7 +85,7 @@ class TestAstrokatYAML(unittest.TestCase):
     #                        'astrokat/test/test_obs/{}.yaml'.format('raster-scans-sim')])
     #
     #     # get result and make sure everything ran properly
-    #     result = LoggedTelescope.string_stream.getvalue()
+    #     result = LoggedTelescope.user_logger_stream.getvalue()
     #     self.assertIn('Single run through observation target list', result, 'Single run')
     #     self.assertIn('0408-65 observed', result, '0408-65 observed')
     #     self.assertIn('1934-638 observed', result, '1934-638 observed')
@@ -106,7 +103,7 @@ class TestAstrokatYAML(unittest.TestCase):
             '--dry-run',
        ])
         # get result and make sure everything ran properly
-        result = LoggedTelescope.string_stream.getvalue()
+        result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn('Single run through observation target list', result, 'Single run')
         self.assertIn(
             ("Imaging targets are ['T3R04C06', 'T4R00C02', 'T4R00C04', 'T4R00C06',"
@@ -144,7 +141,7 @@ class TestAstrokatYAML(unittest.TestCase):
        ])
 
         # get result and make sure everything ran properly
-        result = LoggedTelescope.string_stream.getvalue()
+        result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn('Scheduled observation time lapsed - ending observation',
                       result, 'observation time lapsed')
 
