@@ -93,4 +93,4 @@ class LoggedTelescope(observe_main.Telescope):
         Returns:
             _io.StringIO: Text I/O implementation using an in-memory buffer.
         """
-        return StringIO()
+        LoggedTelescope.user_logger_stream = StringIO()
