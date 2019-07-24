@@ -89,8 +89,5 @@ class LoggedTelescope(observe_main.Telescope):
     def reset_user_logger_stream():
         """Convenient static method for resetting an in-memory buffer.
         See: https://stackoverflow.com/a/4330829/6165344
-
-        Returns:
-            _io.StringIO: Text I/O implementation using an in-memory buffer.
         """
         LoggedTelescope.user_logger_stream = StringIO()
