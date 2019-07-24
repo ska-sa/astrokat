@@ -1,5 +1,7 @@
 instrument:
   integration_time: 2
+durations:
+  start_time: 2018-07-23 00:10:00
 observation_loop:
   - LST: 0:00-23:50
     target_list:
