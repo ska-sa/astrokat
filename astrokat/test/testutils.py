@@ -5,12 +5,6 @@ from six.moves import StringIO
 from astrokat import observe_main, simulate, utility
 
 
-__all__ = ['yaml_path', 'LoggedTelescope']
-
-PROPOSAL_ID = "CAM_AstroKAT_UnitTest"
-OBSERVER = "KAT Tester"
-
-
 def yaml_path(file_path):
     """Convenient method for finding the yaml's file absolute path.
 
@@ -33,8 +27,8 @@ def extract_start_time(yaml_file):
     :return: start_time if it exists in yaml file
     """
     yaml = utility.read_yaml(yaml_file)
-    if yaml and yaml.get('durations') and yaml.get('durations').get('start_time'):
-        return yaml['durations']['start_time']
+    if yaml and yaml.get("durations") and yaml.get("durations").get("start_time"):
+        return yaml["durations"]["start_time"]
 
 
 def execute_observe_main(file_name):
@@ -46,26 +40,30 @@ def execute_observe_main(file_name):
     start_time = extract_start_time(yaml_file)
 
     params = [
-        '--yaml', yaml_file,
-        '--observer', OBSERVER,
-        '--proposal-id', PROPOSAL_ID,
-        '--dry-run',
-        '--sb-id-code', os.getenv('SB_ID_CODE'),
+        "--yaml", yaml_file,
+        "--observer", "KAT Tester",
+        "--proposal-id", "CAM_AstroKAT_UnitTest",
+        "--dry-run",
     ]
 
+    sb_id_code = os.getenv("SB_ID_CODE")
+    if sb_id_code:
+        params.append("--sb-id-code")
+        params.append(sb_id_code)
+
     if start_time:
-        params.append('--start-time')
+        params.append("--start-time")
         params.append(str(start_time))
 
     observe_main.main(params)
 
 
 class LoggedTelescope(observe_main.Telescope):
-
     """
     Class to be used as class decorator for test case.
     The body of the test case class is patched with a new object.
-    When the class exits the patch is undone.
+
+    Note: that when the class exits the patch is undone.
 
     Attributes:
         user_logger_stream (_io.StringIO): Text I/O implementation using an in-memory
@@ -79,10 +77,20 @@ class LoggedTelescope(observe_main.Telescope):
         # Add log handler AFTER init, as the user_logger is
         # replaced during init
         out_hdlr = logging.StreamHandler(self.user_logger_stream)
-        formatter = logging.Formatter('%(asctime)s - %(message)s')
+        formatter = logging.Formatter("%(asctime)s - %(message)s")
         formatter.formatTime = simulate.sim_time
         out_hdlr.setFormatter(formatter)
         out_hdlr.setLevel(logging.TRACE)
         user_logger = observe_main.user_logger
         user_logger.addHandler(out_hdlr)
         user_logger.setLevel(logging.INFO)
+
+    @staticmethod
+    def reset_user_logger_stream():
+        """Convenient static method for resetting an in-memory buffer.
+        See: https://stackoverflow.com/a/4330829/6165344
+
+        Returns:
+            _io.StringIO: Text I/O implementation using an in-memory buffer.
+        """
+        return StringIO()
