@@ -334,6 +334,11 @@ def run_observation(opts, kat):
     if 'durations' in obs_plan_params:
         if 'obs_duration' in obs_plan_params['durations']:
             obs_duration = obs_plan_params['durations']['obs_duration']
+    # check for nonsensical observation duration setting
+    if obs_duration < 1e-5:
+        user_logger.error('Unexpected value: obs_duration: {}'.format(
+            obs_duration))
+        return
 
     # Each observation loop contains a number of observation cycles over LST ranges
     # For a single observation loop, only a start LST and duration is required
