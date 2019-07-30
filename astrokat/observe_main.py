@@ -283,8 +283,8 @@ class Telescope(object):
             return
         approved_sb_sensor_value = approved_sb_sensor.get_value()
         if self.array.sb_id_code not in approved_sb_sensor_value:
-            user_logger.info('Skipping instrument checks - {} not in approved_schedule'
-                             .format(self.array.sb_id_code))
+            user_logger.info('Skipping instrument checks - {} not in approved_schedule'.format(
+                self.array.sb_id_code))
             return
 
         for key in instrument.keys():
@@ -334,6 +334,11 @@ def run_observation(opts, kat):
     if 'durations' in obs_plan_params:
         if 'obs_duration' in obs_plan_params['durations']:
             obs_duration = obs_plan_params['durations']['obs_duration']
+    # check for nonsensical observation duration setting
+    if obs_duration < 1e-5:
+        user_logger.error('Unexpected value: obs_duration: {}'.format(
+            obs_duration))
+        return
 
     # Each observation loop contains a number of observation cycles over LST ranges
     # For a single observation loop, only a start LST and duration is required
@@ -347,6 +352,7 @@ def run_observation(opts, kat):
         target_list = obs_targets['target'].tolist()
         # build katpoint catalogues for tidy handling of targets
         catalogue = collect_targets(kat.array, target_list)
+        obs_tags = []
         for tgt in obs_targets:
             # catalogue names are no longer unique
             name = tgt['name']
@@ -356,7 +362,9 @@ def run_observation(opts, kat):
                 if (name == cat_tgt.name and
                         tags == ' '.join(cat_tgt.tags)):
                     tgt['target'] = cat_tgt
+                    obs_tags.extend(cat_tgt.tags)
                     break
+        cal_tags = np.unique([tag for tag in obs_tags if 'cal' in tag])
 
         # observer object handle to track the observation timing in a more user friendly way
         observer = catalogue._antenna.observer
@@ -376,24 +384,20 @@ def run_observation(opts, kat):
             if opts.all_up and (len(catalogue.filter(el_limit_deg=opts.horizon)) != len(catalogue)):
                 raise NotAllTargetsUpError('Not all targets are currently visible - '
                                            'please re-run the script with --visibility for information')
-        cal_tags = {'Polarisation': 'polcal',
-                    'Flux': 'fluxcal',
-                    'Bandpass': 'bpcal',
-                    'Gain': 'gaincal',
-                    'Delay': 'delaycal',
-                    }
-        target_tags = []
-        for cal_type in cal_tags.keys():
-            target_tags.append('~{}'.format(cal_tags[cal_type]))
-            cal_array = [repr(cal.name) for cal in catalogue.filter(cal_tags[cal_type])]
+        # List sources and their associated functions from observation tags
+        not_cals_filter_list = []
+        for cal_type in cal_tags:
+            not_cals_filter_list.append('~{}'.format(cal_type))
+            cal_array = [repr(cal.name) for cal in catalogue.filter(cal_type)]
             if len(cal_array) < 1:
                 continue  # do not display empty tags
             cal_list = ', '.join(cal_array)
             user_logger.info("{} calibrators are [{}]".format(
-                             cal_type,
+                             str.upper(cal_type.replace('cal', '')),
                              cal_list))
-        user_logger.info('Imaging targets are [{}]'.format(
-                         ', '.join([repr(target.name) for target in catalogue.filter(target_tags)])))
+        user_logger.info('Observation targets are [{}]'.format(
+            ', '.join([repr(target.name) for target in catalogue.filter(
+                not_cals_filter_list)])))
 
         # TODO: the description requirement in sessions should be re-evaluated
         # since the schedule block has the description
