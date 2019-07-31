@@ -27,6 +27,11 @@ def read_yaml(filename):
         # not a yaml file, suspected csv file, returning False
         return {}
 
+    # remove empty keys
+    for key in data.keys():
+        if data[key] is None:
+            del data[key]
+
     # handle mapping of user friendly keys to CAM resource keys
     if 'instrument' in data.keys():
         instrument = data['instrument']
