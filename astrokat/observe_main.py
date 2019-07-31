@@ -335,7 +335,7 @@ def run_observation(opts, kat):
         if 'obs_duration' in obs_plan_params['durations']:
             obs_duration = obs_plan_params['durations']['obs_duration']
     # check for nonsensical observation duration setting
-    if obs_duration < 1e-5:
+    if  abs(obs_duration) < 1e-5:
         user_logger.error('Unexpected value: obs_duration: {}'.format(
             obs_duration))
         return
