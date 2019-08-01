@@ -359,7 +359,8 @@ def run_observation(opts, kat):
                     tgt['target'] = cat_tgt
                     obs_tags.extend(cat_tgt.tags)
                     break
-        cal_tags = np.unique([tag for tag in obs_tags if 'cal' in tag])
+        obs_tags = list(set(obs_tags))
+        cal_tags = [tag for tag in obs_tags if 'cal' in tag]
 
         # observer object handle to track the observation timing in a more user friendly way
         observer = catalogue._antenna.observer
