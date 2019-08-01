@@ -30,11 +30,8 @@ class TestAstrokatYAML(unittest.TestCase):
         # get result and make sure everything ran properly
         result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn("Single run through observation target list", result)
-        self.assertIn(
-            "Bandpass calibrators are ['1934-638', '0408-65']",
-            result,
-            "two Bandpass calibrators",
-        )
+        self.assertIn("BP calibrators are ['1934-638', '0408-65']", result,
+                      "two Bandpass calibrators")
 
         cal1 = result.count("0408-65 observed for 30.0 sec")
         cal2 = result.count("1934-638 observed for 30.0 sec")
@@ -71,14 +68,17 @@ class TestAstrokatYAML(unittest.TestCase):
         result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn("Single run through observation target list", result)
         expected_results = (
-            "Imaging targets are ['T3R04C06', 'T4R00C02', 'T4R00C04', 'T4R00C06',"
-            " 'T4R01C01', 'T4R01C03', 'T4R01C05', 'T4R02C02', 'T4R02C04']"
+            "Observation targets are ['T3R04C06', 'T4R00C02', 'T4R00C04', 'T4R00C06', "
+            "'T4R01C01', 'T4R01C03', 'T4R01C05', 'T4R02C02', 'T4R02C04']"
         )
         self.assertIn(expected_results, result, "Nine imaging targets")
-        self.assertIn("Bandpass calibrators are ['1934-638', '3C286']", result,
-            "two bandpass calibrators"
-        )
-        self.assertIn("Gain calibrators are ['1827-360']", result, "one gain calibrator")
+
+        self.assertIn("BP calibrators are ['1934-638', '3C286']", result,
+                      "two bandpass calibrators")
+        self.assertIn("GAIN calibrators are ['1827-360']", result, "one gain calibrator")
+        self.assertIn("POL calibrators are ['3C286']", result, "one pol calibrator")
+        self.assertIn("DELAY calibrators are ['1934-638']", result, "one delay calibrator")
+
         self.assertIn("1827-360 observed for 30.0 sec", result)
         self.assertIn("1934-638 observed for 120.0 sec", result)
         self.assertIn("3C286 observed for 40.0 sec", result)
@@ -104,16 +104,16 @@ class TestAstrokatYAML(unittest.TestCase):
         )
 
         expected_results = (
-            "Imaging targets are ['T3R04C06', 'T4R00C02', 'T4R00C04', 'T4R00C06',"
-            " 'T4R01C01', 'T4R01C03', 'T4R01C05', 'T4R02C02', 'T4R02C04']"
+            "Observation targets are ['T3R04C06', 'T4R00C02', 'T4R00C04', 'T4R00C06', "
+            "'T4R01C01', 'T4R01C03', 'T4R01C05', 'T4R02C02', 'T4R02C04']"
         )
         self.assertIn(expected_results, result, "Nine imaging targets")
 
-        self.assertIn("Bandpass calibrators are ['1934-638', '3C286']", result,
-            "two bandpass calibrators",
-        )
-
-        self.assertIn("Gain calibrators are ['1827-360']", result, "one gain calibrator")
+        self.assertIn("GAIN calibrators are ['1827-360']", result, "one gain calibrator")
+        self.assertIn("BP calibrators are ['1934-638', '3C286']", result,
+                      "two BP calibrator")
+        self.assertIn("DELAY calibrators are ['1934-638']", result, "one dealy calibrator")
+        self.assertIn("POL calibrators are ['3C286']", result, "one pol calibrator")
         self.assertIn("1827-360 observed for 30.0 sec", result)
         self.assertIn("1934-638 observed for 120.0 sec", result)
         self.assertIn("3C286 observed for 80.0 sec", result)
