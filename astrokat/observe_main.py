@@ -360,7 +360,7 @@ def run_observation(opts, kat):
                     obs_tags.extend(cat_tgt.tags)
                     break
         obs_tags = list(set(obs_tags))
-        cal_tags = [tag for tag in obs_tags if 'cal' in tag]
+        cal_tags = [tag for tag in obs_tags if tag[-3:] == 'cal']
 
         # observer object handle to track the observation timing in a more user friendly way
         observer = catalogue._antenna.observer
@@ -384,13 +384,12 @@ def run_observation(opts, kat):
         not_cals_filter_list = []
         for cal_type in cal_tags:
             not_cals_filter_list.append('~{}'.format(cal_type))
-            cal_array = [repr(cal.name) for cal in catalogue.filter(cal_type)]
+            cal_array = [cal.name for cal in catalogue.filter(cal_type)]
             if len(cal_array) < 1:
                 continue  # do not display empty tags
-            cal_list = ', '.join(cal_array)
-            user_logger.info("{} calibrators are [{}]".format(
-                             str.upper(cal_type.replace('cal', '')),
-                             cal_list))
+            user_logger.info("{} calibrators are {}".format(
+                             str.upper(cal_type[:-3]),
+                             cal_array))
         user_logger.info('Observation targets are [{}]'.format(
             ', '.join([repr(target.name) for target in catalogue.filter(
                 not_cals_filter_list)])))
