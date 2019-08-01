@@ -28,7 +28,7 @@ def read_yaml(filename):
         return {}
 
     # remove empty keys
-    for key in data.keys():
+    for key in list(data.keys()):
         if data[key] is None:
             del data[key]
 
