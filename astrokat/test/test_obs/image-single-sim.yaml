@@ -17,5 +17,5 @@ observation_loop:
       - name=T4R02C02, radec=+17:15:26.58923 -38:26:36.9760, tags=target, duration=180.0
       - name=T4R02C04, radec=+17:12:28.40227 -39:14:39.4421, tags=target, duration=180.0
       - name=J1939-6342 | *1934-638, radec=19:39:25.03 -63:42:45.63, tags=bpcal delaycal, duration=60.0, cadence=1800.0
-      - name=J1331+3030 | *3C286, radec=13:31:08.288 +30:30:32.959, tags=bpcal polcal, duration=20.0, cadence=300.0
+      - name=J1331+3030 | *3C286, radec=13:31:08.288 +30:30:32.959, tags=bpcal polcal, duration=20.0, cadence=900.0
       - name=1827-360, radec=18:30:58.80 -36:02:30.1, tags=gaincal, duration=30.0
