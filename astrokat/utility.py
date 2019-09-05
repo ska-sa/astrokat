@@ -1,3 +1,4 @@
+"""."""
 import datetime
 import katpoint
 import numpy
@@ -6,17 +7,15 @@ import yaml
 
 
 class NotAllTargetsUpError(Exception):
-    """
-    Not all targets are above the horizon at the start of the observation.
-    """
+    """Not all targets are above the horizon at the start of the observation."""
 
 
 class NoTargetsUpError(Exception):
     """No targets are above the horizon at the start of the observation."""
 
 
-# Read config .yaml file
 def read_yaml(filename):
+    """Read config .yaml file."""
     with open(filename, 'r') as stream:
         try:
             data = yaml.safe_load(stream)
@@ -38,7 +37,7 @@ def read_yaml(filename):
         if instrument is not None:
             if 'integration_time' in instrument.keys():
                 integration_time = float(instrument['integration_time'])
-                instrument['dump_rate'] = 1./integration_time
+                instrument['dump_rate'] = 1. / integration_time
                 del instrument['integration_time']
 
     # verify required information in observation loop before continuing
@@ -48,16 +47,16 @@ def read_yaml(filename):
             raise RuntimeError(msg)
         if 'start_time' in data['durations']:
             start_time = data['durations']['start_time']
-            if type(start_time) is str:
+            if isinstance(start_time, str):
                 data['durations']['start_time'] = \
-                        datetime.datetime.strptime(start_time,
-                                                   '%Y-%m-%d %H:%M')
+                    datetime.datetime.strptime(start_time,
+                                               '%Y-%m-%d %H:%M')
     if 'observation_loop' not in data.keys():
         raise RuntimeError('Nothing to observe, exiting')
     if data['observation_loop'] is None:
         raise RuntimeError('Empty observation loop, exiting')
     for obs_loop in data['observation_loop']:
-        if type(obs_loop) is str:
+        if isinstance(obs_loop, str):
             raise RuntimeError('Incomplete observation input: '
                                'LST range and at least one target required.')
         # TODO: correct implementation for single vs multiple observation loops
@@ -78,20 +77,22 @@ def read_yaml(filename):
     return data
 
 
-# Safely convert a datetime object to a timestamp
-# UTC seconds since epoch
 def datetime2timestamp(datetime_obj):
+    """Safely convert a datetime object to a timestamp.
+
+    UTC seconds since epoch
+    """
     epoch = datetime.datetime.utcfromtimestamp(0)
     return (datetime_obj - epoch).total_seconds()
 
 
-# Safely convert a timestamp to UTC datetime object
 def timestamp2datetime(timestamp):
+    """Safely convert a timestamp to UTC datetime object."""
     return datetime.datetime.utcfromtimestamp(timestamp)
 
 
-# construct an expected katpoint target string
 def katpoint_target(target_item):
+    """Construct an expected katpoint target string."""
     coords = ['radec', 'azel', 'gal']
     # input string format: name=, radec=, tags=, duration=, ...
     target_ = [item.strip() for item in target_item.split(',')]
@@ -108,7 +109,7 @@ def katpoint_target(target_item):
         else:
             fluxmodel = ()
         for coord in coords:
-            prefix = coord+'='
+            prefix = coord + '='
             if item_.startswith(prefix):
                 ctag = coord
                 x = item_[len(prefix):].split()[0].strip()
@@ -119,23 +120,23 @@ def katpoint_target(target_item):
     return name, target
 
 
-# extract lst range from YAML key
 def get_lst(yaml_lst):
+    """Extract lst range from YAML key."""
     start_lst = None
     end_lst = None
     # YAML input without quotes will calc this integer
-    if type(yaml_lst) is int:
-        HH = int(yaml_lst/60)
-        MM = yaml_lst - (HH*60)
+    if isinstance(yaml_lst, int):
+        HH = int(yaml_lst / 60)
+        MM = yaml_lst - (HH * 60)
         yaml_lst = '{}:{}'.format(HH, MM)
     # floating point hour format
-    if type(yaml_lst) is float:
+    if isinstance(yaml_lst, float):
         HH = int(yaml_lst)
         MM = int(60 * (yaml_lst - HH))
         yaml_lst = '{}:{}'.format(HH, MM)
 
     err_msg = 'Format error reading LST range in observation file.'
-    if type(yaml_lst) is not str:
+    if not isinstance(yaml_lst, str):
         raise RuntimeError(err_msg)
 
     nvals = len(yaml_lst.split('-'))
@@ -144,31 +145,36 @@ def get_lst(yaml_lst):
     elif nvals > 2:
         raise RuntimeError(err_msg)
     else:
-        start_lst, end_lst = [lst_val.strip() for lst_val in yaml_lst.split('-')]
+        start_lst, end_lst = [lst_val.strip()
+                              for lst_val in yaml_lst.split('-')]
     if ':' in start_lst:
-        time_ = datetime.datetime.strptime('{}'.format(start_lst), '%H:%M').time()
-        start_lst = time_.hour + time_.minute/60.
+        time_ = datetime.datetime.strptime(
+            '{}'.format(start_lst), '%H:%M').time()
+        start_lst = time_.hour + time_.minute / 60.
 
     if end_lst is None:
         end_lst = (start_lst + 24.) % 24.
         if numpy.abs(end_lst - start_lst) < 1.:
             end_lst = 24.
     elif ':' in end_lst:
-        time_ = datetime.datetime.strptime('{}'.format(end_lst), '%H:%M').time()
-        end_lst = time_.hour + time_.minute/60.
+        time_ = datetime.datetime.strptime(
+            '{}'.format(end_lst), '%H:%M').time()
+        end_lst = time_.hour + time_.minute / 60.
     else:
         end_lst = float(end_lst)
 
     return start_lst, end_lst
 
 
-# find when is LST for date given, else for today
 def lst2utc(req_lst, ref_location, date=None):
+    """Find when is LST for date given, else for Today."""
     def get_lst_range(date):
-        date_timestamp = time.mktime(date.timetuple())  # this will be local time
+        date_timestamp = time.mktime(
+            date.timetuple())  # this will be local time
         time_range = katpoint.Timestamp(date_timestamp).secs + \
-            numpy.arange(0, 24.*3600., 60)
-        lst_range = numpy.degrees(target.antenna.local_sidereal_time(time_range)) / 15.
+            numpy.arange(0, 24. * 3600., 60)
+        lst_range = numpy.degrees(
+            target.antenna.local_sidereal_time(time_range)) / 15.
         return time_range, lst_range
 
     req_lst = float(req_lst)
@@ -180,13 +186,13 @@ def lst2utc(req_lst, ref_location, date=None):
     else:
         date = date.replace(hour=0, minute=0, second=0, microsecond=0)
     [time_range, lst_range] = get_lst_range(date)
-    lst_idx = numpy.abs(lst_range-req_lst).argmin()
+    lst_idx = numpy.abs(lst_range - req_lst).argmin()
     if lst_range[lst_idx] < req_lst:
-        x = lst_range[lst_idx:lst_idx+2]
-        y = time_range[lst_idx:lst_idx+2]
+        x = lst_range[lst_idx:lst_idx + 2]
+        y = time_range[lst_idx:lst_idx + 2]
     else:
-        x = lst_range[lst_idx-1:lst_idx+1]
-        y = time_range[lst_idx-1:lst_idx+1]
+        x = lst_range[lst_idx - 1:lst_idx + 1]
+        y = time_range[lst_idx - 1:lst_idx + 1]
     linefit = numpy.poly1d(numpy.polyfit(x, y, 1))
     return datetime.datetime.utcfromtimestamp(linefit(req_lst))
 

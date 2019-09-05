@@ -1,3 +1,4 @@
+"""."""
 from __future__ import division
 from __future__ import absolute_import
 
@@ -42,7 +43,7 @@ def _nd_log_msg_(ant,
                    actual_time))
     user_logger.info(msg)
     msg = ('Pattern set as {} sec ON for {} sec cycle length'
-           .format(actual_on_frac*actual_cycle,
+           .format(actual_on_frac * actual_cycle,
                    actual_cycle))
     user_logger.info(msg)
 
@@ -61,8 +62,8 @@ def on(kat,
         Container for accessing KATCP resources allocated to schedule block.
     lead_time : float, optional
         Lead time before the noisediode is switched on [sec]
-    """
 
+    """
     # Noise Diodes are triggered on all antennas in array simultaneously
     # add some lead to ensure all digitisers set at the same time
     if timestamp is None:
@@ -105,8 +106,8 @@ def off(kat,
         Time since the epoch as a floating point number [sec]
     lead_time : float, optional
         Lead time before the noisediode is switched off [sec]
-    """
 
+    """
     # Noise Diodes are triggered on all antennas in array simultaneously
     # add some lead to ensure all digitisers set at the same time
     if timestamp is None:
@@ -150,8 +151,8 @@ def trigger(kat,
     session : katcorelib.CaptureSession-like object
     duration : float, optional
         Duration that the noisediode will be active [sec]
-    """
 
+    """
     if duration is None:
         return True  # nothing to do
     msg = ('Firing noise diode for {}s before target observation'
@@ -207,8 +208,8 @@ def pattern(kat,  # kat subarray object
             etc., etc.
     lead_time : float, optional
         Lead time before digitisers pattern is set [sec]
-    """
 
+    """
     nd_antennas = nd_setup['antennas']  # selected antennas for nd pattern
     cycle_length = nd_setup['cycle_len']  # nd pattern length [sec]
     on_fraction = nd_setup['on_frac']  # on fraction of pattern lenght [%]
@@ -220,14 +221,13 @@ def pattern(kat,  # kat subarray object
     user_logger.info(msg)
 
     if not kat.dry_run:
-        if kat.sensor.sub_band.get_value() == 'l' and \
-                float(cycle_length) > 20.:
-                    msg = 'Maximum cycle length of L-band is 20 seconds'
-                    raise RuntimeError(msg)
+        if kat.sensor.sub_band.get_value() == 'l' and float(cycle_length) > 20.:
+            msg = 'Maximum cycle length of L-band is 20 seconds'
+            raise RuntimeError(msg)
         # Set noise diode period to multiple of correlator integration time.
         dump_period = session.cbf.correlator.sensor.int_time.get_value()
         user_logger.warning('Correlator integration time {} [sec]'
-                            .format(1./dump_period))
+                            .format(1. / dump_period))
         cycle_length = int(cycle_length / dump_period) * dump_period
         msg = 'Set noise diode period to multiple of correlator dump period:'
         msg += ' cycle length = {} [sec]'.format(cycle_length)
@@ -262,7 +262,8 @@ def pattern(kat,  # kat subarray object
     else:
         sb_ants = [ant.name for ant in kat.ants]
         if 'cycle' not in nd_antennas:
-            sb_ants = [ant.strip() for ant in nd_antennas.split(',') if ant.strip() in sb_ants]
+            sb_ants = [ant.strip() for ant in nd_antennas.split(',')
+                       if ant.strip() in sb_ants]
             user_logger.info('Antennas found in subarray, setting ND: {}'
                              .format(','.join(sb_ants)))
         # Noise Diodes are triggered for selected antennas in the array

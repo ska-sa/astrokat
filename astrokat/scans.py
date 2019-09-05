@@ -1,3 +1,4 @@
+"""."""
 from __future__ import division
 from __future__ import absolute_import
 
@@ -14,6 +15,7 @@ except ImportError:
 
 
 def drift_pointing_offset(target, duration=60.):
+    """."""
     obs_start_ts = target.antenna.observer.date
     transit_time = obs_start_ts + duration / 2.0
     # Stationary transit point becomes new target
@@ -28,6 +30,7 @@ def drift_pointing_offset(target, duration=60.):
 
 
 def drift_scan(session, target, nd_period=None, duration=60.):
+    """."""
     # trigger noise diode if set
     trigger(session.kat, session, duration=nd_period)
     target = drift_pointing_offset(target, duration=duration)
@@ -37,6 +40,7 @@ def drift_scan(session, target, nd_period=None, duration=60.):
 
 
 def raster_scan(session, target, nd_period=None, **kwargs):
+    """."""
     # trigger noise diode if set
     trigger(session.kat, session, duration=nd_period)
     # TODO: ignoring raster_scan, not currently working robustly
@@ -51,6 +55,7 @@ def raster_scan(session, target, nd_period=None, **kwargs):
 
 
 def scan(session, target, nd_period=None, **kwargs):
+    """."""
     # trigger noise diode if set
     trigger(session.kat, session, duration=nd_period)
     try:
@@ -63,6 +68,7 @@ def scan(session, target, nd_period=None, **kwargs):
 
 
 def forwardscan(session, target, nd_period=None, **kwargs):
+    """."""
     target_visible = scan(session,
                           target,
                           nd_period=nd_period,
@@ -71,6 +77,7 @@ def forwardscan(session, target, nd_period=None, **kwargs):
 
 
 def reversescan(session, target, nd_period=None, **kwargs):
+    """."""
     returnscan = dict(kwargs)
     returnscan['start'] = kwargs['end']
     returnscan['end'] = kwargs['start']
@@ -83,6 +90,7 @@ def reversescan(session, target, nd_period=None, **kwargs):
 
 # temporary fix until raster scan can be fixed
 def return_scan(session, target, nd_period=None, **kwargs):
+    """."""
     # set up 2way scan
     user_logger.info('Forward scan over target')
     target_visible = forwardscan(session,

@@ -1,3 +1,4 @@
+"""."""
 import argparse
 import astrokat
 
@@ -14,7 +15,7 @@ except ImportError:
 def session_options(parser,
                     short_opts_to_remove=[],
                     long_opts_to_remove=[]):
-    # Add options from katcorelib that is valid for all observations
+    """Add options from katcorelib that is valid for all observations."""
     dryrun = False
     group = parser.add_argument_group(
         title="standard MeerKAT options",
@@ -41,10 +42,10 @@ def session_options(parser,
                       opt.__dict__['dest'],
                       'type':
                       type(opt.__dict__['default'])
-                      if type(opt.__dict__['default']) != tuple else None,
+                      if not isinstance(opt.__dict__['default'], tuple) else None,
                       'default':
                       opt.__dict__['default']
-                      if type(opt.__dict__['default']) != tuple else None,
+                      if not isinstance(opt.__dict__['default'], tuple) else None,
                       'nargs':
                       opt.__dict__['nargs']
                       if opt.__dict__['nargs'] != 1 else None,
@@ -81,7 +82,7 @@ def cli(prog,
         short_opts_to_remove=['-h'],
         long_opts_to_remove=['--version'],
         args=None):
-
+    """."""
     if parser is None:
         # Set up standard script options
         # TODO: more complex usage string in separate function
@@ -92,10 +93,11 @@ def cli(prog,
             " Track one or more sources for a specified time." \
             " At least one target must be specified." \
             " Also note the **required** options."
-        parser = argparse.ArgumentParser(usage=usage,
-                                         description=description,
-                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                         )
+        parser = argparse.ArgumentParser(
+            usage=usage,
+            description=description,
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        )
 
     # Standard track experiment options
     parser.add_argument('--version',

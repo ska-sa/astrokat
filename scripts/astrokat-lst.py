@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# MeerKAT LST calculation helper tools
+"""MeerKAT LST calculation helper tools."""
 
 import argparse
 import ephem
@@ -12,6 +12,7 @@ from datetime import datetime
 
 
 def cli(prog):
+    """."""
     usage = "{} [options]".format(prog)
     description = 'LST calculations for MeerKAT telescope'
 
@@ -57,6 +58,7 @@ Only shows the LST for script parsing')
 
 
 def main(args):
+    """."""
     observer = Observatory().observer
 
     if args.target:

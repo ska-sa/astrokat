@@ -1,5 +1,8 @@
 #!/usr/bin/env python
-# Take a catalogue file and construct a basic observation configuration file
+"""Take a catalogue file.
+
+and construct a basic observation configuration file
+"""
 
 from __future__ import print_function
 
@@ -12,6 +15,7 @@ import sys
 from contextlib import contextmanager
 @contextmanager
 def smart_open(filename):
+    """."""
     if filename and filename != '-':
         with open(filename, 'w') as fout:
             yield fout
@@ -19,8 +23,11 @@ def smart_open(filename):
         yield sys.stdout
 
 
-# parsing command line options and return arguments
 def cli(prog):
+    """Parse command line options.
+
+    Return arguments
+    """
     version = "{} 0.1".format(prog)
     usage = "{} [options] --infile <full_path/cat_file.csv>".format(prog)
     description = "\
@@ -103,15 +110,19 @@ calibrators are identified by tags in their description strings \
     return parser
 
 
-#  Assume comma separated values
-#  No header lines are allowed, only target information
-#  Input format: name, tags, ra, dec
 class UnpackCatalogue(object):
+    """Assume comma separated values.
+
+    No header lines are allowed, only target information
+    Input format: name, tags, ra, dec
+    """
+
     def __init__(self, filename):
+        """."""
         self.infile = filename
 
-    # cleanup catalogue tags and construct expected tag format
     def tidy_tags(self, tags):
+        """Cleanup catalogue tags and construct expected tag format."""
         tags = tags.split()
         # add target tag if not a calibrator
         if not any('cal' in tag for tag in tags):
@@ -119,13 +130,13 @@ class UnpackCatalogue(object):
                 tags.append('target')
         return ' '.join(tags)
 
-    # unpack all targets from catalogue files into list
     def read_catalogue(self,
                        target_duration='',
                        gaincal_duration='',
                        bpcal_duration='',
                        bpcal_interval=None,
                        ):
+        """Unpack all targets from catalogue files into list."""
         target_list = []
         header = ''
         with open(self.infile, 'r') as fin:
@@ -180,8 +191,8 @@ class UnpackCatalogue(object):
                         target_spec += cadence
                         target_items.append(bpcal_interval)
                 if flux is not None:
-                        target_spec += flux_model
-                        target_items.append(flux)
+                    target_spec += flux_model
+                    target_items.append(flux)
                 try:
                     target = target_spec.format(*target_items)
                 except IndexError:
@@ -192,11 +203,15 @@ class UnpackCatalogue(object):
         return header, target_list
 
 
-#  Create a default observation config file
-#  Assume the format of a target in the list:
-#  'name=<name>, radec=<HH:MM:SS.f>,<DD:MM:SS.f>, tags=<tags>, duration=<sec>'
 class BuildObservation(object):
+    """Create a default observation config file.
+
+    Assume the format of a target in the list:
+    'name=<name>, radec=<HH:MM:SS.f>,<DD:MM:SS.f>, tags=<tags>, duration=<sec>'
+    """
+
     def __init__(self, target_list):
+        """."""
         self.target_list = target_list
         self.configuration = None
 
@@ -205,6 +220,7 @@ class BuildObservation(object):
                   obs_duration=None,
                   lst=None,
                   ):
+        """."""
         obs_plan = {}
         # subarray specific setup options
         if len(instrument) > 0:
@@ -232,6 +248,7 @@ class BuildObservation(object):
                    header=None,
                    configuration=None,
                    outfile='obs_config.yaml'):
+        """."""
         if configuration is not None:
             self.configuration = configuration
         if self.configuration is None:
@@ -241,7 +258,7 @@ class BuildObservation(object):
             init_str = header
 
         for each in self.configuration.keys():
-            if each is 'observation_loop':
+            if each == 'observation_loop':
                 continue
             init_str += '{}:\n'.format(each)
             values = self.configuration[each]

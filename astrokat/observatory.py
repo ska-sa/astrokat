@@ -1,3 +1,4 @@
+"""."""
 from __future__ import division
 from __future__ import absolute_import
 
@@ -46,10 +47,11 @@ else:
     _node_config_available = True
 
 
-# Basic LST calculations using ephem
 class Observatory(object):
+    """Basic LST calculations using ephem."""
 
     def __init__(self, location=None, horizon=20., datetime=None):
+        """."""
         self.location = _ref_location
         self.node_config_available = _node_config_available
         if location is not None:
@@ -88,6 +90,7 @@ class Observatory(object):
         return self.observer.sidereal_time()
 
     def read_file_from_node_config(self, catalogue_file):
+        """."""
         if not self.node_config_available:
             raise AttributeError('Node config is not configured')
         else:
@@ -95,27 +98,30 @@ class Observatory(object):
             assert katconf.resource_exists(catalogue_file), err_msg
             return katconf.resource_template(catalogue_file)
 
-    # default reference location
     def get_location(self):
+        """Get the default reference location."""
         return katpoint.Antenna(self.location)
 
-    # MeerKAT observer
     def get_observer(self, horizon=20.):
+        """Get the MeerKAT observer."""
         observer = self.kat.observer
         observer.horizon = numpy.deg2rad(horizon)
         observer.date = ephem.now()
         return observer
 
     def set_target(self, target):
+        """."""
         target = katpoint.Target(target)
         target.body.compute(self.observer)
         return target
 
     def get_target(self, target_item):
+        """."""
         name, target_item = katpoint_target(target_item)
         return self.set_target(target_item)
 
     def unpack_target(self, target_item):
+        """."""
         target_dict = {}
         for item in target_item.split(','):
             item_ = item.strip().split('=')
@@ -123,13 +129,15 @@ class Observatory(object):
         return target_dict
 
     def lst2hours(self, ephem_lst):
+        """."""
         time_ = datetime.strptime('{}'.format(ephem_lst), '%H:%M:%S.%f').time()
         time_ = (time_.hour +
-                 (time_.minute/60.) +
-                 (time_.second+time_.microsecond/1e6)/3600.)
+                 (time_.minute / 60.) +
+                 (time_.second + time_.microsecond / 1e6) / 3600.)
         return '%.3f' % time_
 
     def start_obs(self, target_list, str_flag=False):
+        """."""
         start_lst = []
         for target in target_list:
             target_ = self.get_target(target).body
@@ -140,6 +148,7 @@ class Observatory(object):
         return self.lst2hours(start_lst)
 
     def end_obs(self, target_list, str_flag=False):
+        """."""
         end_lst = []
         for target in target_list:
             target_ = self.get_target(target).body
@@ -150,8 +159,8 @@ class Observatory(object):
         return self.lst2hours(end_lst)
 
 
-# Collecting targets into katpoint catalogue
 def collect_targets(kat, args):
+    """Collect targets into katpoint catalogue."""
     from_names = from_strings = from_catalogues = num_catalogues = 0
     catalogue = katpoint.Catalogue()
     catalogue.antenna = katpoint.Antenna(_ref_location)
