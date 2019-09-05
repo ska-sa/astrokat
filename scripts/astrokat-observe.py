@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""."""
+"""Observe with astrokat."""
 import sys
 from astrokat.observe_main import main
 

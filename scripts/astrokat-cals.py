@@ -144,7 +144,7 @@ while for a single target a quick command line option is also available \
 
 
 def source_solar_angle(catalogue, ref_antenna):
-    """."""
+    """Source solar angle."""
     date = ref_antenna.observer.date
     horizon = numpy.degrees(ref_antenna.observer.horizon)
     date = date.datetime().replace(hour=0, minute=0, second=0, microsecond=0)
@@ -202,7 +202,7 @@ def source_solar_angle(catalogue, ref_antenna):
 
 
 def source_rise_set(catalogue, ref_antenna):
-    """."""
+    """Set source rise."""
     date = ref_antenna.observer.date
     date = date.datetime().replace(hour=0, minute=0, second=0, microsecond=0)
     numdays = 365
@@ -684,7 +684,7 @@ def add_target(target,
 
 
 def main(args):
-    """."""
+    """Calibrate."""
     observatory = Observatory()
     location = observatory.location
     node_config_available = observatory.node_config_available
@@ -801,7 +801,8 @@ def main(args):
             except (AssertionError, IOError):
                 msg = bcolors.WARNING
                 msg += 'Unable to open {}\n'.format(cal_catalogue)
-                msg += 'Observation file will still be created, please add calibrator manually\n'
+                msg += 'Observation file will still be created,'
+                'please add calibrator manually\n'
                 msg += bcolors.ENDC
                 print(msg)
                 continue

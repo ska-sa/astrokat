@@ -1,4 +1,4 @@
-"""."""
+"""Tests utilities."""
 import logging
 import os
 from six.moves import StringIO

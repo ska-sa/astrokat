@@ -1,5 +1,4 @@
-"""."""
-# Observation script and chronology check.
+"""Observation script and chronology check."""
 
 import ephem
 import logging
@@ -223,10 +222,10 @@ def above_horizon(katpt_target, horizon=20.):
 
 
 class Telescope(object):
-    """."""
+    """The telescope class."""
 
     def __init__(self, opts, correlator=None):
-        """."""
+        """Construct the telescope components."""
         user_logger.info('Setting up telescope for observation')
         self.opts = opts
 
@@ -263,7 +262,7 @@ class Telescope(object):
         return self
 
     def __exit__(self, type, value, traceback):
-        """."""
+        """Return telescope to its startup state."""
         user_logger.info('Returning telescope to startup state')
         # Ensure known exit state before quitting
         # TODO: Return correlator settings to entry values
@@ -275,11 +274,11 @@ class Telescope(object):
         """Include current sensor list in instrument.
 
         sub_ [
-        # # pool_resources,  # ptuse or specific antennas
-        # product,        # correlator product
-        # dump_rate,      # dumprate
-        # band,           # band
-        # ]
+            pool_resources,  # ptuse or specific antennas
+            product,        # correlator product
+            dump_rate,      # dumprate
+            band,           # band
+            ]
         """
         user_logger.trace(self.opts.obs_plan_params['instrument'])
         if self.opts.obs_plan_params['instrument'] is None:
@@ -698,7 +697,7 @@ def run_observation(opts, kat):
 
 
 def main(args):
-    """."""
+    """Observe."""
     (opts, args) = astrokat.cli(
         os.path.basename(__file__),
         # remove redundant KAT-7 options

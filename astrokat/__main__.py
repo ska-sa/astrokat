@@ -1,4 +1,4 @@
-"""."""
+"""Add standard observation script options from sessions."""
 import argparse
 import astrokat
 
@@ -11,7 +11,6 @@ except ImportError:
     pass
 
 
-# Add standard observation script options from sessions
 def session_options(parser,
                     short_opts_to_remove=[],
                     long_opts_to_remove=[]):
@@ -82,7 +81,7 @@ def cli(prog,
         short_opts_to_remove=['-h'],
         long_opts_to_remove=['--version'],
         args=None):
-    """."""
+    """Specify initial implementation of observation input parameter using json."""
     if parser is None:
         # Set up standard script options
         # TODO: more complex usage string in separate function

@@ -1,4 +1,4 @@
-"""."""
+"""Configuration for MeerKAT observatory."""
 from __future__ import division
 from __future__ import absolute_import
 
@@ -51,7 +51,7 @@ class Observatory(object):
     """Basic LST calculations using ephem."""
 
     def __init__(self, location=None, horizon=20., datetime=None):
-        """."""
+        """Construct obsevatory class."""
         self.location = _ref_location
         self.node_config_available = _node_config_available
         if location is not None:
@@ -90,7 +90,7 @@ class Observatory(object):
         return self.observer.sidereal_time()
 
     def read_file_from_node_config(self, catalogue_file):
-        """."""
+        """Read configuration file."""
         if not self.node_config_available:
             raise AttributeError('Node config is not configured')
         else:
@@ -110,18 +110,18 @@ class Observatory(object):
         return observer
 
     def set_target(self, target):
-        """."""
+        """Set the target."""
         target = katpoint.Target(target)
         target.body.compute(self.observer)
         return target
 
     def get_target(self, target_item):
-        """."""
+        """Obtain target description."""
         name, target_item = katpoint_target(target_item)
         return self.set_target(target_item)
 
     def unpack_target(self, target_item):
-        """."""
+        """See full description of target."""
         target_dict = {}
         for item in target_item.split(','):
             item_ = item.strip().split('=')
@@ -129,7 +129,7 @@ class Observatory(object):
         return target_dict
 
     def lst2hours(self, ephem_lst):
-        """."""
+        """Convert time format."""
         time_ = datetime.strptime('{}'.format(ephem_lst), '%H:%M:%S.%f').time()
         time_ = (time_.hour +
                  (time_.minute / 60.) +
@@ -137,7 +137,7 @@ class Observatory(object):
         return '%.3f' % time_
 
     def start_obs(self, target_list, str_flag=False):
-        """."""
+        """Start the observation."""
         start_lst = []
         for target in target_list:
             target_ = self.get_target(target).body
@@ -148,7 +148,7 @@ class Observatory(object):
         return self.lst2hours(start_lst)
 
     def end_obs(self, target_list, str_flag=False):
-        """."""
+        """End the observation."""
         end_lst = []
         for target in target_list:
             target_ = self.get_target(target).body

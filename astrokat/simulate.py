@@ -19,13 +19,13 @@ _DEFAULT_SLEW_TIME = 45.0  # [sec]
 
 
 def setobserver(update):
-    """."""
+    """Simulate the observer."""
     global simobserver
     simobserver = update
 
 
 def sim_time(record, datefmt=None):
-    """."""
+    """Simulate the time."""
     now = simobserver.date.datetime()
     return now.strftime('%Y-%m-%d %H:%M:%SZ')
 
@@ -36,7 +36,7 @@ logging.addLevelName(logging.TRACE, "TRACE")
 
 
 def trace(self, message, *args, **kws):
-    """."""
+    """Trace logs."""
     if self.isEnabledFor(logging.TRACE):
         # Yes, logger takes its '*args' as 'args'.
         self._log(logging.TRACE, message, args, **kws)
@@ -55,10 +55,10 @@ user_logger.setLevel(logging.INFO)
 
 
 class Fakr(namedtuple('Fakr', 'priv_value')):
-    """."""
+    """Simulating class."""
 
     def get_value(self):
-        """."""
+        """Construct."""
         return self.priv_value
 
 
@@ -66,7 +66,7 @@ class SimKat(object):
     """Fake telescope connection."""
 
     def __init__(self, opts):
-        """."""
+        """Construct simulator."""
         kwargs = vars(opts)
         self.dry_run = True
         self.obs_params = kwargs['obs_plan_params']
@@ -99,11 +99,11 @@ class SimKat(object):
         pass
 
     def get(self, sensorname):
-        """."""
+        """Get sensor name."""
         return self._sensors.get(sensorname)
 
     def fake_sensors(self, kwargs):
-        """."""
+        """Fake sensors."""
         _sensors = {}
         if 'instrument' not in self.obs_params.keys():
             return _sensors
@@ -116,7 +116,7 @@ class SimKat(object):
 
 
 def verify_and_connect(opts):
-    """."""
+    """Verufy and connect sim."""
     return SimKat(opts)
 
 
@@ -124,7 +124,7 @@ class SimSession(object):
     """Fake observation session."""
 
     def __init__(self, kat, **kwargs):
-        """."""
+        """Constuctor."""
         self.kwargs = kwargs
         self.obs_params = kat.obs_params
         self.kat = kat
@@ -223,14 +223,14 @@ class SimSession(object):
              index=-1,
              projection='zenithal-equidistant',
              announce=True):
-        """."""
+        """Scan."""
         time.sleep(duration)
         now = timestamp2datetime(self.time)
         simobserver.date = ephem.Date(now)
         return True
 
     def slew_time(self, target):
-        """."""
+        """Get slew time."""
         slew_speed = 2.  # degrees / sec
         self.katpt_current.body.compute(self.katpt_current.antenna.observer)
         target.body.compute(target.antenna.observer)
@@ -247,7 +247,7 @@ class SimSession(object):
 
 
 def start_session(kat, **kwargs):
-    """."""
+    """Start observing."""
     return SimSession(kat, **kwargs)
 
 

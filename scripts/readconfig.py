@@ -11,7 +11,7 @@ import yaml
 
 
 def main(yaml_config):
-    """."""
+    """Read config."""
     with open(yaml_config, 'r') as stream:
         try:
             data = yaml.safe_load(stream)

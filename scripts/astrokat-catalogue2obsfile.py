@@ -15,7 +15,7 @@ import sys
 from contextlib import contextmanager
 @contextmanager
 def smart_open(filename):
-    """."""
+    """Open."""
     if filename and filename != '-':
         with open(filename, 'w') as fout:
             yield fout
@@ -211,7 +211,7 @@ class BuildObservation(object):
     """
 
     def __init__(self, target_list):
-        """."""
+        """Construct the BuildObservation class."""
         self.target_list = target_list
         self.configuration = None
 
@@ -220,7 +220,7 @@ class BuildObservation(object):
                   obs_duration=None,
                   lst=None,
                   ):
-        """."""
+        """Configure."""
         obs_plan = {}
         # subarray specific setup options
         if len(instrument) > 0:
@@ -248,7 +248,7 @@ class BuildObservation(object):
                    header=None,
                    configuration=None,
                    outfile='obs_config.yaml'):
-        """."""
+        """Write the yaml observation file."""
         if configuration is not None:
             self.configuration = configuration
         if self.configuration is None:

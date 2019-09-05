@@ -12,7 +12,7 @@ from datetime import datetime
 
 
 def cli(prog):
-    """."""
+    """LST calculations for MeerKAT telescope."""
     usage = "{} [options]".format(prog)
     description = 'LST calculations for MeerKAT telescope'
 
@@ -58,7 +58,7 @@ Only shows the LST for script parsing')
 
 
 def main(args):
-    """."""
+    """Do calculation."""
     observer = Observatory().observer
 
     if args.target:

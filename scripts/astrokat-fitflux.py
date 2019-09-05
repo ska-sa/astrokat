@@ -33,17 +33,15 @@ flux_cals = {
     }
 
 
-# Find index and nearest value in array
 def find_nearest(array, value):
-    """."""
+    """Find index and nearest value in array."""
     array = numpy.asarray(array)
     idx = (numpy.abs(array - value)).argmin()
     return idx, array[idx]
 
 
-# Calculating flux density from polynomial equation
 def calc_flux_density(coeffs, freqs):
-    """."""
+    """Calculate flux density from polynomial equation."""
     log10S = [coeffs[0]]*len(freqs)
     for idx, coeff in enumerate(coeffs[1:]):
         log10S += coeff * (numpy.log10(freqs)**(idx+1))

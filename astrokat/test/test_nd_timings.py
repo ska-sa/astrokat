@@ -1,4 +1,4 @@
-"""."""
+"""Tests Noise Diode timing."""
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -16,7 +16,7 @@ from .testutils import LoggedTelescope, execute_observe_main
 
 @patch("astrokat.observe_main.Telescope", LoggedTelescope)
 class TestAstrokatYAML(unittest.TestCase):
-    """."""
+    """Tests astrokat yaml."""
 
     def setUp(self):
         """Before each test is ran.
@@ -25,7 +25,7 @@ class TestAstrokatYAML(unittest.TestCase):
         LoggedTelescope.reset_user_logger_stream()
         """
     def test_nd_pattern_sim(self):
-        """."""
+        """Tests nd sim."""
         execute_observe_main("test_nd/nd-pattern-sim.yaml")
 
         # TODO: restore this check after working out an appropriate start-time

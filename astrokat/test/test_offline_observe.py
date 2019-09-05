@@ -10,7 +10,7 @@ from .testutils import LoggedTelescope, execute_observe_main
 
 @patch("astrokat.observe_main.Telescope", LoggedTelescope)
 class TestAstrokatYAML(unittest.TestCase):
-    """."""
+    """Tests astrokat yaml."""
 
     def setUp(self):
         """Before each test is ran.
@@ -40,8 +40,7 @@ class TestAstrokatYAML(unittest.TestCase):
         cal1 = result.count("0408-65 observed for 30.0 sec")
         cal2 = result.count("1934-638 observed for 30.0 sec")
 
-        self.assertGreaterEqual(
-            cal1 + cal2, 1, "At least one bpcal was observed")
+        self.assertGreaterEqual(cal1 + cal2, 1, "At least one bpcal was observed")
         self.assertLessEqual(cal1 + cal2, 2, "At most 2 bpcals were observed")
 
     def test_drift_targets_sim(self):
@@ -55,10 +54,8 @@ class TestAstrokatYAML(unittest.TestCase):
             "Single run")
         self.assertIn("0408-65 observed for 180.0 sec", result)
         self.assertIn("1934-638 observed for 180.0 sec", result)
-        self.assertEqual(
-            result.count("Drift_scan observation for"),
-            2,
-            "two drift scans")
+        self.assertEqual(result.count("Drift_scan observation for"),
+                         2, "two drift scans")
 
     # TODO: not sure how raster scan works. Will work out correct test with Ruby
     # def test_raster_scans_sim(self):

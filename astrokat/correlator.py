@@ -4,7 +4,7 @@
 def set_fengines(session,
                  requant_gains=None,
                  fft_shift=None):
-    """."""
+    """Set the f-engines."""
     if not session.cbf.fengine.inputs:
         msg = 'Cannot set the F-engine gains'
         raise RuntimeError(msg)

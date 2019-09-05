@@ -1,4 +1,4 @@
-"""."""
+"""Astrokat utilities."""
 import datetime
 import katpoint
 import numpy
