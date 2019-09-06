@@ -1,1 +1,1 @@
-"""Init tests."""
+"""Initialize tests."""

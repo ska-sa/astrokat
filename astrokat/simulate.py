@@ -76,26 +76,26 @@ class SimKat(object):
         self._ants = ['m011', 'm022', 'm033', 'm044']
 
     def __enter__(self):
-        """."""
+        """Magic method."""
         return self
 
     def __getattr__(self, key):
-        """."""
+        """Magic method."""
         return self
 
     def __call__(self, *args, **kwargs):
-        """."""
+        """Magic method."""
         return self
 
     def __iter__(self):
-        """."""
+        """Magic method."""
         Ant = namedtuple('Ant', ['name'])
         for ant in self._ants:
             yield Ant(ant)
         raise StopIteration
 
     def __exit__(self, type, value, traceback):
-        """."""
+        """Magic method."""
         pass
 
     def get(self, sensorname):
@@ -116,7 +116,7 @@ class SimKat(object):
 
 
 def verify_and_connect(opts):
-    """Verufy and connect sim."""
+    """Verify and connect sim."""
     return SimKat(opts)
 
 
@@ -124,7 +124,7 @@ class SimSession(object):
     """Fake observation session."""
 
     def __init__(self, kat, **kwargs):
-        """Constuctor."""
+        """Constructor."""
         self.kwargs = kwargs
         self.obs_params = kat.obs_params
         self.kat = kat
@@ -143,33 +143,34 @@ class SimSession(object):
         time.time = lambda: self.time
 
         def simsleep(seconds):
+            """Simulate sleep."""
             self.time += seconds
         time.sleep = simsleep
 
     def __enter__(self):
-        """."""
+        """Magic method."""
         return self
 
     def __getattr__(self, key):
-        """."""
+        """Magic method."""
         self._key = key
         return self
 
     def __call__(self, *args, **kwargs):
-        """."""
+        """Call."""
         return self
 
     def __nonzero__(self):
-        """."""
+        """Nonzero method."""
         return True
 
     def __iter__(self):
-        """."""
+        """Magic method."""
         yield self
         raise StopIteration
 
     def __exit__(self, type, value, traceback):
-        """."""
+        """Magic method."""
         # TODO: self.track_ cleanup for multiple obs loops
         if self.track_:
             self.kat._session_cnt += 1
@@ -188,7 +189,7 @@ class SimSession(object):
         return slew_time
 
     def track(self, target, duration=0, announce=False):
-        """."""
+        """Track."""
         self.track_ = True
         time.sleep(self._fake_slew_(target))
         now = timestamp2datetime(self.time)
@@ -209,7 +210,7 @@ class SimSession(object):
                     scan_in_azimuth=True,
                     projection='zenithal-equidistant',
                     announce=True):
-        """."""
+        """Raster scan."""
         duration = scan_duration * num_scans
         time.sleep(duration)
         now = timestamp2datetime(self.time)

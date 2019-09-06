@@ -11,6 +11,7 @@ except ImportError:
     pass
 
 
+# Add standard observation script options from sessions
 def session_options(parser,
                     short_opts_to_remove=[],
                     long_opts_to_remove=[]):

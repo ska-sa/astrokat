@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Here is the description of `astrokat`."""
+"""astrokat setup."""
 from setuptools import setup, find_packages
 
 
