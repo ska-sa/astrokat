@@ -228,7 +228,6 @@ class Telescope(object):
     """The telescope class."""
 
     def __init__(self, opts, correlator=None):
-        """Construct the telescope components."""
         user_logger.info('Setting up telescope for observation')
         self.opts = opts
 

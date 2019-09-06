@@ -118,7 +118,6 @@ class UnpackCatalogue(object):
     """
 
     def __init__(self, filename):
-        """."""
         self.infile = filename
 
     def tidy_tags(self, tags):
@@ -211,7 +210,6 @@ class BuildObservation(object):
     """
 
     def __init__(self, target_list):
-        """Construct the BuildObservation class."""
         self.target_list = target_list
         self.configuration = None
 

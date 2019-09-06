@@ -51,7 +51,6 @@ class Observatory(object):
     """Basic LST calculations using ephem."""
 
     def __init__(self, location=None, horizon=20., datetime=None):
-        """Construct obsevatory class."""
         self.location = _ref_location
         self.node_config_available = _node_config_available
         if location is not None:
