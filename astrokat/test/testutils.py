@@ -30,15 +30,16 @@ def extract_start_time(yaml_file):
 
     """
     yaml = utility.read_yaml(yaml_file)
-    if yaml and yaml.get("durations") and yaml.get(
-            "durations").get("start_time"):
+    if yaml and yaml.get("durations") and yaml.get("durations").get("start_time"):
         return yaml["durations"]["start_time"]
 
 
 def execute_observe_main(file_name):
     """Run observer_main with correct parameters.
 
-    :param file_name: relative path to yaml file
+    Parameters
+    ----------
+        file_name: relative path to yaml file
 
     """
     yaml_file = yaml_path(file_name)

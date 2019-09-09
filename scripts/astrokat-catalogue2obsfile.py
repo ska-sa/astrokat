@@ -128,21 +128,21 @@ class UnpackCatalogue(object):
         if not any("cal" in tag for tag in tags):
             if "target" not in tags:
                 tags.append("target")
-        return ' '.join(tags)
+        return " ".join(tags)
 
     def read_catalogue(self,
-                       target_duration='',
-                       gaincal_duration='',
-                       bpcal_duration='',
+                       target_duration="",
+                       gaincal_duration="",
+                       bpcal_duration="",
                        bpcal_interval=None,
                        ):
         """Unpack all targets from catalogue files into list."""
         target_list = []
-        header = ''
-        with open(self.infile, 'r') as fin:
+        header = ""
+        with open(self.infile, "r") as fin:
             for idx, line in enumerate(fin.readlines()):
                 # keep header information
-                if line[0] == '#':
+                if line[0] == "#":
                     header += line
                     continue
                 # skip blank lines
@@ -150,7 +150,7 @@ class UnpackCatalogue(object):
                     continue
                 try:
                     # unpack data columns
-                    data_columns = [each.strip() for each in line.strip().split(',')]
+                    data_columns = [each.strip() for each in line.strip().split(",")]
                 except ValueError:
                     print("Could not unpack line:{}".format(line))
                     continue
@@ -158,7 +158,7 @@ class UnpackCatalogue(object):
                     [name, tags, ra, dec] = data_columns[:4]
                     flux = None
                     if len(data_columns) > 4:
-                        flux = ' '.join(data_columns[4:])
+                        flux = " ".join(data_columns[4:])
                         # skip empty brackets it means nothing
                         if len(flux[1:-1]) < 1:
                             flux = None
@@ -172,9 +172,8 @@ class UnpackCatalogue(object):
                     prefix = "radec"
                 if len(name) < 1:
                     name = "target{}_{}".format(idx, prefix)
-                target_items = [name,
-                                prefix,
-                                ' '.join([ra, dec]),
+                target_items = [name, prefix,
+                                " ".join([ra, dec]),
                                 tags[len(prefix):].strip(),
                                 ]
 
@@ -197,7 +196,7 @@ class UnpackCatalogue(object):
                     target = target_spec.format(*target_items)
                 except IndexError:
                     msg = "Incorrect target definition\n"
-                    msg += "verify line: {}".format(line.strip())
+                    msg += "Verify line: {}".format(line.strip())
                     raise RuntimeError(msg)
                 target_list.append(target)
         return header, target_list
@@ -271,24 +270,24 @@ class BuildObservation(object):
             self.configuration = configuration
         if self.configuration is None:
             raise RuntimeError("No observation configuration to output")
-        init_str = ''
+        init_str = ""
         if header is not None:
             init_str = header
 
         for each in self.configuration.keys():
             if each == "observation_loop":
                 continue
-            init_str += '{}:\n'.format(each)
+            init_str += "{}:\n".format(each)
             values = self.configuration[each]
             for key in values.keys():
                 if values[key] is not None:
                     init_str += "  {}: {}\n".format(key, values[key])
 
         obs_loop = self.configuration["observation_loop"][0]
-        init_str += '{}:\n'.format("observation_loop")
+        init_str += "{}:\n".format("observation_loop")
         init_str += "  - LST: {}\n".format(obs_loop["lst"])
 
-        target_list = ''
+        target_list = ""
         for target in obs_loop["target_list"]:
             target_list += "      - {}\n".format(target)
 

@@ -34,8 +34,7 @@ def drift_scan(session, target, nd_period=None, duration=60.):
     # trigger noise diode if set
     trigger(session.kat, session, duration=nd_period)
     target = drift_pointing_offset(target, duration=duration)
-    user_logger.info('Drift_scan observation for {} sec'
-                     .format(duration))
+    user_logger.info("Drift_scan observation for {} sec".format(duration))
     return session.track(target, duration=duration)
 
 
@@ -62,8 +61,7 @@ def scan(session, target, nd_period=None, **kwargs):
         timestamp = session.time
     except AttributeError:
         timestamp = time.time()
-    user_logger.debug('DEBUG: Starting scan across target: {}'
-                      .format(timestamp))
+    user_logger.debug("DEBUG: Starting scan across target: {}".format(timestamp))
     return session.scan(target, **kwargs)
 
 
@@ -87,8 +85,8 @@ def reversescan(session, target, nd_period=None, **kwargs):
 
     """
     returnscan = dict(kwargs)
-    returnscan['start'] = kwargs['end']
-    returnscan['end'] = kwargs['start']
+    returnscan["start"] = kwargs["end"]
+    returnscan["end"] = kwargs["start"]
     target_visible = scan(session,
                           target,
                           nd_period=nd_period,
@@ -103,13 +101,13 @@ def return_scan(session, target, nd_period=None, **kwargs):
 
     """
     # set up 2way scan
-    user_logger.info('Forward scan over target')
+    user_logger.info("Forward scan over target")
     target_visible = forwardscan(session,
                                  target,
                                  nd_period=nd_period,
                                  **kwargs)
 
-    user_logger.info('Reverse scan over target')
+    user_logger.info("Reverse scan over target")
     target_visible += reversescan(session,
                                   target,
                                   nd_period=nd_period,

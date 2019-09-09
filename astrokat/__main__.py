@@ -12,9 +12,7 @@ except ImportError:
 
 
 # Add standard observation script options from sessions
-def session_options(parser,
-                    short_opts_to_remove=[],
-                    long_opts_to_remove=[]):
+def session_options(parser, short_opts_to_remove=[], long_opts_to_remove=[]):
     """Add options from katcorelib that are valid for all observations."""
     dryrun = False
     group = parser.add_argument_group(
@@ -25,47 +23,47 @@ def session_options(parser,
         # fudge parser_ class from OptionParser to Group
         for opt in parser_.option_list:
             # Disregarding options we don't want in the group
-            long_ = opt.__dict__['_long_opts'][0]
-            if 'dry-run' in long_:
+            long_ = opt.__dict__["_long_opts"][0]
+            if "dry-run" in long_:
                 dryrun = True
                 continue
             if long_ in long_opts_to_remove:
                 continue
-            args = opt.__dict__['_long_opts']
-            if opt.__dict__['_short_opts']:
-                short = opt.__dict__['_short_opts'][0]
+            args = opt.__dict__["_long_opts"]
+            if opt.__dict__["_short_opts"]:
+                short = opt.__dict__["_short_opts"][0]
                 if short in short_opts_to_remove:
                     continue
-                args = opt.__dict__['_short_opts'] + args
+                args = opt.__dict__["_short_opts"] + args
 
-            kwargs = {'dest':
-                      opt.__dict__['dest'],
-                      'type':
-                      type(opt.__dict__['default'])
-                      if not isinstance(opt.__dict__['default'], tuple) else None,
-                      'default':
-                      opt.__dict__['default']
-                      if not isinstance(opt.__dict__['default'], tuple) else None,
-                      'nargs':
-                      opt.__dict__['nargs']
-                      if opt.__dict__['nargs'] != 1 else None,
-                      'metavar':
-                      opt.__dict__['metavar']
-                      if not opt.__dict__['choices'] else '',
-                      'choices':
-                      opt.__dict__['choices'],
-                      'action':
-                      opt.__dict__['action']
-                      if opt.__dict__['action'] != 'store_true' else None,
-                      'const':
-                      opt.__dict__['const']
-                      if opt.__dict__['action'] == 'store_const' else None,
-                      'help':
-                      opt.__dict__['help'].replace("%default", "%(default)s")
-                      if long_ != '--quorum' else opt.__dict__['help'].replace("%", "%%"),
-                      'required':
+            kwargs = {"dest":
+                      opt.__dict__["dest"],
+                      "type":
+                      type(opt.__dict__["default"])
+                      if not isinstance(opt.__dict__["default"], tuple) else None,
+                      "default":
+                      opt.__dict__["default"]
+                      if not isinstance(opt.__dict__["default"], tuple) else None,
+                      "nargs":
+                      opt.__dict__["nargs"]
+                      if opt.__dict__["nargs"] != 1 else None,
+                      "metavar":
+                      opt.__dict__["metavar"]
+                      if not opt.__dict__["choices"] else "",
+                      "choices":
+                      opt.__dict__["choices"],
+                      "action":
+                      opt.__dict__["action"]
+                      if opt.__dict__["action"] != "store_true" else None,
+                      "const":
+                      opt.__dict__["const"]
+                      if opt.__dict__["action"] == "store_const" else None,
+                      "help":
+                      opt.__dict__["help"].replace("%default", "%(default)s")
+                      if long_ != "--quorum" else opt.__dict__["help"].replace("%", "%%"),
+                      "required":
                       True
-                      if '**required**' in opt.__dict__['help'] else False,
+                      if "**required**" in opt.__dict__["help"] else False,
                       }
 
             group.add_argument(*args, **kwargs)
@@ -73,7 +71,7 @@ def session_options(parser,
     # something goes wrong in this conversion for opts to args
     # adding this manually
     if dryrun:
-        group.add_argument('--dry-run', action='store_true')
+        group.add_argument("--dry-run", action="store_true")
     return parser
 
 
@@ -99,9 +97,9 @@ def cli(prog,
         )
 
     # Standard track experiment options
-    parser.add_argument('--version',
-                        action='version', version=astrokat.__version__)
-    parser.add_argument('--yaml',
+    parser.add_argument("--version",
+                        action="version", version=astrokat.__version__)
+    parser.add_argument("--yaml",
                         type=str,
                         required=True,
                         help="Observation file, obs_plan.yaml (**required**)")

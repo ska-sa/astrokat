@@ -60,16 +60,16 @@ class TestAstrokatYAML(unittest.TestCase):
 
     # TODO: not sure how raster scan works. Will work out correct test with Ruby
     # def test_raster_scans_sim(self):
-    #     observe_main.main(['--yaml',
-    #                        'astrokat/test/test_obs/{}.yaml'.format('raster-scans-sim')])
+    #     observe_main.main(["--yaml",
+    #                        "astrokat/test/test_obs/{}.yaml".format("raster-scans-sim")])
     #
     #     # get result and make sure everything ran properly
     #     result = LoggedTelescope.user_logger_stream.getvalue()
-    #     self.assertIn('Single run through observation target list',
-    #     result, 'Single run') self.assertIn('0408-65 observed', result,
-    #     '0408-65 observed') self.assertIn('1934-638 observed', result,
-    #     '1934-638 observed') self.assertEqual(result.count(
-    #     'Drift_scan observation for'), 2, 'two drift scans')
+    #     self.assertIn("Single run through observation target list",
+    #     result, "Single run") self.assertIn("0408-65 observed", result,
+    #     "0408-65 observed") self.assertIn("1934-638 observed", result,
+    #     "1934-638 observed") self.assertEqual(result.count(
+    #     "Drift_scan observation for"), 2, "two drift scans")
 
     def test_image_single_sim(self):
         """Test image single sim."""
@@ -112,8 +112,7 @@ class TestAstrokatYAML(unittest.TestCase):
         result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn(
             "Scheduled observation time lapsed - ending observation",
-            result,
-            "observation time lapsed",
+            result, "observation time lapsed",
         )
 
         expected_results = (

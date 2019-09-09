@@ -53,8 +53,10 @@ def on(kat,
 
     Parameters
     ----------
-    mkat : session kat container-like object
+    kat : session kat container-like object
         Container for accessing KATCP resources allocated to schedule block.
+    timestamp : float, optional
+        Time since the epoch as a floating point number [sec]
     lead_time : float, optional
         Lead time before the noisediode is switched on [sec]
 
@@ -76,8 +78,8 @@ def on(kat,
         # - use integer second boundary as that is most likely be an exact
         #   time that DMC can execute at
         msg = (
-            "Dry-run: Set all noise diodes with timestamp {}"
-            "({})".format(np.ceil(timestamp), time.ctime(timestamp)))
+            "Dry-run: Set all noise diodes with timestamp"
+            "{} ({})".format(np.ceil(timestamp), time.ctime(timestamp)))
         user_logger.info(msg)
 
     return timestamp
@@ -91,7 +93,7 @@ def off(kat,
 
     Parameters
     ----------
-    mkat : session kat container-like object
+    kat : session kat container-like object
         Container for accessing KATCP resources allocated to schedule block.
     timestamp : float, optional
         Time since the epoch as a floating point number [sec]
@@ -119,8 +121,8 @@ def off(kat,
         # - use integer second boundary as that is most likely be an exact
         #   time that DMC can execute at
         msg = (
-            "Dry-run: Set all noise diodes with timestamp {}"
-            "({})".format(np.ceil(timestamp), time.ctime(timestamp)))
+            "Dry-run: Set all noise diodes with timestamp"
+            "{} ({})".format(np.ceil(timestamp), time.ctime(timestamp)))
         user_logger.info(msg)
 
     return timestamp
@@ -134,7 +136,7 @@ def trigger(kat,
 
     Parameters
     ----------
-    mkat : session kat container-like object
+    kat : session kat container-like object
         Container for accessing KATCP resources allocated to schedule block.
     session : katcorelib.CaptureSession-like object
     duration : float, optional
@@ -148,15 +150,15 @@ def trigger(kat,
     user_logger.debug("DEBUG: issue command to switch ND on @ {}".format(time.time()))
     user_logger.trace("TRACE: ts before issue nd on command {}".format(time.time()))
     timestamp_on_set = on(kat)
-    user_logger.debug("DEBUG: on {} ({})".format(timestamp_on_set,
-                                                 time.ctime(timestamp_on_set)))
+    user_logger.debug(
+        "DEBUG: on {} ({})".format(timestamp_on_set, time.ctime(timestamp_on_set)))
     user_logger.debug("DEBUG: fire nd for {}".format(duration))
     sleeptime = timestamp_on_set - time.time() + duration
     time.sleep(sleeptime)  # default sleep to see for signal to get through
     user_logger.trace("TRACE: ts after issue nd on sleep {}".format(time.time()))
     timestamp_off_set = off(kat)
-    user_logger.debug("DEBUG: off {} ({})".format(timestamp_off_set,
-                                                  time.ctime(timestamp_off_set)))
+    user_logger.debug(
+        "DEBUG: off {} ({})".format(timestamp_off_set, time.ctime(timestamp_off_set)))
     sleeptime = timestamp_off_set - time.time()
     user_logger.debug("DEBUG: now {}, sleep {}".format(time.time(), sleeptime))
     time.sleep(sleeptime)  # default sleep to see for signal to get through
@@ -174,7 +176,7 @@ def pattern(kat,  # kat subarray object
 
     Parameters
     ----------
-    mkat : session kat container-like object
+    kat : session kat container-like object
         Container for accessing KATCP resources allocated to schedule block.
     session : katcorelib.CaptureSession-like object
     nd_setup : dict
@@ -191,10 +193,8 @@ def pattern(kat,  # kat subarray object
     cycle_length = nd_setup["cycle_len"]  # nd pattern length [sec]
     on_fraction = nd_setup["on_frac"]  # on fraction of pattern length [%]
     msg = (
-        "Repeat noise diode pattern every {} sec, with {}"
-        "sec on and apply pattern to {}".format(cycle_length,
-                                                float(cycle_length) * float(on_fraction),
-                                                nd_antennas))
+        "Repeat noise diode pattern every {} sec, with {} sec on and apply pattern to"
+        "{}".format(cycle_length, float(cycle_length) * float(on_fraction), nd_antennas))
     user_logger.info(msg)
 
     if not kat.dry_run:
@@ -231,17 +231,17 @@ def pattern(kat,  # kat subarray object
         if not kat.dry_run:
             timestamp = _katcp_reply_to_log_(replies)
         else:
-            msg = ("Dry-run: Set all noise diodes with timestamp {} ({})"
-                   .format(int(timestamp),
-                           time.ctime(timestamp)))
+            msg = (
+                "Dry-run: Set all noise diodes with timestamp"
+                "{} ({})".format(int(timestamp), time.ctime(timestamp)))
             user_logger.info(msg)
     else:
         sb_ants = [ant.name for ant in kat.ants]
         if "cycle" not in nd_antennas:
             sb_ants = [ant.strip() for ant in nd_antennas.split(',')
                        if ant.strip() in sb_ants]
-            user_logger.info("Antennas found in subarray, setting ND: {}"
-                             .format(','.join(sb_ants)))
+            user_logger.info(
+                "Antennas found in subarray, setting ND: {}".format(','.join(sb_ants)))
         # Noise Diodes are triggered for selected antennas in the array
         for ant in sb_ants:
             ped = getattr(kat, ant)
@@ -251,20 +251,19 @@ def pattern(kat,  # kat subarray object
             if not kat.dry_run:
                 timestamp = _katcp_reply_to_log_({ant: the_reply})
             else:
-                msg = ("Dry-run: Set noise diode for antenna {} with timestamp {}"
-                       .format(ant, timestamp))
+                msg = (
+                    "Dry-run: Set noise diode for antenna"
+                    "{} with timestamp {}".format(ant, timestamp))
                 user_logger.info(msg)
             if nd_antennas == "cycle":
                 # add time [sec] to ensure all digitisers set at the same time
                 timestamp += cycle_length * on_fraction
 
     wait_time = timestamp - time.time()
-    user_logger.trace("TRACE: set nd pattern at {} from now {}, sleep {}"
-                      .format(timestamp,
-                              time.time(),
-                              wait_time))
+    user_logger.trace(
+        "TRACE: set nd pattern at"
+        "{} from now {}, sleep {}".format(timestamp, time.time(), wait_time))
     time.sleep(wait_time)
-    user_logger.trace("TRACE: ts after wait period {}"
-                      .format(time.time()))
+    user_logger.trace("TRACE: ts after wait period {}".format(time.time()))
 
 # -fin-

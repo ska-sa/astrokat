@@ -64,9 +64,9 @@ class Observatory(object):
         try:
             rise_time = self.observer.next_rising(ephem_target)
         except ephem.AlwaysUpError:
-            return ephem.hours('0:0:01.0')
+            return ephem.hours("0:0:01.0")
         except AttributeError:
-            return ephem.hours('0:0:01.0')
+            return ephem.hours("0:0:01.0")
 
         if not lst:
             return rise_time
@@ -79,9 +79,9 @@ class Observatory(object):
             set_time = self.observer.next_setting(ephem_target,
                                                   start=rise_time)
         except ephem.AlwaysUpError:
-            return ephem.hours('23:59:59.0')
+            return ephem.hours("23:59:59.0")
         except AttributeError:
-            return ephem.hours('23:59:59.0')
+            return ephem.hours("23:59:59.0")
 
         if not lst:
             return set_time
@@ -164,7 +164,7 @@ class Observatory(object):
 
     def lst2hours(self, ephem_lst):
         """Convert time format from ephem LST time to number of hours since epoch."""
-        time_ = datetime.strptime('{}'.format(ephem_lst), '%H:%M:%S.%f').time()
+        time_ = datetime.strptime("{}".format(ephem_lst), "%H:%M:%S.%f").time()
         time_ = (time_.hour +
                  (time_.minute / 60.) +
                  (time_.second + time_.microsecond / 1e6) / 3600.)
@@ -248,10 +248,12 @@ def collect_targets(kat, args):
     if len(catalogue) == 0:
         raise ValueError("No known targets found in argument list")
     msg = (
-        "Found {} target(s): {} from {} catalogue(s), {} from default"
-        "catalogue and {} as target string(s)".format(len(catalogue), from_catalogues,
-                                                      num_catalogues, from_names,
-                                                      from_strings))
+        "Found {} target(s): {} from {} catalogue(s), {} from default catalogue and"
+        "{} as target string(s)".format(len(catalogue),
+                                        from_catalogues,
+                                        num_catalogues,
+                                        from_names,
+                                        from_strings))
     user_logger.info(msg)
     return catalogue
 
