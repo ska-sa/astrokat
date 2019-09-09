@@ -25,7 +25,7 @@ class TestAstrokatYAML(unittest.TestCase):
         LoggedTelescope.reset_user_logger_stream()
         """
     def test_nd_pattern_sim(self):
-        """Tests nd sim."""
+        """Tests noisediode simulator."""
         execute_observe_main("test_nd/nd-pattern-sim.yaml")
 
         # TODO: restore this check after working out an appropriate start-time

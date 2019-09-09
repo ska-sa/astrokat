@@ -2,6 +2,7 @@
 """Scaling flux calibrator coefficient to MHz.
 
 Reference: Perley & Butler 2017
+
 """
 
 import argparse
@@ -58,9 +59,13 @@ def coeffs_ghz2mhz(
     """Scaling the flux model coefficients from the GHz used to MHz.
 
     scale coefficients using simple math:
-    python astrokat-fitflux.py
+    ------------------------------------
+        python astrokat-fitflux.py
+
     scale coefficients by refitting the polynomial:
-    python astrokat-fitflux.py --refit
+    ----------------------------------------------
+        python astrokat-fitflux.py --refit
+
     """
     [min_idx, value] = find_nearest(fit_frequencies_mhz, min_freq_mhz)
     [max_idx, value] = find_nearest(fit_frequencies_mhz, max_freq_mhz)
@@ -77,41 +82,41 @@ def coeffs_ghz2mhz(
     log10S_ = calc_flux_density(coeffs_, 10.**x)
 
     if verbose:
-        plt.figure(figsize=(8, 11), facecolor='white')
+        plt.figure(figsize=(8, 11), facecolor="white")
         plt.subplot(211)
         plt.loglog(fit_freq_ghz, 10.**log10S)
         plt.title(calib)
-        plt.ylabel('Flux Density [Jy]')
-        plt.xlabel('Frequency(GHz)')
-        plt.axis('tight')
+        plt.ylabel("Flux Density [Jy]")
+        plt.xlabel("Frequency(GHz)")
+        plt.axis("tight")
         plt.subplot(212)
-        plt.loglog(10.**x, 10.**y, 'b', 10.**x, 10.**log10S_, 'r--')
-        plt.ylabel('Flux Density [Jy]')
-        plt.xlabel('Frequency(MHz)')
-        plt.axis('tight')
+        plt.loglog(10.**x, 10.**y, "b", 10.**x, 10.**log10S_, "r--")
+        plt.ylabel("Flux Density [Jy]")
+        plt.xlabel("Frequency(MHz)")
+        plt.axis("tight")
 
     return coeffs_
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     usage = "%%prog [options]"
-    description = 'Scale flux model coefficients from GHz to MHz for MeerKAT telescope'
+    description = "Scale flux model coefficients from GHz to MHz for MeerKAT telescope"
 
     parser = argparse.ArgumentParser(
             usage=usage,
             description=description)
     parser.add_argument(
-            '--version',
-            action='version',
+            "--version",
+            action="version",
             version=__version__)
     parser.add_argument(
-            '--refit',
-            action='store_true',
-            help='Redo polynomial fit using MHz frequencies')
+            "--refit",
+            action="store_true",
+            help="Redo polynomial fit using MHz frequencies")
     parser.add_argument(
-            '--verbose',
-            action='store_true',
-            help='Display flux model results with refitting coefficients.')
+            "--verbose",
+            action="store_true",
+            help="Display flux model results with refitting coefficients.")
     args = parser.parse_args()
 
     for calib in flux_cals.keys():

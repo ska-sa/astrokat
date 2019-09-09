@@ -1,4 +1,4 @@
-"""Test observe script in simulated environment."""
+"""Test astrokat observe.py script in a simulated environment."""
 from __future__ import absolute_import
 from __future__ import print_function
 

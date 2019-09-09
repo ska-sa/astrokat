@@ -7,7 +7,11 @@ import yaml
 
 
 class NotAllTargetsUpError(Exception):
-    """Not all targets are above the horizon at the start of the observation."""
+    """Raise error when not all targets are at the desired horizon.
+
+    Not all targets are above the horizon at the start of the observation error
+
+    """
 
 
 class NoTargetsUpError(Exception):
@@ -78,21 +82,28 @@ def read_yaml(filename):
 
 
 def datetime2timestamp(datetime_obj):
-    """Safely convert a datetime object to a timestamp.
+    """Safely convert a datetime object to a UTC timestamp.
 
-    UTC seconds since epoch
+    UTC seconds since epoch, reverse of `timestamp2datetime`
+    method described in this module
+
     """
     epoch = datetime.datetime.utcfromtimestamp(0)
     return (datetime_obj - epoch).total_seconds()
 
 
 def timestamp2datetime(timestamp):
-    """Safely convert a timestamp to UTC datetime object."""
+    """Safely convert a timestamp to UTC datetime object.
+
+    UTC datetime object, reverse of `datetime2timestamp`
+    method described in this module
+
+    """
     return datetime.datetime.utcfromtimestamp(timestamp)
 
 
 def katpoint_target(target_item):
-    """Construct an expected katpoint target string."""
+    """Construct an expected katpoint target from a target_item string."""
     coords = ['radec', 'azel', 'gal']
     # input string format: name=, radec=, tags=, duration=, ...
     target_ = [item.strip() for item in target_item.split(',')]
@@ -121,7 +132,12 @@ def katpoint_target(target_item):
 
 
 def get_lst(yaml_lst):
-    """Extract lst range from YAML key."""
+    """Extract lst range from YAML key.
+
+    Get the Local Sidereal Time range for when a celestial body can be observed
+    from the YAML file of targets in config
+
+    """
     start_lst = None
     end_lst = None
     # YAML input without quotes will calc this integer

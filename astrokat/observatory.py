@@ -17,8 +17,8 @@ from .utility import katpoint_target, lst2utc
 try:
     import katconf
     # Set up configuration source
-    _config_path = '/var/kat/config'
-    _node_file = '/var/kat/node.conf'
+    _config_path = "/var/kat/config"
+    _node_file = "/var/kat/node.conf"
     _settings = {}
     if os.path.isdir(_config_path):
         katconf.set_config(katconf.environ(override=_config_path))
@@ -38,7 +38,7 @@ try:
 
 except (ImportError, ValueError):
     # default reference position for MKAT array
-    _ref_location = 'ref, -30:42:39.8, 21:26:38.0, 1035.0, 0.0, , , 1.15'
+    _ref_location = "ref, -30:42:39.8, 21:26:38.0, 1035.0, 0.0, , , 1.15"
     _node_config_available = False
 else:
     # default reference position for MKAT array from katconf
@@ -89,38 +89,73 @@ class Observatory(object):
         return self.observer.sidereal_time()
 
     def read_file_from_node_config(self, catalogue_file):
-        """Read configuration file."""
+        """Read catalogue file from node config.
+
+        Parameters
+        ----------
+            catalogue_file:
+                catalogue of celestial objects
+                that can be observed with the telescope
+                system running on the current node
+
+        """
         if not self.node_config_available:
-            raise AttributeError('Node config is not configured')
+            raise AttributeError("Node config is not configured")
         else:
-            err_msg = 'Catalogue file does not exist in node config!'
+            err_msg = "Catalogue file does not exist in node config!"
             assert katconf.resource_exists(catalogue_file), err_msg
             return katconf.resource_template(catalogue_file)
 
     def get_location(self):
-        """Get the default reference location."""
+        """Get the default reference location.
+
+        Calls the katpoint.Antenna object, a MeerKAT wrapper around
+        the PyEphem.observer object
+
+        """
         return katpoint.Antenna(self.location)
 
     def get_observer(self, horizon=20.):
-        """Get the MeerKAT observer."""
+        """Get the MeerKAT observer object.
+
+        The location and time of the telescope instance
+        """
         observer = self.kat.observer
         observer.horizon = numpy.deg2rad(horizon)
         observer.date = ephem.now()
         return observer
 
     def set_target(self, target):
-        """Set the target."""
+        """Set the target.
+
+        MeerKAT Wrapper around a PyEphem.Body object,
+        target is a comma-separated description which
+        contains parameters such as the target name,
+        position, flux model.
+
+        """
         target = katpoint.Target(target)
         target.body.compute(self.observer)
         return target
 
     def get_target(self, target_item):
-        """Obtain target description."""
+        """Obtain target description.
+
+        Call to `set_taget` methods described in this module
+
+        """
         name, target_item = katpoint_target(target_item)
         return self.set_target(target_item)
 
     def unpack_target(self, target_item):
-        """See full description of target."""
+        """Unpack full description of target.
+
+        Parameters
+        -----------
+            target_item: string of target(s)
+            names and descriptions which can be pointed at by an antenna.
+
+        """
         target_dict = {}
         for item in target_item.split(','):
             item_ = item.strip().split('=')
@@ -128,7 +163,7 @@ class Observatory(object):
         return target_dict
 
     def lst2hours(self, ephem_lst):
-        """Convert time format."""
+        """Convert time format from ephem LST time to number of hours since epoch."""
         time_ = datetime.strptime('{}'.format(ephem_lst), '%H:%M:%S.%f').time()
         time_ = (time_.hour +
                  (time_.minute / 60.) +
@@ -136,7 +171,12 @@ class Observatory(object):
         return '%.3f' % time_
 
     def start_obs(self, target_list, str_flag=False):
-        """Start the observation."""
+        """Start time of the observation.
+
+        Call to `lst2hours` method described in this module for the
+        starting time target of observation.
+
+        """
         start_lst = []
         for target in target_list:
             target_ = self.get_target(target).body
@@ -147,7 +187,12 @@ class Observatory(object):
         return self.lst2hours(start_lst)
 
     def end_obs(self, target_list, str_flag=False):
-        """End the observation."""
+        """End time of the observation.
+
+        Call to `lst2hours` method described in this module for the
+        end time target of observation.
+
+        """
         end_lst = []
         for target in target_list:
             target_ = self.get_target(target).body
@@ -174,7 +219,7 @@ def collect_targets(kat, args):
             try:
                 catalogue.add(open(arg))
             except ValueError:
-                msg = 'Catalogue {} contains bad targets'.format(arg)
+                msg = "Catalogue {} contains bad targets".format(arg)
                 user_logger.warning(msg)
             from_catalogues += len(catalogue) - count_before_add
             num_catalogues += 1
@@ -187,8 +232,7 @@ def collect_targets(kat, args):
             if arg.find(',') < 0:
                 target = kat.sources[arg]
                 if target is None:
-                    msg = ('Unknown target or catalogue {}, skipping it'
-                           .format(arg))
+                    msg = ("Unknown target or catalogue {}, skipping it".format(arg))
                     user_logger.warning(msg)
                 else:
                     catalogue.add(target)
@@ -199,18 +243,15 @@ def collect_targets(kat, args):
                     catalogue.add(arg)
                     from_strings += 1
                 except ValueError as err:
-                    msg = ('Invalid target {}, skipping it [{}]'
-                           .format(arg, err))
+                    msg = ("Invalid target {}, skipping it [{}]".format(arg, err))
                     user_logger.warning(msg)
     if len(catalogue) == 0:
         raise ValueError("No known targets found in argument list")
-    msg = ('Found {} target(s): {} from {} catalogue(s), '
-           '{} from default catalogue and {} as target string(s)'
-           .format(len(catalogue),
-                   from_catalogues,
-                   num_catalogues,
-                   from_names,
-                   from_strings))
+    msg = (
+        "Found {} target(s): {} from {} catalogue(s), {} from default"
+        "catalogue and {} as target string(s)".format(len(catalogue), from_catalogues,
+                                                      num_catalogues, from_names,
+                                                      from_strings))
     user_logger.info(msg)
     return catalogue
 

@@ -24,10 +24,12 @@ except ImportError:
     from astrokat import collect_targets, user_logger, start_session, verify_and_connect
 
 
-# unpack targets to katpoint compatible format
 # TODO: target description defined in function needs to be in configuration
 def read_targets(target_items):
-    """Read targets info."""
+    """Read targets info.
+
+    Unpack targets to katpoint compatible format
+    """
     desc = {
         'names': (
             'name',
@@ -106,12 +108,11 @@ def read_targets(target_items):
     return target_list
 
 
-# target observation functionality
 def observe(
         session,
         target_info,
         **kwargs):
-    """Observation functionality."""
+    """Target observation functionality."""
     target_visible = False
 
     target_name = target_info['name']
@@ -204,7 +205,6 @@ def observe(
     return target_visible
 
 
-# finding each cadence target in order of target list
 def cadence_target(target_list):
     """Find each cadence target in order of target list."""
     for target in target_list:
@@ -217,7 +217,6 @@ def cadence_target(target_list):
     return False
 
 
-# check target visibility
 def above_horizon(katpt_target, horizon=20.):
     """Check target visibility."""
     [azim, elev] = katpt_target.azel(time.time())
@@ -225,7 +224,10 @@ def above_horizon(katpt_target, horizon=20.):
 
 
 class Telescope(object):
-    """The telescope class."""
+    """The telescope class.
+
+    Settings for the telescope components
+    """
 
     def __init__(self, opts, correlator=None):
         user_logger.info('Setting up telescope for observation')
@@ -281,6 +283,7 @@ class Telescope(object):
             dump_rate,      # dumprate
             band,           # band
             ]
+
         """
         user_logger.trace(self.opts.obs_plan_params['instrument'])
         if self.opts.obs_plan_params['instrument'] is None:
@@ -430,20 +433,18 @@ def run_observation(opts, kat):
             session.standard_setup(**vars(opts))
             start_datetime = timestamp2datetime(time.time())
             observer.date = ephem.Date(start_datetime)
-            user_logger.trace('TRACE: requested start time ({}) {}'
-                              .format(datetime2timestamp(start_datetime),
-                                      start_datetime))
+            user_logger.trace(
+                "TRACE: requested start time"
+                "({}) {}".format(datetime2timestamp(start_datetime), start_datetime))
 
-            user_logger.trace('TRACE: observer at start\n {}'
-                              .format(observer))
+            user_logger.trace("TRACE: observer at start\n {}".format(observer))
 
             # Verify the observation is in a valid LST range
             # and that it is worth while continuing with the observation
             # Do not use float() values, ephem.hours does not convert as
             # expected
             local_lst = observer.sidereal_time()
-            user_logger.trace('TRACE: Local LST {}'
-                              .format(ephem.hours(local_lst)))
+            user_logger.trace("TRACE: Local LST {}".format(ephem.hours(local_lst)))
             # Only observe targets in current LST range
             if float(start_lst) < end_lst:
                 in_range = (
@@ -452,9 +453,10 @@ def run_observation(opts, kat):
                         ephem.hours(local_lst) < ephem.hours(
                             str(end_lst))))
                 if not in_range:
-                    user_logger.error('Local LST outside LST range {}-{}'
-                                      .format(ephem.hours(str(start_lst)),
-                                              ephem.hours(str(end_lst))))
+                    user_logger.error("Local LST outside LST range"
+                                      "{}-{}".format(ephem.hours(str(start_lst)),
+                                                     ephem.hours(str(end_lst)))
+                                      )
                     continue
             else:
                 # else assume rollover at midnight to next day
@@ -464,9 +466,10 @@ def run_observation(opts, kat):
                         ephem.hours(local_lst) > ephem.hours(
                             str(end_lst))))
                 if out_range:
-                    user_logger.error('Local LST outside LST range {}-{}'
-                                      .format(ephem.hours(str(start_lst)),
-                                              ephem.hours(str(end_lst))))
+                    user_logger.error("Local LST outside LST range"
+                                      "{}-{}".format(ephem.hours(str(start_lst)),
+                                                     ephem.hours(str(end_lst)))
+                                      )
                     continue
             # TODO: setup of noise diode pattern should be moved to sessions
             #  so it happens in the line above
@@ -479,20 +482,20 @@ def run_observation(opts, kat):
             # Adding explicit init after "Capture-init failed" exception was
             # encountered
             session.capture_init()
-            user_logger.debug('DEBUG: Initialise capture start with timestamp {} ({})'
-                              .format(int(time.time()),
-                                      timestamp2datetime(time.time())))
+            user_logger.debug("DEBUG: Initialise capture start with timestamp"
+                              "{} ({})".format(int(time.time()),
+                                               timestamp2datetime(time.time()))
+                              )
 
             # Go to first target before starting capture
             user_logger.info('Slewing to first target')
             observe(session, obs_targets[0], slewonly=True)
             # Only start capturing once we are on target
             session.capture_start()
-            user_logger.trace('TRACE: capture start time after slew ({}) {}'
-                              .format(time.time(),
-                                      timestamp2datetime(time.time())))
-            user_logger.trace('TRACE: observer after slew\n {}'
-                              .format(observer))
+            user_logger.trace(
+                "TRACE: capture start time after slew"
+                "({}) {}".format(time.time(), timestamp2datetime(time.time())))
+            user_logger.trace("TRACE: observer after slew\n {}".format(observer))
 
             done = False
             sanity_cntr = 0
@@ -502,7 +505,8 @@ def run_observation(opts, kat):
                 sanity_cntr += 1
                 if sanity_cntr > 100000:
                     user_logger.error(
-                        'While limit counter has reached {}, exiting' .format(sanity_cntr))
+                        "While limit counter has reached {},"
+                        "exiting" .format(sanity_cntr))
                     break
 
                 # Cycle through target list in order listed
@@ -512,10 +516,9 @@ def run_observation(opts, kat):
 
                 for cnt, target in enumerate(obs_targets):
                     katpt_target = target['target']
-                    user_logger.debug('DEBUG: {} {}'
-                                      .format(cnt, target))
-                    user_logger.trace('TRACE: initial observer for target\n {}'
-                                      .format(observer))
+                    user_logger.debug("DEBUG: {} {}".format(cnt, target))
+                    user_logger.trace(
+                        "TRACE: initial observer for target\n {}".format(observer))
                     # check target visible before doing anything
                     if not above_horizon(katpt_target, horizon=opts.horizon):
                         show_horizon_status = True
@@ -527,11 +530,11 @@ def run_observation(opts, kat):
                                 delta_time >= target['cadence'])
                         if show_horizon_status:
                             user_logger.warn(
-                                'Target {} below {} deg horizon, continuing' .format(
-                                    target['name'], opts.horizon))
+                                "Target {} below {} deg horizon,"
+                                "continuing" .format(target['name'], opts.horizon))
                         continue
                     user_logger.trace(
-                        'TRACE: observer after horizon check\n {}' .format(observer))
+                        "TRACE: observer after horizon check\n {}" .format(observer))
 
                     # check and observe all targets with cadences
                     while_cntr = 0
@@ -546,18 +549,18 @@ def run_observation(opts, kat):
                             done = True
                             break
                         # check target visible before doing anything
-                        user_logger.trace('TRACE: cadence target\n {}\n {}'
-                                          .format(tgt,
-                                                  catalogue[tgt['name']]))
-                        user_logger.trace('TRACE: initial observer for cadence'
-                                          'target\n {}'.format(observer))
-                        user_logger.trace('TRACE: observer before track\n {}'
-                                          .format(observer))
                         user_logger.trace(
-                            'TRACE: target observation # {}'
-                            'last observed {}'.format(
-                                tgt['obs_cntr'],
-                                tgt['last_observed']))
+                            "TRACE: cadence"
+                            "target\n{}\n {}".format(tgt, catalogue[tgt['name']]))
+                        user_logger.trace(
+                            "TRACE: initial observer for cadence"
+                            "target\n {}".format(observer))
+                        user_logger.trace(
+                            "TRACE: observer before track\n {}".format(observer))
+                        user_logger.trace(
+                            "TRACE: target observation # {}"
+                            "last observed {}".format(tgt['obs_cntr'],
+                                                      tgt['last_observed']))
                         if above_horizon(
                                 catalogue[tgt['name']], horizon=opts.horizon):
                             if observe(session, tgt, **obs_plan_params):
@@ -568,12 +571,11 @@ def run_observation(opts, kat):
                                 # target not visibile to sessions anymore
                                 cadence_targets.remove(tgt)
                             user_logger.trace(
-                                'TRACE: observer after track\n {}' .format(observer))
+                                "TRACE: observer after track\n {}" .format(observer))
                             user_logger.trace(
-                                'TRACE: target observation # {} last'
-                                'observed {}'.format(
-                                    tgt['obs_cntr'],
-                                    tgt['last_observed']))
+                                "TRACE: target observation # {} last"
+                                "observed {}".format(tgt['obs_cntr'],
+                                                     tgt['last_observed']))
                         else:
                             cadence_targets.remove(tgt)
                         while_cntr += 1
@@ -581,55 +583,53 @@ def run_observation(opts, kat):
                             break
                     if done:
                         break
-                    user_logger.trace('TRACE: observer after cadence\n {}'
-                                      .format(observer))
+                    user_logger.trace(
+                        "TRACE: observer after cadence\n {}".format(observer))
 
                     # observe non cadence target
                     if target['cadence'] < 0:
-                        user_logger.trace('TRACE: normal target\n {}'
-                                          .format(target))
-                        user_logger.trace('TRACE: observer before track\n {}'
-                                          .format(observer))
-                        user_logger.trace('TRACE: ts before observe {}'
-                                          .format(time.time()))
-                        user_logger.trace('TRACE: target last observed {}'
-                                          .format(target['last_observed']))
+                        user_logger.trace("TRACE: normal target\n {}".format(target))
+                        user_logger.trace(
+                            "TRACE: observer before track\n {}".format(observer))
+                        user_logger.trace(
+                            "TRACE: ts before observe {}".format(time.time()))
+                        user_logger.trace(
+                            "TRACE: target last"
+                            "observed {}".format(target['last_observed']))
 
                         targets_visible += observe(
                             session,
                             target,
                             **obs_plan_params)
 
-                        user_logger.trace('TRACE: observer after track\n {}'
-                                          .format(observer))
-                        user_logger.trace('TRACE: ts after observe {}'
-                                          .format(time.time()))
+                        user_logger.trace(
+                            "TRACE: observer after track\n {}".format(observer))
+                        user_logger.trace(
+                            "TRACE: ts after observe {}".format(time.time()))
                         if targets_visible:
                             target['obs_cntr'] += 1
                             target['last_observed'] = time.time()
                         user_logger.trace(
-                            'TRACE: target observation # {} last'
-                            'observed {}'.format(
-                                target['obs_cntr'],
-                                target['last_observed']))
-                        user_logger.trace('TRACE: observer after track\n {}'
-                                          .format(observer))
+                            "TRACE: target observation # {} last"
+                            "observed {}".format(target['obs_cntr'],
+                                                 target['last_observed']))
+                        user_logger.trace(
+                            "TRACE: observer after track\n {}".format(observer))
 
                     # loop continuation checks
                     delta_time = time.time() - session.start_time
-                    user_logger.trace('TRACE: time elapsed {} sec'
-                                      .format(delta_time))
-                    user_logger.trace('TRACE: total obs duration {} sec'
-                                      .format(obs_duration))
+                    user_logger.trace("TRACE: time elapsed {} sec".format(delta_time))
+                    user_logger.trace(
+                        "TRACE: total obs duration {} sec".format(obs_duration))
                     if obs_duration > 0:
                         time_remaining = obs_duration - delta_time
-                        user_logger.trace('TRACE: time remaining {} sec'
-                                          .format(time_remaining))
+                        user_logger.trace(
+                            "TRACE: time remaining {} sec".format(time_remaining))
 
                         next_target = obs_targets[(cnt + 1) % len(obs_targets)]
-                        user_logger.trace('TRACE: next target before cadence'
-                                          'check:\n{}'.format(next_target)
-                                          )
+                        user_logger.trace(
+                            "TRACE: next target before cadence"
+                            "check:\n{}".format(next_target))
                         # check if there is a cadence target that must be run
                         # instead of next target
                         for next_cadence_tgt_idx in range(
@@ -638,20 +638,21 @@ def run_observation(opts, kat):
                                 next_cadence_tgt_idx % len(obs_targets)]
                             if next_cadence_target['cadence'] > 0:
                                 user_logger.trace(
-                                    'TRACE: time needed for next obs {} sec' .format(
-                                        next_cadence_target['cadence']))
+                                    "TRACE: time needed for next obs"
+                                    "{} sec" .format(next_cadence_target['cadence']))
                                 next_target = obs_targets[
                                     next_cadence_tgt_idx % len(obs_targets)]
                                 continue
                         user_logger.trace(
-                            'TRACE: next target after cadencecheck:\n{}' .format(next_target))
+                            "TRACE: next target after cadence"
+                            "check:\n{}" .format(next_target))
                         user_logger.trace(
-                            'TRACE: time needed for next obs {} sec' .format(
-                                next_target['duration']))
+                            "TRACE: time needed for next obs"
+                            "{} sec" .format(next_target['duration']))
                         if time_remaining < 1. or \
                                 time_remaining < next_target['duration']:
                             user_logger.info(
-                                'Scheduled observation time lapsed - ending observation')
+                                "Scheduled observation time lapsed - ending observation")
                             done = True
                             break
 
@@ -661,24 +662,23 @@ def run_observation(opts, kat):
 
                 if obs_duration < 0:
                     user_logger.info(
-                        'Observation list completed - ending observation')
+                        "Observation list completed - ending observation")
                     done = True
 
                 # End if there is nothing to do
                 if not targets_visible:
                     user_logger.warning(
-                        'No more targets to observe - stopping script'
-                        'instead of hanging around')
+                        "No more targets to observe - stopping script"
+                        "instead of hanging around")
                     done = True
 
-        user_logger.trace('TRACE: observer at end\n {}'
-                          .format(observer))
+        user_logger.trace("TRACE: observer at end\n {}".format(observer))
         # display observation cycle statistics
         print
         user_logger.info("Observation loop statistics")
         total_obs_time = observation_timer - session.start_time
         if obs_duration < 0:
-            user_logger.info('Single run through observation target list')
+            user_logger.info("Single run through observation target list")
         else:
             user_logger.info("Desired observation time {:.2f} sec ({:.2f} min)"
                              .format(obs_duration, obs_duration / 60.))
@@ -692,18 +692,21 @@ def run_observation(opts, kat):
                 durations = obs_targets[obs_targets['name']
                                         == unique_target]['duration']
                 if np.isnan(durations).any():
-                    user_logger.info('{} observed {} times'
-                                     .format(unique_target,
-                                             np.sum(cntrs)))
+                    user_logger.info("{} observed {} times".format(unique_target,
+                                                                   np.sum(cntrs)))
                 else:
-                    user_logger.info('{} observed for {} sec'
-                                     .format(unique_target,
-                                             np.sum(cntrs * durations)))
+                    user_logger.info(
+                        "{} observed for {} sec".format(unique_target,
+                                                        np.sum(cntrs * durations)))
         print
 
 
 def main(args):
-    """Observe."""
+    """Run the observation.
+
+    Run the observation script read arguments from yaml file
+
+    """
     (opts, args) = astrokat.cli(
         os.path.basename(__file__),
         # remove redundant KAT-7 options
@@ -726,9 +729,9 @@ def main(args):
     # command line arguments will be dropped to unknown arguments
     unknown_args = [arg for arg in args if arg.startswith('--')]
     if any('horizon' in arg for arg in unknown_args):
-        raise RuntimeError('Command line option {} not supported. '
-                           'Please specify parameters in YAML file.'.format(
-                               'horizon'))
+        raise RuntimeError(
+            "Command line option {} not supported. Please specify parameters"
+            "in YAML file.".format("horizon"))
     # TODO: add correlator settings YAML option for config file
 
     # unpack observation from observation plan

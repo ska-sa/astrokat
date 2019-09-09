@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """MeerKAT calibrator selection tools.
 
-Returns the closest calibrator(s) for per target
+Returns the closest calibrator(s) per target
 """
 
 from __future__ import print_function
@@ -31,139 +31,140 @@ except ImportError:  # not a processing node
 def cli(prog):
     """Define command line input arguments."""
     usage = "{} [options]".format(prog)
-    description = 'calibrator selection for MeerKAT telescope'
+    description = "Calibrator selection for MeerKAT telescope"
 
     parser = argparse.ArgumentParser(
         usage=usage,
         description=description,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '--version',
-        action='version',
+        "--version",
+        action="version",
         version=__version__)
     parser.add_argument(
-        '--pi',
+        "--pi",
         type=str,
-        help='name of principle investigator or '
-        'designated project leader')
+        help="Name of principal investigator or designated project leader")
     parser.add_argument(
-        '--contact',
+        "--contact",
         type=str,
-        help='PI contact details, '
-        'such as email address or phone number')
+        help="PI contact details, such as email address or phone number")
     parser.add_argument(
-        '--prop-id',
+        "--prop-id",
         type=str,
-        help='proposal ID')
-    cal_tags = ['gain', 'bp', 'flux', 'pol', 'delay']
+        help="Proposal ID")
+    cal_tags = ["gain", "bp", "flux", "pol", "delay"]
     parser.add_argument(
-        '--cal-tags',
+        "--cal-tags",
         type=str,
-        nargs='+',
-        metavar='<tag>',
+        nargs="+",
+        metavar="<tag>",
         choices=cal_tags,
-        help='list of tags specifying types of calibrators to provide: '
-        'gain bp flux pol')
+        help="List of tags specifying types of calibrators to provide: "
+        "gain bp flux pol")
     parser.add_argument(
-        '--cat-path',
+        "--cat-path",
         type=str,
-        help='path to calibrator catalogue folder')
+        help="Path to calibrator catalogue folder")
     parser.add_argument(
-        '--solar-angle',
+        "--solar-angle",
         type=float,
         default=20.,  # angle in degrees
-        help='solar separation angle from target observation region')
+        help="Solar separation angle (in degrees) from target observation region")
     parser.add_argument(
-        '--datetime',
+        "--datetime",
         default=datetime.utcnow(),
-        help="catalogue creation or viewing date and time with "
-        "string format 'YYYY-MM-DD HH:MM'")
+        help="Catalogue creation or viewing date and time with string"
+             "format 'YYYY-MM-DD HH:MM'")
     parser.add_argument(
-        '--horizon',
+        "--horizon",
         type=float,
         default=17.,  # angle in degrees
-        help='minimum pointing angle of MeerKAT dish')
+        help="Minimum pointing angle (in degrees) of MeerKAT dish")
     parser.add_argument(
-        '--lst',
-        action='store_true',
-        help='display rise and set times in LST (default UTC)')
+        "--lst",
+        action="store_true",
+        help="Display rise and set times in LST (default UTC)")
 
     group = parser.add_argument_group(
-        title="\
-observation target specification (*required*)",
-        description="\
-multiple targets are added using an input file, \
-while for a single target a quick command line option is also available \
- -- simultaneous use of a catalogue and input target is not allowed.")
+        title="Observation target specification (*required*)",
+        description="Multiple targets are added using an input file,"
+                    "while for a single target a quick command line"
+                    "option is also available -- simultaneous use of"
+                    "a catalogue and input target is not allowed.")
     ex_group = group.add_mutually_exclusive_group(required=True)
     ex_group.add_argument(
-        '--infile',
+        "--infile",
         type=str,
-        help='observation targets as CSV input file')
+        help="Observation targets as CSV input file")
     ex_group.add_argument(
-        '--target',
+        "--target",
         nargs=3,
         type=str,
-        metavar=('Name', 'RA', 'Decl'),
-        help='returns MeerKAT LST range for a celestial target '
-        'with coordinates HH:MM:SS DD:MM:SS')
+        metavar=("Name", "RA", "Decl"),
+        help="Returns MeerKAT LST range for a celestial target"
+             "with coordinates 'HH:MM:SS DD:MM:SS'")
     ex_group.add_argument(
-        '--view',
+        "--view",
         type=str,
-        metavar='CATALOGUE',
-        help='display catalogue sources elevation over time')
+        metavar="CATALOGUE",
+        help="Display catalogue sources elevation over time")
 
     group = parser.add_argument_group(
-        title="catalogue output options",
-        description="options to view constructed observation catalogue")
+        title="Catalogue output options",
+        description="Options to view constructed observation catalogue")
     group.add_argument(
-        '--outfile',
+        "--outfile",
         type=str,
-        help='path and name for observation catalogue CSV file '
-        '(if not provided, only target listing will be displayed)')
+        help="Path and name for observation catalogue CSV file"
+             "(if not provided, only target listing will be displayed)")
     group.add_argument(
-        '--text-only',
-        action='store_true',
-        help='output observation target information text only')
+        "--text-only",
+        action="Store_true",
+        help="Output observation target information text only")
     group.add_argument(
-        '--all-cals',
-        action='store_true',
-        help='show all primary calibrators in catalogue')
-    view_tags = ['elevation', 'solarangle', 'riseset']
+        "--all-cals",
+        action="Store_true",
+        help="Show all primary calibrators in catalogue")
+    view_tags = ["elevation", "solarangle", "riseset"]
     group.add_argument(
-        '--view-tags',
+        "--view-tags",
         type=str,
-        nargs='+',
-        metavar='<tag>',
+        nargs="+",
+        metavar="<tag>",
         choices=view_tags,
-        default=['elevation'],
-        help='list of plot options for target visualization: '
-        'elevation solarangle riseset')
+        default=["elevation"],
+        help="List of plot options for target visualization:"
+             "elevation solarangle riseset")
 
     return parser.parse_args()
 
 
 def source_solar_angle(catalogue, ref_antenna):
-    """Source solar angle."""
+    """Source solar angle.
+
+    The solar separation angle (in degrees) from target observation region
+
+    """
     date = ref_antenna.observer.date
     horizon = numpy.degrees(ref_antenna.observer.horizon)
     date = date.datetime().replace(hour=0, minute=0, second=0, microsecond=0)
     numdays = 365
     date_list = [date - timedelta(days=x) for x in range(0, numdays)]
 
-    sun = katpoint.Target('Sun, special')
-    katpt_targets = catalogue.filter(['~bpcal',
-                                      '~fluxcal',
-                                      '~polcal',
-                                      '~gaincal',
-                                      '~delaycal'])
+    sun = katpoint.Target("Sun, special")
+    katpt_targets = catalogue.filter(["~bpcal",
+                                      "~fluxcal",
+                                      "~polcal",
+                                      "~gaincal",
+                                      "~delaycal"])
 
     for cnt, katpt_target in enumerate(katpt_targets):
-        plt.figure(figsize=(17, 7), facecolor='white')
+        plt.figure(figsize=(17, 7), facecolor="white")
         ax = plt.subplot(111)
         plt.subplots_adjust(right=0.8)
         fontP = FontProperties()
-        fontP.set_size('small')
+        fontP.set_size("small")
 
         solar_angle = []
         for the_date in date_list:
@@ -180,17 +181,17 @@ def source_solar_angle(catalogue, ref_antenna):
             solar_angle,
             fmt='.',
             linewidth=0,
-            label='{}'.format(katpt_target.name))
+            label="{}".format(katpt_target.name))
         ax.axhspan(0., horizon, facecolor='k', alpha=0.2)
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, box.width * 0.95, box.height])
         plt.grid()
         plt.legend(
-            loc='center left',
+            loc="center left",
             bbox_to_anchor=(1, 0.5),
-            prop={'size': 10},
+            prop={"size": 10},
             numpoints=1)
-        plt.ylabel('Solar Separation Angle (degrees)')
+        plt.ylabel("Solar Separation Angle (degrees)")
         ax.set_xticklabels(date_list[0::20], rotation=30, fontsize=10)
         ax.xaxis.set_major_formatter(
             mdates.DateFormatter("%b %d"))
@@ -198,28 +199,32 @@ def source_solar_angle(catalogue, ref_antenna):
             mdates.DayLocator(
                 bymonthday=range(30),
                 interval=10))
-        ax.set_xlabel('Date')
+        ax.set_xlabel("Date")
 
 
 def source_rise_set(catalogue, ref_antenna):
-    """Set source rise."""
+    """Set source rise time.
+
+    display rise and set times in LST (default UTC)
+
+    """
     date = ref_antenna.observer.date
     date = date.datetime().replace(hour=0, minute=0, second=0, microsecond=0)
     numdays = 365
     date_list = [date - timedelta(days=x) for x in range(0, numdays)]
 
-    katpt_targets = catalogue.filter(['~bpcal',
-                                      '~fluxcal',
-                                      '~polcal',
-                                      '~gaincal',
-                                      '~delaycal'])
+    katpt_targets = catalogue.filter(["~bpcal",
+                                      "~fluxcal",
+                                      "~polcal",
+                                      "~gaincal",
+                                      "~delaycal"])
 
     for cnt, katpt_target in enumerate(katpt_targets):
-        plt.figure(figsize=(17, 7), facecolor='white')
+        plt.figure(figsize=(17, 7), facecolor="white")
         ax = plt.subplot(111)
         plt.subplots_adjust(right=0.8)
         fontP = FontProperties()
-        fontP.set_size('small')
+        fontP.set_size("small")
         rise_times = []
         set_times = []
         for the_date in date_list:
@@ -237,23 +242,23 @@ def source_rise_set(catalogue, ref_antenna):
             rise_times,
             fmt='.',
             linewidth=0,
-            label='{} rising'.format(katpt_target.name))
+            label="{} rising".format(katpt_target.name))
         myplot, = plt.plot_date(
             date_list,
             set_times,
             fmt='.',
             linewidth=0,
-            label='{} setting'.format(katpt_target.name))
+            label="{} setting".format(katpt_target.name))
         ax.axhspan(7.25, 17.5, facecolor='k', alpha=0.2)
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, box.width * 0.95, box.height])
         plt.grid()
         plt.legend(
-            loc='center left',
+            loc="center left",
             bbox_to_anchor=(1, 0.5),
-            prop={'size': 10},
+            prop={"size": 10},
             numpoints=1)
-        plt.ylabel('Time UTC (hour)')
+        plt.ylabel("Time UTC (hour)")
         plt.yticks(numpy.arange(0., 24., 1.), fontsize=10)
         ax.set_xticklabels(date_list[0::20], rotation=30, fontsize=10)
         ax.xaxis.set_major_formatter(
@@ -262,19 +267,19 @@ def source_rise_set(catalogue, ref_antenna):
             mdates.DayLocator(
                 bymonthday=range(30),
                 interval=10))
-        ax.set_xlabel('Date')
+        ax.set_xlabel("Date")
 
 
 # source elevation over time (24H) plot
 def source_elevation(catalogue, ref_antenna):
     """Generate a plot of elevation over time for 24 hour period.
 
-    for all sources in provided catalogue at a specific location
+    For all sources in provided catalogue at a specific location
 
     @param catalogue: katpoint.Catalogue object
     @param ref_antenna: katpoint.Antenna object
-
     @return: matplotlib figure handle
+
     """
     catalogue.antenna = ref_antenna
     horizon = numpy.degrees(ref_antenna.observer.horizon)
@@ -285,11 +290,11 @@ def source_elevation(catalogue, ref_antenna):
     time_range = creation_timestamp + numpy.arange(0, 24. * 60. * 60., 360.)
     timestamps = [timestamp2datetime(ts) for ts in time_range]
 
-    fig = plt.figure(figsize=(15, 7), facecolor='white')
+    fig = plt.figure(figsize=(15, 7), facecolor="white")
     ax = plt.subplot(111)
     plt.subplots_adjust(right=0.8)
     fontP = FontProperties()
-    fontP.set_size('small')
+    fontP.set_size("small")
 
     for cnt, target in enumerate(catalogue.targets):
         elev = []
@@ -298,9 +303,9 @@ def source_elevation(catalogue, ref_antenna):
             target.body.compute(catalogue.antenna.observer)
             elev.append(numpy.degrees(target.body.alt))
 
-        label = '{} '.format(target.name)
-        target.tags.remove('radec')
-        target.tags.remove('target') if 'target' in target.tags else None
+        label = "{} ".format(target.name)
+        target.tags.remove("radec")
+        target.tags.remove("target") if "target" in target.tags else None
         label += ', '.join(target.tags)
 
         myplot, = plt.plot_date(
@@ -312,11 +317,11 @@ def source_elevation(catalogue, ref_antenna):
     ax.axhspan(15, horizon, facecolor='k', alpha=0.1)
     plt.grid()
     plt.legend(
-        loc='center left',
+        loc="center left",
         bbox_to_anchor=(1, 0.5),
-        prop={'size': 10},
+        prop={"size": 10},
         numpoints=1)
-    plt.ylabel('Elevation (deg)')
+    plt.ylabel("Elevation (deg)")
     plt.ylim(15, 90)
     plt.yticks(fontsize=10)
 
@@ -331,20 +336,19 @@ def source_elevation(catalogue, ref_antenna):
     locs_labels = matplotlib.dates.num2date(locs)
     locator = matplotlib.ticker.FixedLocator(locs)
     ax.xaxis.set_major_locator(locator)
-    utc_timestamps = [locs_lbl.strftime('%H:%M') for locs_lbl in locs_labels]
+    utc_timestamps = [locs_lbl.strftime("%H:%M") for locs_lbl in locs_labels]
 
     lst_timestamps = []
     for locs_ts in locs_labels:
         catalogue.antenna.observer.date = ephem.Date(locs_ts)
-        lst_time = '{}'.format(catalogue.antenna.observer.sidereal_time())
-        lst_time_str = datetime.strptime(lst_time,
-                                         '%H:%M:%S.%f').strftime('%H:%M')
+        lst_time = "{}".format(catalogue.antenna.observer.sidereal_time())
+        lst_time_str = datetime.strptime(lst_time, "%H:%M:%S.%f").strftime("%H:%M")
         lst_timestamps.append(lst_time_str)
 
     ax.set_xticklabels(lst_timestamps,
                        rotation=30,
                        fontsize=10)
-    ax.set_xlabel('Local Sidereal Time')
+    ax.set_xlabel("Local Sidereal Time")
 
     ax2 = ax.twiny()
     box = ax2.get_position()
@@ -355,12 +359,12 @@ def source_elevation(catalogue, ref_antenna):
     ax2.set_xticklabels(utc_timestamps,
                         rotation=30,
                         fontsize=10)
-    ax2.set_xlabel('Time (UTC) starting from {}'.format(
+    ax2.set_xlabel("Time (UTC) starting from {}".format(
         datetime.utcfromtimestamp(
-            creation_timestamp).strftime('%Y-%m-%d %H:%M:%S')))
+            creation_timestamp).strftime("%Y-%m-%d %H:%M:%S")))
 
-    imfile = 'elevation_utc_lst.png'
-    print('Elevation plot {}'.format(imfile))
+    imfile = "elevation_utc_lst.png"
+    print("Elevation plot {}".format(imfile))
     plt.savefig(imfile, dpi=300)
     return fig
 
@@ -369,16 +373,17 @@ class bcolors:
     """Output observation target stats.
 
     Helper class for command line color output
+
     """
 
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+    HEADER = "\033[95m"
+    OKBLUE = "\033[94m"
+    OKGREEN = "\033[92m"
+    WARNING = "\033[93m"
+    FAIL = "\033[91m"
+    ENDC = "\033[0m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
 
 
 def table_line(datetime,  # ephem.Date object
@@ -402,6 +407,7 @@ def table_line(datetime,  # ephem.Date object
     @param notes: [optional] user provided extra information
 
     @return: <name> <risetime UTC> <settime UTC> <Separation> <Notes>
+
     """
     observatory = Observatory(horizon=horizon, datetime=datetime)
     rise_time = observatory._ephem_risetime_(target.body, lst=lst)
@@ -426,7 +432,7 @@ def table_line(datetime,  # ephem.Date object
             clo_clr = bcolors.FAIL
             sep_note += ' ***'
 
-    table_info = '{: <16}{: <32}{: <16}{: <16}{: <16}{: <16}{: <16}{: <16}\n'.format(
+    table_info = "{: <16}{: <32}{: <16}{: <16}{: <16}{: <16}{: <16}{: <16}\n".format(
         target.name, ' '.join(
             target.tags), str(
             target.body._ra), str(
@@ -450,39 +456,39 @@ def obs_table(ref_antenna,
     @param solar_sep: [optional] minimum solar separation angle
 
     @return: <name> <tag> <risetime> <settime> <Separation> <Notes>
+
     """
     creation_time = ref_antenna.observer.date
     horizon = numpy.degrees(ref_antenna.observer.horizon)
-    observation_table = '\nObservation Table for {} (UTC)\n'.format(
+    observation_table = "\nObservation Table for {} (UTC)\n".format(
         creation_time)
-    date_str = 'UTC'
+    date_str = "UTC"
     if lst:
-        date_str = 'LST'
-    observation_table += 'Times listed in {} for target rise and set times\n'.format(
+        date_str = "LST"
+    observation_table += "Times listed in {} for target rise and set times\n".format(
         date_str)
-    observation_table += 'Target visible when above {} degrees\n'.format(
-        horizon)
-    _table = '{: <16}{: <32}{: <16}{: <16}{: <16}{: <16}{: <16}{: <16}\n'.format(
-        'Sources', 'Class', 'RA', 'Decl', 'Rise Time', 'Set Time', 'Separation', 'Notes',)
+    observation_table += "Target visible when above {} degrees\n".format(horizon)
+    _table = "{: <16}{: <32}{: <16}{: <16}{: <16}{: <16}{: <16}{: <16}\n".format(
+        "Sources", "Class", "RA", "Decl", "Rise Time", "Set Time", "Separation", "Notes",)
     observation_table += _table
 
     # targets are not calibrators
     target_tags = [
-        '~bpcal',
-        '~gaincal',
-        '~fluxcal',
-        '~polcal',
-        '~delaycal',
+        "~bpcal",
+        "~gaincal",
+        "~fluxcal",
+        "~polcal",
+        "~delaycal",
     ]
-    sun = katpoint.Target('Sun, special')
+    sun = katpoint.Target("Sun, special")
     sun.body.compute(ref_antenna.observer)
     katpt_targets = catalogue.filter(target_tags)
-    calibrator_tags = ['bpcal', 'fluxcal', 'polcal', 'gaincal']
+    calibrator_tags = ["bpcal", "fluxcal", "polcal", "gaincal"]
     katpt_calibrators = catalogue.filter(calibrator_tags)
     for cnt, target in enumerate(katpt_targets):
         note = ''
         if cnt < 1:
-            note = 'separation from Sun'
+            note = "Separation from Sun"
         target.body.compute(ref_antenna.observer)
         separation_angle = ephem.separation(sun.body, target.body)
         observation_table += table_line(ref_antenna.observer.date,
@@ -509,7 +515,7 @@ def obs_table(ref_antenna,
         target = ref_tgt_list[tgt_idx]
         separation_angle = numpy.degrees(sep_angles[tgt_idx])
         if current_target != target.name:
-            note = 'separation from {}'.format(target.name)
+            note = "Separation from {}".format(target.name)
             current_target = target.name
         observation_table += table_line(ref_antenna.observer.date,
                                         calibrator,
@@ -531,12 +537,13 @@ def write_header(args,
     """Create fancy header to add at the top of the calibrator catalogue.
 
     Adding information such as proposal ID, PI, contact details
+
     """
     catalogue_header = userheader
-    catalogue_header += '# Observation catalogue for proposal ID {}\n'.format(
+    catalogue_header += "# Observation catalogue for proposal ID {}\n".format(
         args.prop_id)
-    catalogue_header += '# PI: {}\n'.format(args.pi)
-    catalogue_header += '# Contact details: {}\n'.format(args.contact)
+    catalogue_header += "# PI: {}\n".format(args.pi)
+    catalogue_header += "# Contact details: {}\n".format(args.contact)
     return catalogue_header
 
 
@@ -568,6 +575,7 @@ def _separation_angles(katpt_catalogue,
     @param observer: ephem.Observer object
 
     @return: List of separation angles in radians
+
     """
     target.compute(observer)
     separation_angles = []
@@ -588,6 +596,7 @@ def _closest_calibrator_(katpt_catalogue,
 
     @return: katpoint.Target closest calibrator
     @return: separation angle in degrees
+
     """
     separation_angles = _separation_angles(katpt_catalogue, target, observer)
     closest_idx = numpy.argmin(separation_angles)
@@ -609,6 +618,7 @@ def get_cal(catalogue,
 
     @return: katpoint.Target closest calibrator
     @return: separation angle in degrees
+
     """
     calibrator, separation = _closest_calibrator_(catalogue,
                                                   katpt_target.body,
@@ -633,6 +643,7 @@ def best_cal_cover(catalogue,
     @return: separation angle in degrees
     @return: katpoint.Target additional calibrator for LST coverage
     @return: additional separation angle in degrees
+
     """
     calibrator, separation = _closest_calibrator_(catalogue,
                                                   katpt_target.body,
@@ -674,6 +685,7 @@ def add_target(target,
     @param tag: target tag as string
 
     @return: katpoint.Catalogue
+
     """
     if catalogue.__contains__(target.name):
         if tag not in catalogue[target.name].tags:
@@ -684,7 +696,7 @@ def add_target(target,
 
 
 def main(args):
-    """Calibrate."""
+    """Run calibration observation."""
     observatory = Observatory()
     location = observatory.location
     node_config_available = observatory.node_config_available
@@ -694,11 +706,11 @@ def main(args):
     ref_antenna.observer.horizon = ephem.degrees(str(args.horizon))
 
     caltag_dict = {
-        'bp': 'bandpass',
-        'delay': 'delay',
-        'flux': 'flux',
-        'gain': 'gain',
-        'pol': 'polarisation'
+        "bp": "bandpass",
+        "delay": "dela",
+        "flux": "flux",
+        "gain": "gain",
+        "pol": "polarisation"
     }
 
     # TODO: think about moving this to a separate script
@@ -708,8 +720,8 @@ def main(args):
         if data_dict:
             catalogue = katpoint.Catalogue()
             catalogue.antenna = ref_antenna
-            for observation_cycle in data_dict['observation_loop']:
-                for target_item in observation_cycle['target_list']:
+            for observation_cycle in data_dict["observation_loop"]:
+                for target_item in observation_cycle["target_list"]:
                     name, target = katpoint_target(target_item)
                     catalogue.add(katpoint.Target(target))
         else:  # assume CSV
@@ -724,11 +736,11 @@ def main(args):
         if not(args.text_only or text_only):
             for view_option in args.view_tags:
                 cp_cat = deepcopy(catalogue)
-                if 'elevation' in view_option:
+                if "elevation" in view_option:
                     plot_func = source_elevation
-                if 'solarangle' in view_option:
+                if "solarangle" in view_option:
                     plot_func = source_solar_angle
-                if 'riseset' in view_option:
+                if "riseset" in view_option:
                     plot_func = source_rise_set
                 plot_func(cp_cat,
                           ref_antenna)
@@ -739,13 +751,13 @@ def main(args):
         catalogue_path = args.cat_path
         config_file_available = True
     else:
-        catalogue_path = 'katconfig/user/catalogues'
+        catalogue_path = "katconfig/user/catalogues"
         config_file_available = False
 
     # before doing anything, verify that calibrator catalogues can be accessed
     if not os.path.isdir(catalogue_path) and not node_config_available:
-        msg = 'Could not access calibrator catalogue default location\n'
-        msg += 'add explicit location of catalogue folder using --cat-path <dirname>'
+        msg = "Could not access calibrator catalogue default location\n"
+        msg += "add explicit location of catalogue folder using --cat-path <dirname>"
         raise RuntimeError(msg)
 
     # constructing observational catalogue
@@ -759,7 +771,7 @@ def main(args):
         # input target from command line
         args.target = [target.strip() for target in args.target]
         target = ', '.join(map(str, [args.target[0],
-                                     'radec target',
+                                     "radec target",
                                      args.target[1],
                                      args.target[2]]))
         cal_targets = [katpoint.Target(target)]
@@ -772,11 +784,11 @@ def main(args):
                     continue
                 if len(line) < 1:  # ignore empty lines
                     continue
-                if 'calref' in line:
-                    target = line.strip().replace('calref', 'target')
+                if "calref" in line:
+                    target = line.strip().replace("calref", "target")
                     cal_targets.append(katpoint.Target(target))
                 else:  # add target to catalogue
-                    target = line.strip().replace('radec', 'radec target')
+                    target = line.strip().replace("radec", "radec target")
                     observation_catalogue.add(katpoint.Target(target))
         # if not reference target for calibrator selection is specified,
         # simply select the first target listed in the catalogue
@@ -788,7 +800,7 @@ def main(args):
         for cal_tag in args.cal_tags:
             cal_catalogue = os.path.join(
                 catalogue_path,
-                'Lband-{}-calibrators.csv'.format(caltag_dict[cal_tag]),
+                "Lband-{}-calibrators.csv".format(caltag_dict[cal_tag]),
             )
             try:
                 if config_file_available:
@@ -800,13 +812,13 @@ def main(args):
                     calibrators = katpoint.Catalogue(file(cal_catalogue))
             except (AssertionError, IOError):
                 msg = bcolors.WARNING
-                msg += 'Unable to open {}\n'.format(cal_catalogue)
-                msg += 'Observation file will still be created,'
-                'please add calibrator manually\n'
+                msg += "Unable to open {}\n".format(cal_catalogue)
+                msg += "Observation file will still be created,"
+                "please add calibrator manually\n"
                 msg += bcolors.ENDC
                 print(msg)
                 continue
-            if 'gain' in cal_tag or 'delay' in cal_tag:
+            if "gain" in cal_tag or "delay" in cal_tag:
                 # for secondary calibrators such as gain:
                 # find the closest calibrator
                 calibrator, separation_angle = get_cal(calibrators,
@@ -833,7 +845,8 @@ def main(args):
                     if preceding_calibrator is not None \
                             and preceding_calibrator_separation_angle < 90.:
                         observation_catalogue = add_target(
-                            preceding_calibrator, observation_catalogue, tag=cal_tag + 'cal')
+                            preceding_calibrator, observation_catalogue,
+                            tag=cal_tag + 'cal')
                     observation_catalogue = add_target(calibrator,
                                                        observation_catalogue,
                                                        tag=cal_tag + 'cal')
@@ -851,7 +864,7 @@ def main(args):
             catalogue_header,
             catalogue_data,
         )
-        print('Observation catalogue {}'.format(args.outfile))
+        print("Observation catalogue {}".format(args.outfile))
 
     # output observation stats for catalogue
     obs_summary = obs_table(
@@ -864,22 +877,22 @@ def main(args):
     print(obs_summary)
 
     if text_only and not args.text_only:
-        msg = 'Required matplotlib functionalities not available\n'
-        msg += 'Cannot create elevation plot\n'
-        msg += 'Only producing catalogue file and output to screen'
+        msg = "Required matplotlib functionalities not available\n"
+        msg += "Cannot create elevation plot\n"
+        msg += "Only producing catalogue file and output to screen"
         print(msg)
     if not (text_only or args.text_only):
         # create elevation plot for sources
         obs_catalogue = catalogue_header
         for target in catalogue_data:
-            obs_catalogue += '{}\n'.format(target)
+            obs_catalogue += "{}\n".format(target)
         source_elevation(observation_catalogue,
                          ref_antenna)
         plt.show()
         plt.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # This code will take care of negative values for declination
     for i, arg in enumerate(sys.argv):
         if (arg[0] == '-') and arg[1].isdigit():

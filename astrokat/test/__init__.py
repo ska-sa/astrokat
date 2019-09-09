@@ -1,1 +1,1 @@
-"""Initialize tests."""
+"""Initialize `astrokat` tests."""

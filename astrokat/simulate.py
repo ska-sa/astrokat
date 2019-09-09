@@ -1,4 +1,4 @@
-"""Provides skeleton for faking live system."""
+"""Provides skeleton for mimicking a live MeerKAT telescope system."""
 from __future__ import division
 from __future__ import absolute_import
 
@@ -19,13 +19,23 @@ _DEFAULT_SLEW_TIME = 45.0  # [sec]
 
 
 def setobserver(update):
-    """Simulate the observer."""
+    """Simulate and update the observer location.
+
+    An `Observer` object to compute the positions of celestial bodies
+    as seen from a particular latitude and longitude on the Earth surface.
+
+    """
     global simobserver
     simobserver = update
 
 
 def sim_time(record, datefmt=None):
-    """Simulate the time."""
+    """Simulate the time of the observer object.
+
+    The year, month, dat, hour, minute and seconds string
+    describing the current time at the observer's location
+
+    """
     now = simobserver.date.datetime()
     return now.strftime('%Y-%m-%d %H:%M:%SZ')
 
@@ -55,10 +65,8 @@ user_logger.setLevel(logging.INFO)
 
 
 class Fakr(namedtuple('Fakr', 'priv_value')):
-    """Simulating class."""
 
     def get_value(self):
-        """Construct."""
         return self.priv_value
 
 
@@ -110,12 +118,12 @@ class SimKat(object):
 
 
 def verify_and_connect(opts):
-    """Verify and connect sim."""
+    """Verify and connect simulation."""
     return SimKat(opts)
 
 
 class SimSession(object):
-    """Fake observation session."""
+    """Fake an observation session."""
 
     def __init__(self, kat, **kwargs):
         self.kwargs = kwargs
@@ -136,7 +144,12 @@ class SimSession(object):
         time.time = lambda: self.time
 
         def simsleep(seconds):
-            """Simulate sleep."""
+            """Simulate sleep.
+
+            Simulate the sleep functionality, a wait for a specified
+            number of seconds until next telescope action
+
+            """
             self.time += seconds
         time.sleep = simsleep
 
@@ -176,7 +189,7 @@ class SimSession(object):
         return slew_time
 
     def track(self, target, duration=0, announce=False):
-        """Track source."""
+        """Simulate the track source functionality during observations."""
         self.track_ = True
         time.sleep(self._fake_slew_(target))
         now = timestamp2datetime(self.time)
@@ -197,7 +210,7 @@ class SimSession(object):
                     scan_in_azimuth=True,
                     projection='zenithal-equidistant',
                     announce=True):
-        """Raster scan."""
+        """Simulate raster scan."""
         duration = scan_duration * num_scans
         time.sleep(duration)
         now = timestamp2datetime(self.time)
@@ -211,14 +224,19 @@ class SimSession(object):
              index=-1,
              projection='zenithal-equidistant',
              announce=True):
-        """Scan."""
+        """Simulate scan functionality during observations."""
         time.sleep(duration)
         now = timestamp2datetime(self.time)
         simobserver.date = ephem.Date(now)
         return True
 
     def slew_time(self, target):
-        """Get slew time."""
+        """Get slew time.
+
+        How long in seconds, it took to the antennas to move
+        from previous target to the next
+
+        """
         slew_speed = 2.  # degrees / sec
         self.katpt_current.body.compute(self.katpt_current.antenna.observer)
         target.body.compute(target.antenna.observer)
@@ -235,7 +253,7 @@ class SimSession(object):
 
 
 def start_session(kat, **kwargs):
-    """Start observing."""
+    """Start the observation simulation."""
     return SimSession(kat, **kwargs)
 
 

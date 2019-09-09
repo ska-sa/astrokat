@@ -15,11 +15,11 @@ except ImportError:
 def session_options(parser,
                     short_opts_to_remove=[],
                     long_opts_to_remove=[]):
-    """Add options from katcorelib that is valid for all observations."""
+    """Add options from katcorelib that are valid for all observations."""
     dryrun = False
     group = parser.add_argument_group(
-        title="standard MeerKAT options",
-        description="default observation script options")
+        title="Standard MeerKAT options",
+        description="Default observation script options")
     if live_system:
         parser_ = standard_script_options('', '')
         # fudge parser_ class from OptionParser to Group
@@ -88,11 +88,10 @@ def cli(prog,
         # TODO: more complex usage string in separate function
         usage = "%s [options]" \
                 " --yaml <YAMLfile>" % prog
-        description = \
-            "Sources are specified either as part of an observation profile." \
-            " Track one or more sources for a specified time." \
-            " At least one target must be specified." \
-            " Also note the **required** options."
+        description = "Sources are specified either as part of an observation profile." \
+                      "Track one or more sources for a specified time." \
+                      "At least one target must be specified." \
+                      "Also note the **required** options."
         parser = argparse.ArgumentParser(
             usage=usage,
             description=description,
@@ -105,7 +104,7 @@ def cli(prog,
     parser.add_argument('--yaml',
                         type=str,
                         required=True,
-                        help='observation file, obs_plan.yaml (**required**)')
+                        help="Observation file, obs_plan.yaml (**required**)")
 
     # Add standard observation script options from sessions
     parser = session_options(parser,
@@ -114,28 +113,28 @@ def cli(prog,
                              )
 
     # Observation simulation for planning using observation script
-    title = "observation planning and verifications"
-    description = "basic output of observation to verify expected outcome"
+    title = "Observation planning and verifications"
+    description = "Basic output of observation to verify expected outcome"
     group = parser.add_argument_group(title=title,
                                       description=description)
     ex_group = group.add_mutually_exclusive_group()
-    ex_group.add_argument('--visibility',
-                          action='store_true',
-                          help='display short summary of target visibility')
-    ex_group.add_argument('--all-up',
-                          action='store_true',
-                          help='ensure all target horizon before continuing')
-    group.add_argument('--debug',
-                       action='store_true',
-                       help='verbose logger output for debugging')
-    group.add_argument('--trace',
-                       action='store_true',
-                       help='debug trace logger output for debugging')
+    ex_group.add_argument("--visibility",
+                          action="store_true",
+                          help="Display short summary of target visibility")
+    ex_group.add_argument("--all-up",
+                          action="store_true",
+                          help="Ensure all target horizon before continuing")
+    group.add_argument("--debug",
+                       action="store_true",
+                       help="verbose logger output for debugging")
+    group.add_argument("--trace",
+                       action="store_true",
+                       help="Debug trace logger output for debugging")
 
     return parser.parse_known_args(args=args)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
     cli(sys.argv[0])
 
