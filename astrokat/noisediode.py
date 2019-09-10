@@ -81,9 +81,7 @@ def on(kat, timestamp=None, lead_time=_DEFAULT_LEAD_TIME):
 
 
 # switch noise-source pattern off
-def off(kat,
-        timestamp=None,
-        lead_time=_DEFAULT_LEAD_TIME):
+def off(kat, timestamp=None, lead_time=_DEFAULT_LEAD_TIME):
     """Switch noise-source pattern off.
 
     Parameters

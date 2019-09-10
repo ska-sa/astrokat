@@ -19,7 +19,13 @@ def session_options(parser, short_opts_to_remove=[], long_opts_to_remove=[]):
     ----------
     parser:
     short_opts_to_remove: list
+                          Previous short observation command line options to discard
     long_opts_to_remove: list
+                         Previous long observation command line options to discard
+    Returns
+    -------
+    parser: :class:`optparse.OptionParser` object
+        Parser populated with standard script options
 
     """
     dryrun = False
@@ -27,7 +33,7 @@ def session_options(parser, short_opts_to_remove=[], long_opts_to_remove=[]):
         title="Standard MeerKAT options",
         description="Default observation script options")
     if live_system:
-        parser_ = standard_script_options('', '')
+        parser_ = standard_script_options("", "")
         # fudge parser_ class from OptionParser to Group
         for opt in parser_.option_list:
             # Disregarding options we don't want in the group
@@ -71,7 +77,7 @@ def session_options(parser, short_opts_to_remove=[], long_opts_to_remove=[]):
                       if long_ != "--quorum" else opt.__dict__["help"].replace("%", "%%"),
                       "required":
                       True
-                      if "**required**" in opt.__dict__["help"] else False,
+                      if "**required**" in opt.__dict__["help"] else False
                       }
 
             group.add_argument(*args, **kwargs)
@@ -92,11 +98,17 @@ def cli(prog,
 
     Parameters
     ----------
-    prog:
-    parser:
-    short_opts_to_remove:
-    long_opts_to_remove:
-    args:
+
+    parser: class:`optparse.OptionParser` object
+            Parser populated with standard script options
+    short_opts_to_remove: list
+                          Previous short observation command line options to discard
+    long_opts_to_remove: list
+                         Previous long observation command line options to discard
+    Returns
+    -------
+    parser: class:`optparse.OptionParser` object
+        Parser populated with standard script options
 
     """
     if parser is None:
