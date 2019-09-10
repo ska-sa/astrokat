@@ -46,9 +46,12 @@ def execute_observe_main(file_name):
     start_time = extract_start_time(yaml_file)
 
     params = [
-        "--yaml", yaml_file,
-        "--observer", "KAT Tester",
-        "--proposal-id", "CAM_AstroKAT_UnitTest",
+        "--yaml",
+        yaml_file,
+        "--observer",
+        "KAT Tester",
+        "--proposal-id",
+        "CAM_AstroKAT_UnitTest",
         "--dry-run",
     ]
 

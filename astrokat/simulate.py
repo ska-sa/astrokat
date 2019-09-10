@@ -73,7 +73,6 @@ user_logger.setLevel(logging.INFO)
 
 
 class Fakr(namedtuple("Fakr", "priv_value")):
-
     def get_value(self):
         return self.priv_value
 
@@ -142,7 +141,8 @@ class SimSession(object):
         if "durations" in self.obs_params:
             if "start_time" in self.obs_params["durations"]:
                 self.start_time = datetime2timestamp(
-                    self.obs_params["durations"]["start_time"])
+                    self.obs_params["durations"]["start_time"]
+                )
         self.time = self.start_time
         self.katpt_current = None
 
@@ -159,6 +159,7 @@ class SimSession(object):
 
             """
             self.time += seconds
+
         time.sleep = simsleep
 
     def __enter__(self):
@@ -184,7 +185,8 @@ class SimSession(object):
             self.kat._session_cnt += 1
         if self.kat._session_cnt < len(self.obs_params["observation_loop"]):
             self.kat._lst, _ = get_lst(
-                self.obs_params["observation_loop"][self.kat._session_cnt]["LST"])
+                self.obs_params["observation_loop"][self.kat._session_cnt]["LST"]
+            )
 
     def _fake_slew_(self, target):
         slew_time = 0
@@ -219,14 +221,17 @@ class SimSession(object):
         self.katpt_current = target
         return True
 
-    def raster_scan(self, target,
-                    num_scans=3,
-                    scan_duration=30.0,
-                    scan_extent=6.0,
-                    scan_spacing=0.5,
-                    scan_in_azimuth=True,
-                    projection='zenithal-equidistant',
-                    announce=True):
+    def raster_scan(
+        self,
+        target,
+        num_scans=3,
+        scan_duration=30.0,
+        scan_extent=6.0,
+        scan_spacing=0.5,
+        scan_in_azimuth=True,
+        projection="zenithal-equidistant",
+        announce=True,
+    ):
         """Simulate raster scan.
 
         Parameters
@@ -246,13 +251,16 @@ class SimSession(object):
         simobserver.date = ephem.Date(now)
         return True
 
-    def scan(self, target,
-             duration=30.0,
-             start=(-3.0, 0.0),
-             end=(3.0, 0.0),
-             index=-1,
-             projection='zenithal-equidistant',
-             announce=True):
+    def scan(
+        self,
+        target,
+        duration=30.0,
+        start=(-3.0, 0.0),
+        end=(3.0, 0.0),
+        index=-1,
+        projection="zenithal-equidistant",
+        announce=True,
+    ):
         """Simulate scan functionality during observations.
 
         Parameters
@@ -285,7 +293,7 @@ class SimSession(object):
                  position, flux model.
 
         """
-        slew_speed = 2.  # degrees / sec
+        slew_speed = 2.0  # degrees / sec
         self.katpt_current.body.compute(self.katpt_current.antenna.observer)
         target.body.compute(target.antenna.observer)
         try:

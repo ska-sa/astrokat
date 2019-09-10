@@ -39,8 +39,11 @@ class TestAstrokatYAML(unittest.TestCase):
         # get result and make sure everything ran properly
         result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn("Single run through observation target list", result)
-        self.assertIn("BP calibrators are ['1934-638', '0408-65']", result,
-                      "two Bandpass calibrators")
+        self.assertIn(
+            "BP calibrators are ['1934-638', '0408-65']",
+            result,
+            "two Bandpass calibrators",
+        )
 
         cal1 = result.count("0408-65 observed for 30.0 sec")
         cal2 = result.count("1934-638 observed for 30.0 sec")
@@ -54,10 +57,14 @@ class TestAstrokatYAML(unittest.TestCase):
 
         # get result and make sure everything ran properly
         result = LoggedTelescope.user_logger_stream.getvalue()
-        self.assertIn("Single run through observation target list", result, "Single run")
+        self.assertIn(
+            "Single run through observation target list", result, "Single run"
+        )
         self.assertIn("0408-65 observed for 180.0 sec", result)
         self.assertIn("1934-638 observed for 180.0 sec", result)
-        self.assertEqual(result.count("Drift_scan observation for"), 2, "two drift scans")
+        self.assertEqual(
+            result.count("Drift_scan observation for"), 2, "two drift scans"
+        )
 
     # TODO: not sure how raster scan works. Will work out correct test with Ruby
     # def test_raster_scans_sim(self):
@@ -85,12 +92,18 @@ class TestAstrokatYAML(unittest.TestCase):
         )
         self.assertIn(expected_results, result, "Nine imaging targets")
 
-        self.assertIn("BP calibrators are ['1934-638', '3C286']", result,
-                      "two bandpass calibrators")
-        self.assertIn("GAIN calibrators are ['1827-360']", result, "one gain calibrator")
+        self.assertIn(
+            "BP calibrators are ['1934-638', '3C286']",
+            result,
+            "two bandpass calibrators",
+        )
+        self.assertIn(
+            "GAIN calibrators are ['1827-360']", result, "one gain calibrator"
+        )
         self.assertIn("POL calibrators are ['3C286']", result, "one pol calibrator")
         self.assertIn(
-            "DELAY calibrators are ['1934-638']", result, "one delay calibrator")
+            "DELAY calibrators are ['1934-638']", result, "one delay calibrator"
+        )
 
         self.assertIn("1827-360 observed for 30.0 sec", result)
         self.assertIn("1934-638 observed for 120.0 sec", result)
@@ -113,7 +126,8 @@ class TestAstrokatYAML(unittest.TestCase):
         result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn(
             "Scheduled observation time lapsed - ending observation",
-            result, "observation time lapsed",
+            result,
+            "observation time lapsed",
         )
 
         expected_results = (
@@ -122,11 +136,15 @@ class TestAstrokatYAML(unittest.TestCase):
         )
         self.assertIn(expected_results, result, "Nine imaging targets")
 
-        self.assertIn("GAIN calibrators are ['1827-360']", result, "one gain calibrator")
-        self.assertIn("BP calibrators are ['1934-638', '3C286']", result,
-                      "two BP calibrator")
         self.assertIn(
-            "DELAY calibrators are ['1934-638']", result, "one dealy calibrator")
+            "GAIN calibrators are ['1827-360']", result, "one gain calibrator"
+        )
+        self.assertIn(
+            "BP calibrators are ['1934-638', '3C286']", result, "two BP calibrator"
+        )
+        self.assertIn(
+            "DELAY calibrators are ['1934-638']", result, "one dealy calibrator"
+        )
         self.assertIn("POL calibrators are ['3C286']", result, "one pol calibrator")
         self.assertIn("1827-360 observed for 30.0 sec", result)
         self.assertIn("1934-638 observed for 120.0 sec", result)

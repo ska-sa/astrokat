@@ -14,7 +14,7 @@ except ImportError:
     from .simulate import user_logger
 
 
-def drift_pointing_offset(target, duration=60.):
+def drift_pointing_offset(target, duration=60.0):
     """Drift pointing offset observation.
 
     Parameters
@@ -36,7 +36,7 @@ def drift_pointing_offset(target, duration=60.):
     return target
 
 
-def drift_scan(session, target, nd_period=None, duration=60.):
+def drift_scan(session, target, nd_period=None, duration=60.0):
     """Drift scan observation.
 
     Parameters
@@ -151,5 +151,6 @@ def return_scan(session, target, nd_period=None, **kwargs):
     user_logger.info("Reverse scan over target")
     target_visible += reversescan(session, target, nd_period=nd_period, **kwargs)
     return target_visible
+
 
 # -fin-

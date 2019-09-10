@@ -10,11 +10,13 @@ import sys
 
 # TODO: need to move to utility
 from contextlib import contextmanager
+
+
 @contextmanager
 def smart_open(filename):
     """Open catalogue file."""
-    if filename and filename != '-':
-        with open(filename, 'w') as fout:
+    if filename and filename != "-":
+        with open(filename, "w") as fout:
             yield fout
     else:
         yield sys.stdout
@@ -28,79 +30,83 @@ def cli(prog):
     """
     version = "{} 0.1".format(prog)
     usage = "{} [options] --infile <full_path/cat_file.csv>".format(prog)
-    description = "sources are specified as a catalogue of targets," \
-                  "with optional timing information"
+    description = (
+        "sources are specified as a catalogue of targets,"
+        "with optional timing information"
+    )
     parser = argparse.ArgumentParser(
         usage=usage,
         description=description,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument(
-        "--version",
-        action="version",
-        version=version)
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument("--version", action="version", version=version)
     parser.add_argument(
         "--infile",
         type=str,
         required=True,
-        help="filename of the CSV catalogue to convert (**required**)")
+        help="filename of the CSV catalogue to convert (**required**)",
+    )
     parser.add_argument(
         "--outfile",
         type=str,
-        help="filename for output observation file (default outputs to screen)")
+        help="filename for output observation file (default outputs to screen)",
+    )
 
     description = "instrument setup requirements"
-    group = parser.add_argument_group(title="observation instrument setup",
-                                      description=description)
+    group = parser.add_argument_group(
+        title="observation instrument setup", description=description
+    )
     group.add_argument(
-        "--product",
-        type=str,
-        help="observation instrument product configuration")
+        "--product", type=str, help="observation instrument product configuration"
+    )
+    group.add_argument("--band", type=str, help="observation band: L, UHF, X, S")
     group.add_argument(
-        "--band",
-        type=str,
-        help="observation band: L, UHF, X, S")
-    group.add_argument(
-        "--integration-period",
-        type=float,
-        help="averaging time per dump [sec]")
+        "--integration-period", type=float, help="averaging time per dump [sec]"
+    )
 
-    description = "track a target for imaging or spectral line observations," \
-                  "may optionally have a tag of 'target'."
-    group = parser.add_argument_group(title="target observation strategy",
-                                      description=description)
-    group.add_argument(
-        "--lst",
-        type=str,
-        help="observation start LST or LST range")
+    description = (
+        "track a target for imaging or spectral line observations,"
+        "may optionally have a tag of 'target'."
+    )
+    group = parser.add_argument_group(
+        title="target observation strategy", description=description
+    )
+    group.add_argument("--lst", type=str, help="observation start LST or LST range")
     group.add_argument(
         "--target-duration",
         type=float,
         default=300,  # sec
-        help="default target track duration [sec]")
+        help="default target track duration [sec]",
+    )
     group.add_argument(
-        "--max-duration",
-        type=float,
-        help="maximum duration of observation [sec]")
+        "--max-duration", type=float, help="maximum duration of observation [sec]"
+    )
 
-    description = "calibrators are identified by tags in their description strings" \
-                  "'bpcal', 'gaincal', 'fluxcal' and 'polcal' respectively"
-    group = parser.add_argument_group(title="calibrator observation strategy",
-                                      description=description)
+    description = (
+        "calibrators are identified by tags in their description strings"
+        "'bpcal', 'gaincal', 'fluxcal' and 'polcal' respectively"
+    )
+    group = parser.add_argument_group(
+        title="calibrator observation strategy", description=description
+    )
     group.add_argument(
         "--primary-cal-duration",
         type=float,
         default=300,  # sec
         help="minimum duration to track primary calibrators tagged as "
-             "'bpcal', 'fluxcal' or 'polcal' [sec]")
+        "'bpcal', 'fluxcal' or 'polcal' [sec]",
+    )
     group.add_argument(
         "--primary-cal-cadence",
         type=float,
-        help="minimum observation interval between primary calibrators [sec]")
+        help="minimum observation interval between primary calibrators [sec]",
+    )
     group.add_argument(
         "--secondary-cal-duration",
         type=float,
         default=60,  # sec
-        help="minimum duration to track gain calibrator, 'gaincal' [sec]")
+        help="minimum duration to track gain calibrator, 'gaincal' [sec]",
+    )
     return parser
 
 
@@ -130,12 +136,13 @@ class UnpackCatalogue(object):
                 tags.append("target")
         return " ".join(tags)
 
-    def read_catalogue(self,
-                       target_duration="",
-                       gaincal_duration="",
-                       bpcal_duration="",
-                       bpcal_interval=None
-                       ):
+    def read_catalogue(
+        self,
+        target_duration="",
+        gaincal_duration="",
+        bpcal_duration="",
+        bpcal_interval=None,
+    ):
         """Unpack all targets from catalogue files into list.
 
         Parameters
@@ -185,10 +192,12 @@ class UnpackCatalogue(object):
                     prefix = "radec"
                 if len(name) < 1:
                     name = "target{}_{}".format(idx, prefix)
-                target_items = [name, prefix,
-                                " ".join([ra, dec]),
-                                tags[len(prefix):].strip(),
-                                ]
+                target_items = [
+                    name,
+                    prefix,
+                    " ".join([ra, dec]),
+                    tags[len(prefix) :].strip(),
+                ]
 
                 target_spec = "name={}, {}={}, tags={}, duration={}"
                 cadence = ", cadence={}"
@@ -252,9 +261,9 @@ class BuildObservation(object):
             obs_plan["durations"] = {"obs_duration": obs_duration}
         # LST times only HH:MM in OPT
         start_lst = Observatory().start_obs(self.target_list, str_flag=True)
-        start_lst = ':'.join(start_lst.split(':')[:-1])
+        start_lst = ":".join(start_lst.split(":")[:-1])
         end_lst = Observatory().end_obs(self.target_list, str_flag=True)
-        end_lst = ':'.join(end_lst.split(':')[:-1])
+        end_lst = ":".join(end_lst.split(":")[:-1])
         if lst is None:
             lst = "{}-{}".format(start_lst, end_lst)
         # observational setup
@@ -309,8 +318,9 @@ if __name__ == "__main__":
     instrument = {}
     for group in parser._action_groups:
         if "instrument setup" in group.title:
-            group_dict = {a.dest: getattr(args, a.dest, None)
-                          for a in group._group_actions}
+            group_dict = {
+                a.dest: getattr(args, a.dest, None) for a in group._group_actions
+            }
             instrument = vars(argparse.Namespace(**group_dict))
             break
     for key in instrument.keys():
@@ -320,19 +330,17 @@ if __name__ == "__main__":
     # read targets from catalogue file
     cat_obj = UnpackCatalogue(args.infile)
     header, catalogue = cat_obj.read_catalogue(
-            target_duration=args.target_duration,
-            gaincal_duration=args.secondary_cal_duration,
-            bpcal_duration=args.primary_cal_duration,
-            bpcal_interval=args.primary_cal_cadence
-            )
+        target_duration=args.target_duration,
+        gaincal_duration=args.secondary_cal_duration,
+        bpcal_duration=args.primary_cal_duration,
+        bpcal_interval=args.primary_cal_cadence,
+    )
     obs_plan = BuildObservation(catalogue)
 
     # create observation configuration file
     obs_plan.configure(
-            instrument=instrument,
-            obs_duration=args.max_duration,
-            lst=args.lst
-            )
+        instrument=instrument, obs_duration=args.max_duration, lst=args.lst
+    )
     obs_plan.write_yaml(header=header, outfile=args.outfile)
 
 # -fin-

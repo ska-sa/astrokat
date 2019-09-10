@@ -20,7 +20,7 @@ class NoTargetsUpError(Exception):
 
 def read_yaml(filename):
     """Read config .yaml file."""
-    with open(filename, 'r') as stream:
+    with open(filename, "r") as stream:
         try:
             data = yaml.safe_load(stream)
         except yaml.parser.ParserError:
@@ -41,7 +41,7 @@ def read_yaml(filename):
         if instrument is not None:
             if "integration_time" in instrument.keys():
                 integration_time = float(instrument["integration_time"])
-                instrument["dump_rate"] = 1. / integration_time
+                instrument["dump_rate"] = 1.0 / integration_time
                 del instrument["integration_time"]
 
     # verify required information in observation loop before continuing
@@ -53,7 +53,8 @@ def read_yaml(filename):
             start_time = data["durations"]["start_time"]
             if isinstance(start_time, str):
                 data["durations"]["start_time"] = datetime.datetime.strptime(
-                    start_time, "%Y-%m-%d %H:%M")
+                    start_time, "%Y-%m-%d %H:%M"
+                )
     if "observation_loop" not in data.keys():
         raise RuntimeError("Nothing to observe, exiting")
     if data["observation_loop"] is None:
@@ -62,7 +63,8 @@ def read_yaml(filename):
         if isinstance(obs_loop, str):
             raise RuntimeError(
                 "Incomplete observation input: "
-                "LST range and at least one target required.")
+                "LST range and at least one target required."
+            )
         # TODO: correct implementation for single vs multiple observation loops
         # -> if len(obs_loop) > 0:
         if "LST" not in obs_loop.keys():
@@ -110,21 +112,21 @@ def katpoint_target(target_item):
     for item_ in target_:
         prefix = "name="
         if item_.startswith(prefix):
-            name = item_[len(prefix):]
+            name = item_[len(prefix) :]
         prefix = "tags="
         if item_.startswith(prefix):
-            tags = item_[len(prefix):]
+            tags = item_[len(prefix) :]
         prefix = "model="
         if item_.startswith(prefix):
-            fluxmodel = item_[len(prefix):]
+            fluxmodel = item_[len(prefix) :]
         else:
             fluxmodel = ()
         for coord in coords:
             prefix = coord + "="
             if item_.startswith(prefix):
                 ctag = coord
-                x = item_[len(prefix):].split()[0].strip()
-                y = item_[len(prefix):].split()[1].strip()
+                x = item_[len(prefix) :].split()[0].strip()
+                y = item_[len(prefix) :].split()[1].strip()
                 break
     target = "{}, {} {}, {}, {}, {}".format(name, ctag, tags, x, y, fluxmodel)
     return name, target
@@ -163,15 +165,15 @@ def get_lst(yaml_lst):
         start_lst, end_lst = [lst_val.strip() for lst_val in yaml_lst.split("-")]
     if ":" in start_lst:
         time_ = datetime.datetime.strptime("{}".format(start_lst), "%H:%M").time()
-        start_lst = time_.hour + time_.minute / 60.
+        start_lst = time_.hour + time_.minute / 60.0
 
     if end_lst is None:
-        end_lst = (start_lst + 24.) % 24.
-        if numpy.abs(end_lst - start_lst) < 1.:
-            end_lst = 24.
+        end_lst = (start_lst + 24.0) % 24.0
+        if numpy.abs(end_lst - start_lst) < 1.0:
+            end_lst = 24.0
     elif ":" in end_lst:
         time_ = datetime.datetime.strptime("{}".format(end_lst), "%H:%M").time()
-        end_lst = time_.hour + time_.minute / 60.
+        end_lst = time_.hour + time_.minute / 60.0
     else:
         end_lst = float(end_lst)
 
@@ -193,12 +195,13 @@ def lst2utc(req_lst, ref_location, date=None):
         LST range
 
     """
+
     def get_lst_range(date):
         date_timestamp = time.mktime(date.timetuple())  # this will be local time
-        time_range = katpoint.Timestamp(date_timestamp).secs + \
-            numpy.arange(0, 24. * 3600., 60)
-        lst_range = numpy.degrees(
-            target.antenna.local_sidereal_time(time_range)) / 15.
+        time_range = katpoint.Timestamp(date_timestamp).secs + numpy.arange(
+            0, 24.0 * 3600.0, 60
+        )
+        lst_range = numpy.degrees(target.antenna.local_sidereal_time(time_range)) / 15.0
         return time_range, lst_range
 
     req_lst = float(req_lst)
@@ -212,11 +215,11 @@ def lst2utc(req_lst, ref_location, date=None):
     [time_range, lst_range] = get_lst_range(date)
     lst_idx = numpy.abs(lst_range - req_lst).argmin()
     if lst_range[lst_idx] < req_lst:
-        x = lst_range[lst_idx:lst_idx + 2]
-        y = time_range[lst_idx:lst_idx + 2]
+        x = lst_range[lst_idx : lst_idx + 2]
+        y = time_range[lst_idx : lst_idx + 2]
     else:
-        x = lst_range[lst_idx - 1:lst_idx + 1]
-        y = time_range[lst_idx - 1:lst_idx + 1]
+        x = lst_range[lst_idx - 1 : lst_idx + 1]
+        y = time_range[lst_idx - 1 : lst_idx + 1]
     linefit = numpy.poly1d(numpy.polyfit(x, y, 1))
     return datetime.datetime.utcfromtimestamp(linefit(req_lst))
 

@@ -16,6 +16,7 @@ from .utility import katpoint_target, lst2utc
 
 try:
     import katconf
+
     # Set up configuration source
     _config_path = "/var/kat/config"
     _node_file = "/var/kat/node.conf"
@@ -42,15 +43,18 @@ except (ImportError, ValueError):
     _node_config_available = False
 else:
     # default reference position for MKAT array from katconf
-    _ref_location = (katconf.ArrayConfig().array["array"]["name"] + ", " +
-                     katconf.ArrayConfig().array["array"]["position"])
+    _ref_location = (
+        katconf.ArrayConfig().array["array"]["name"]
+        + ", "
+        + katconf.ArrayConfig().array["array"]["position"]
+    )
     _node_config_available = True
 
 
 class Observatory(object):
     """Basic LST calculations using ephem."""
 
-    def __init__(self, location=None, horizon=20., datetime=None):
+    def __init__(self, location=None, horizon=20.0, datetime=None):
         self.location = _ref_location
         self.node_config_available = _node_config_available
         if location is not None:
@@ -76,8 +80,7 @@ class Observatory(object):
     def _ephem_settime_(self, ephem_target, lst=True):
         try:
             rise_time = self.observer.next_rising(ephem_target)
-            set_time = self.observer.next_setting(ephem_target,
-                                                  start=rise_time)
+            set_time = self.observer.next_setting(ephem_target, start=rise_time)
         except ephem.AlwaysUpError:
             return ephem.hours("23:59:59.0")
         except AttributeError:
@@ -114,7 +117,7 @@ class Observatory(object):
         """
         return katpoint.Antenna(self.location)
 
-    def get_observer(self, horizon=20.):
+    def get_observer(self, horizon=20.0):
         """Get the MeerKAT observer object.
 
         The location and time of the telescope instance
@@ -188,9 +191,11 @@ class Observatory(object):
 
         """
         time_ = datetime.strptime("{}".format(ephem_lst), "%H:%M:%S.%f").time()
-        time_ = (time_.hour +
-                 (time_.minute / 60.) +
-                 (time_.second + time_.microsecond / 1e6) / 3600.)
+        time_ = (
+            time_.hour
+            + (time_.minute / 60.0)
+            + (time_.second + time_.microsecond / 1e6) / 3600.0
+        )
         return "%.3f" % time_
 
     def start_obs(self, target_list, str_flag=False):
@@ -271,7 +276,7 @@ def collect_targets(kat, args):
             if arg.find(",") < 0:
                 target = kat.sources[arg]
                 if target is None:
-                    msg = ("Unknown target or catalogue {}, skipping it".format(arg))
+                    msg = "Unknown target or catalogue {}, skipping it".format(arg)
                     user_logger.warning(msg)
                 else:
                     catalogue.add(target)
@@ -282,18 +287,18 @@ def collect_targets(kat, args):
                     catalogue.add(arg)
                     from_strings += 1
                 except ValueError as err:
-                    msg = ("Invalid target {}, skipping it [{}]".format(arg, err))
+                    msg = "Invalid target {}, skipping it [{}]".format(arg, err)
                     user_logger.warning(msg)
     if len(catalogue) == 0:
         raise ValueError("No known targets found in argument list")
     msg = (
         "Found {} target(s): {} from {} catalogue(s), {} from default catalogue and"
-        "{} as target string(s)".format(len(catalogue),
-                                        from_catalogues,
-                                        num_catalogues,
-                                        from_names,
-                                        from_strings))
+        "{} as target string(s)".format(
+            len(catalogue), from_catalogues, num_catalogues, from_names, from_strings
+        )
+    )
     user_logger.info(msg)
     return catalogue
+
 
 # -fin-

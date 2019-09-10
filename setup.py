@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 
-with open('README.md') as readme:
+with open("README.md") as readme:
     long_description = readme.read()
 
 setup(
@@ -36,11 +36,7 @@ setup(
     zip_safe=False,
     setup_requires=["katversion"],
     use_katversion=True,
-    install_requires=["pyephem",
-                      "katpoint",
-                      "matplotlib<3",
-                      "numpy",
-                      "pyyaml"],
+    install_requires=["pyephem", "katpoint", "matplotlib<3", "numpy", "pyyaml"],
     extras_require={"live": ["katcorelib", "katconf"]},
     tests_require=["nose", "coverage", "nosexcover", "mock", "unittest2"],
 )
