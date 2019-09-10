@@ -23,7 +23,7 @@ try:
     if os.path.isdir(_config_path):
         katconf.set_config(katconf.environ(override=_config_path))
     elif os.path.isfile(_node_file):
-        with open(_node_file, 'r') as fh:
+        with open(_node_file, "r") as fh:
             _node_conf = json.loads(fh.read())
         for _key, _val in _node_conf.items():
             # Remove comments at the end of the line
@@ -42,8 +42,8 @@ except (ImportError, ValueError):
     _node_config_available = False
 else:
     # default reference position for MKAT array from katconf
-    _ref_location = (katconf.ArrayConfig().array['array']['name'] + ', ' +
-                     katconf.ArrayConfig().array['array']['position'])
+    _ref_location = (katconf.ArrayConfig().array["array"]["name"] + ", " +
+                     katconf.ArrayConfig().array["array"]["position"])
     _node_config_available = True
 
 
@@ -93,10 +93,9 @@ class Observatory(object):
 
         Parameters
         ----------
-            catalogue_file:
-                catalogue of celestial objects
-                that can be observed with the telescope
-                system running on the current node
+        catalogue_file: file
+                        Catalogue of celestial objects that can be observed with
+                        the telescope system running on the current node
 
         """
         if not self.node_config_available:
@@ -109,8 +108,8 @@ class Observatory(object):
     def get_location(self):
         """Get the default reference location.
 
-        Calls the katpoint.Antenna object, a MeerKAT wrapper around
-        the PyEphem.observer object
+        Calls the katpoint.Antenna object,
+        a MeerKAT wrapper around the PyEphem.observer object
 
         """
         return katpoint.Antenna(self.location)
@@ -119,6 +118,12 @@ class Observatory(object):
         """Get the MeerKAT observer object.
 
         The location and time of the telescope instance
+
+        Parameters
+        ----------
+        horizon: float
+                 horizon angle in degrees
+
         """
         observer = self.kat.observer
         observer.horizon = numpy.deg2rad(horizon)
@@ -129,9 +134,14 @@ class Observatory(object):
         """Set the target.
 
         MeerKAT Wrapper around a PyEphem.Body object,
-        target is a comma-separated description which
-        contains parameters such as the target name,
-        position, flux model.
+        target is
+
+        Parameters
+        ----------
+        target: str
+                a comma-separated description which
+                contains parameters such as the target name,
+                position, flux model.
 
         """
         target = katpoint.Target(target)
@@ -141,7 +151,13 @@ class Observatory(object):
     def get_target(self, target_item):
         """Obtain target description.
 
-        Call to `set_taget` methods described in this module
+        Call to `set_target` methods described in this module
+
+        Parameters
+        ----------
+        target_item: str
+                     Names and descriptions of target(s)
+                     which can be pointed at by an antenna.
 
         """
         name, target_item = katpoint_target(target_item)
@@ -152,29 +168,41 @@ class Observatory(object):
 
         Parameters
         -----------
-            target_item: string of target(s)
-            names and descriptions which can be pointed at by an antenna.
+        target_item: str
+                     Names and descriptions of target(s)
+                     which can be pointed at by an antenna.
 
         """
         target_dict = {}
-        for item in target_item.split(','):
-            item_ = item.strip().split('=')
+        for item in target_item.split(","):
+            item_ = item.strip().split("=")
             target_dict[item_[0].strip()] = item_[1].strip()
         return target_dict
 
     def lst2hours(self, ephem_lst):
-        """Convert time format from ephem LST time to number of hours since epoch."""
+        """Convert time format from ephem LST time to number of hours since epoch.
+
+        Parameters
+        ----------
+        ephem_lst:
+
+        """
         time_ = datetime.strptime("{}".format(ephem_lst), "%H:%M:%S.%f").time()
         time_ = (time_.hour +
                  (time_.minute / 60.) +
                  (time_.second + time_.microsecond / 1e6) / 3600.)
-        return '%.3f' % time_
+        return "%.3f" % time_
 
     def start_obs(self, target_list, str_flag=False):
         """Start time of the observation.
 
         Call to `lst2hours` method described in this module for the
-        starting time target of observation.
+        starting time target of observation
+
+        Parameters
+        ----------
+        target_list:
+        str_flag:
 
         """
         start_lst = []
@@ -190,7 +218,12 @@ class Observatory(object):
         """End time of the observation.
 
         Call to `lst2hours` method described in this module for the
-        end time target of observation.
+        end time target of observation
+
+        Parameters
+        ----------
+        target_list:
+        str_flag:
 
         """
         end_lst = []
@@ -204,7 +237,13 @@ class Observatory(object):
 
 
 def collect_targets(kat, args):
-    """Collect targets into katpoint catalogue."""
+    """Collect targets into katpoint catalogue.
+
+    Parameters
+    ----------
+    kat: session kat container-like object
+
+    """
     from_names = from_strings = from_catalogues = num_catalogues = 0
     catalogue = katpoint.Catalogue()
     catalogue.antenna = katpoint.Antenna(_ref_location)
@@ -229,7 +268,7 @@ def collect_targets(kat, args):
             # With no comma in target string,
             # assume it's the name of a target
             # to be looked up in standard catalogue
-            if arg.find(',') < 0:
+            if arg.find(",") < 0:
                 target = kat.sources[arg]
                 if target is None:
                     msg = ("Unknown target or catalogue {}, skipping it".format(arg))

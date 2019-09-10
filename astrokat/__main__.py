@@ -13,7 +13,14 @@ except ImportError:
 
 # Add standard observation script options from sessions
 def session_options(parser, short_opts_to_remove=[], long_opts_to_remove=[]):
-    """Add options from katcorelib that are valid for all observations."""
+    """Add options from katcorelib that are valid for all observations.
+
+    Parameters
+    ----------
+    parser:
+    short_opts_to_remove: lst
+    long_opts_to_remove: lst
+    """
     dryrun = False
     group = parser.add_argument_group(
         title="Standard MeerKAT options",
@@ -77,19 +84,28 @@ def session_options(parser, short_opts_to_remove=[], long_opts_to_remove=[]):
 
 def cli(prog,
         parser=None,
-        short_opts_to_remove=['-h'],
-        long_opts_to_remove=['--version'],
+        short_opts_to_remove=["-h"],
+        long_opts_to_remove=["--version"],
         args=None):
-    """Specify initial implementation of observation input parameter using json."""
+    """Specify initial implementation of observation input parameter using json.
+
+    Parameters
+    ----------
+    prog:
+    parser:
+    short_opts_to_remove:
+    long_opts_to_remove:
+    args:
+
+    """
     if parser is None:
         # Set up standard script options
         # TODO: more complex usage string in separate function
-        usage = "%s [options]" \
-                " --yaml <YAMLfile>" % prog
-        description = "Sources are specified either as part of an observation profile." \
-                      "Track one or more sources for a specified time." \
-                      "At least one target must be specified." \
-                      "Also note the **required** options."
+        usage = "%s [options]  --yaml <YAMLfile>" % prog
+        description = """"Sources are specified either as part of an observation profile.
+                          Track one or more sources for a specified time.
+                          At least one target must be specified.
+                          Also note the **required** options."""
         parser = argparse.ArgumentParser(
             usage=usage,
             description=description,
@@ -102,7 +118,8 @@ def cli(prog,
     parser.add_argument("--yaml",
                         type=str,
                         required=True,
-                        help="Observation file, obs_plan.yaml (**required**)")
+                        help="Observation file, obs_plan.yaml (**required**)"
+                        )
 
     # Add standard observation script options from sessions
     parser = session_options(parser,
@@ -118,16 +135,20 @@ def cli(prog,
     ex_group = group.add_mutually_exclusive_group()
     ex_group.add_argument("--visibility",
                           action="store_true",
-                          help="Display short summary of target visibility")
+                          help="Display short summary of target visibility"
+                          )
     ex_group.add_argument("--all-up",
                           action="store_true",
-                          help="Ensure all target horizon before continuing")
+                          help="Ensure all target horizon before continuing"
+                          )
     group.add_argument("--debug",
                        action="store_true",
-                       help="verbose logger output for debugging")
+                       help="verbose logger output for debugging"
+                       )
     group.add_argument("--trace",
                        action="store_true",
-                       help="Debug trace logger output for debugging")
+                       help="Debug trace logger output for debugging"
+                       )
 
     return parser.parse_known_args(args=args)
 

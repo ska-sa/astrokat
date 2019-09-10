@@ -101,5 +101,6 @@ class LoggedTelescope(observe_main.Telescope):
         """Reset an in-memory buffer.
 
         See: https://stackoverflow.com/a/4330829/6165344
+
         """
         LoggedTelescope.user_logger_stream = StringIO()

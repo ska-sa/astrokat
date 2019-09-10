@@ -24,6 +24,11 @@ def setobserver(update):
     An `Observer` object to compute the positions of celestial bodies
     as seen from a particular latitude and longitude on the Earth surface.
 
+    Parameters
+    ----------
+    update: ephem object
+            The observer object to be set
+
     """
     global simobserver
     simobserver = update
@@ -189,7 +194,16 @@ class SimSession(object):
         return slew_time
 
     def track(self, target, duration=0, announce=False):
-        """Simulate the track source functionality during observations."""
+        """Simulate the track source functionality during observations.
+
+        Parameters
+        ----------
+        target: katpoint.Target object
+                The target to be tracked
+        duration: int
+                  The number of seconds tracking
+
+        """
         self.track_ = True
         time.sleep(self._fake_slew_(target))
         now = timestamp2datetime(self.time)
@@ -210,7 +224,19 @@ class SimSession(object):
                     scan_in_azimuth=True,
                     projection='zenithal-equidistant',
                     announce=True):
-        """Simulate raster scan."""
+        """Simulate raster scan.
+
+        Parameters
+        ----------
+        target:
+        num_scans:
+        scan_extent:
+        scan_spacing:
+        scan_in_azimuth:
+        projection:
+        announce:
+
+        """
         duration = scan_duration * num_scans
         time.sleep(duration)
         now = timestamp2datetime(self.time)
@@ -224,7 +250,19 @@ class SimSession(object):
              index=-1,
              projection='zenithal-equidistant',
              announce=True):
-        """Simulate scan functionality during observations."""
+        """Simulate scan functionality during observations.
+
+        Parameters
+        ----------
+        target:
+        duration:
+        start:
+        end:
+        index:
+        projection:
+        announce:
+
+        """
         time.sleep(duration)
         now = timestamp2datetime(self.time)
         simobserver.date = ephem.Date(now)
@@ -235,6 +273,13 @@ class SimSession(object):
 
         How long in seconds, it took to the antennas to move
         from previous target to the next
+
+        Parameters
+        ----------
+         target: str
+                 a comma-separated description which
+                 contains parameters such as the target name,
+                 position, flux model.
 
         """
         slew_speed = 2.  # degrees / sec
@@ -252,7 +297,13 @@ class SimSession(object):
 
 
 def start_session(kat, **kwargs):
-    """Start the observation simulation."""
+    """Start the observation simulation.
+
+    Parameters
+    ----------
+    kat: session kat container-like object
+
+    """
     return SimSession(kat, **kwargs)
 
 

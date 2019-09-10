@@ -2,7 +2,16 @@
 
 
 def set_fengines(session, requant_gains=None, fft_shift=None):
-    """Set the f-engine gains."""
+    """Set the f-engine gains.
+
+    Parameters
+    ----------
+    session: object
+    requant_gains:
+    fft_shift: int
+               Fast Fourier Transform shift
+
+    """
     if not session.cbf.fengine.inputs:
         msg = "Cannot set the F-engine gains"
         raise RuntimeError(msg)

@@ -8,15 +8,14 @@ import time
 
 import astrokat
 from astrokat.utility import datetime2timestamp, timestamp2datetime
-from astrokat import (
-    NoTargetsUpError,
-    NotAllTargetsUpError,
-    read_yaml,
-    get_lst,
-    katpoint_target,
-    noisediode,
-    scans,
-)
+from astrokat import (NoTargetsUpError,
+                      NotAllTargetsUpError,
+                      read_yaml,
+                      get_lst,
+                      katpoint_target,
+                      noisediode,
+                      scans
+                      )
 
 try:
     from katcorelib import collect_targets, user_logger, start_session, verify_and_connect
@@ -29,6 +28,11 @@ def read_targets(target_items):
     """Read targets info.
 
     Unpack targets to katpoint compatible format
+
+    Parameters
+    ----------
+    target_items: sequence
+
     """
     desc = {
         "names": (
@@ -50,7 +54,7 @@ def read_targets(target_items):
             object,
             object,
             int,
-        ),
+        )
     }
     ntargets = len(target_items)
     target_list = np.recarray(ntargets, dtype=desc)
@@ -65,8 +69,8 @@ def read_targets(target_items):
         # When unpacking, katpoint's naming convention will be to use the first
         # name, or the name with the '*' if given. This unpacking mimics that
         # expected behaviour to ensure the target can be easily called by name
-        name_list = [name.strip() for name in name_list.split('|')]
-        prefered_name = list(filter(lambda x: x.startswith('*'), name_list))
+        name_list = [name.strip() for name in name_list.split("|")]
+        prefered_name = list(filter(lambda x: x.startswith("*"), name_list))
         if prefered_name:
             target_name = prefered_name[0][1:]
         else:
@@ -109,7 +113,14 @@ def read_targets(target_items):
 
 
 def observe(session, target_info, **kwargs):
-    """Target observation functionality."""
+    """Target observation functionality.
+
+    Parameters
+    ----------
+    session:
+    target_info:
+
+    """
     target_visible = False
 
     target_name = target_info["name"]
@@ -122,8 +133,9 @@ def observe(session, target_info, **kwargs):
         return session.track(target, duration=0., announce=False)
 
     msg = "Initialising {} {} {}".format(obs_type.capitalize(),
-                                         ', '.join(target.tags[1:]),
-                                         target_name)
+                                         ", ".join(target.tags[1:]),
+                                         target_name
+                                         )
     if not np.isnan(duration):  # scan types do not have durations
         msg += " for {} sec".format(duration)
     if np.isnan(duration) or duration > 1:
@@ -167,7 +179,8 @@ def observe(session, target_info, **kwargs):
             target_visible = scan_func(session,
                                        target,
                                        nd_period=nd_period,
-                                       **kwargs[obs_type])
+                                       **kwargs[obs_type]
+                                       )
         else:
             target_visible = scan_func(session, target, nd_period=nd_period)
     else:  # track is default
@@ -186,15 +199,19 @@ def observe(session, target_info, **kwargs):
 
     if nd_setup is not None:
         # restore pattern if programmed at setup
-        noisediode.pattern(session.kat,
-                           session,
-                           nd_setup)
+        noisediode.pattern(session.kat, session, nd_setup)
 
     return target_visible
 
 
 def cadence_target(target_list):
-    """Find each cadence target in order of target list."""
+    """Find each cadence target in order of target list.
+
+    Parameters
+    ----------
+    target_list: list
+                 List of targets and information about their location, flux etc
+    """
     for target in target_list:
         if target["cadence"] > 0:
             if target["last_observed"] is None:
@@ -208,7 +225,7 @@ def cadence_target(target_list):
 def above_horizon(katpt_target, horizon=20.):
     """Check target visibility."""
     [azim, elev] = katpt_target.azel(time.time())
-    return (elev >= ephem.degrees(str(horizon)))
+    return elev >= ephem.degrees(str(horizon))
 
 
 class Telescope(object):
@@ -263,14 +280,21 @@ class Telescope(object):
         self.array.disconnect()
 
     def subarray_setup(self, instrument):
-        """Include current sensor list in instrument.
+        """Set up the array for observing.
 
-        sub_ [
-            pool_resources,  # ptuse or specific antennas
-            product,        # correlator product
-            dump_rate,      # dumprate
-            band,           # band
-            ]
+        Include current sensor list in instrument.
+
+        Parameters
+        ----------
+        instrument: object
+                    An object specifying the configuration of the correlator and frontend
+                    resources to set up telescope for observing
+                    e.g {pool_resources, product, dump_rate, band}. Where
+
+                        pool_resources = ptuse or specific antennas
+                        product = correlator product
+                        dump_rate = correlator data dumprate
+                        band = observing frequency band (l, s, u, x)
 
         """
         user_logger.trace(self.opts.obs_plan_params["instrument"])
@@ -308,7 +332,7 @@ class Telescope(object):
             elif key == "pool_resources":
                 if conf_param == "available":
                     continue
-                pool_params = [str_.strip() for str_ in conf_param.split(',')]
+                pool_params = [str_.strip() for str_ in conf_param.split(",")]
                 for param in pool_params:
                     if param not in sub_sensor:
                         raise RuntimeError(
@@ -356,8 +380,7 @@ def run_observation(opts, kat):
             # add tag evaluation to identify catalogue targets
             tags = tgt["target"].split(",")[1].strip()
             for cat_tgt in catalogue:
-                if (name == cat_tgt.name and
-                        tags == " ".join(cat_tgt.tags)):
+                if name == cat_tgt.name and tags == " ".join(cat_tgt.tags):
                     tgt["target"] = cat_tgt
                     obs_tags.extend(cat_tgt.tags)
                     break
@@ -395,9 +418,10 @@ def run_observation(opts, kat):
             user_logger.info("{} calibrators are {}".format(
                              str.upper(cal_type[:-3]),
                              cal_array))
-        user_logger.info("Observation targets are [{}]".format(
-            ", ".join([repr(target.name) for target in catalogue.filter(
-                not_cals_filter_list)])))
+        user_logger.info(
+            "Observation targets are [{}]".format(
+                ", ".join([repr(target.name) for target
+                           in catalogue.filter(not_cals_filter_list)])))
 
         # TODO: the description requirement in sessions should be re-evaluated
         # since the schedule block has the description
@@ -430,11 +454,8 @@ def run_observation(opts, kat):
             user_logger.trace("TRACE: Local LST {}".format(ephem.hours(local_lst)))
             # Only observe targets in current LST range
             if float(start_lst) < end_lst:
-                in_range = (
-                    (ephem.hours(local_lst) >= ephem.hours(
-                        str(start_lst))) and (
-                        ephem.hours(local_lst) < ephem.hours(
-                            str(end_lst))))
+                in_range = ((ephem.hours(local_lst) >= ephem.hours(str(start_lst)))
+                            and (ephem.hours(local_lst) < ephem.hours(str(end_lst))))
                 if not in_range:
                     user_logger.error("Local LST outside LST range"
                                       "{}-{}".format(ephem.hours(str(start_lst)),
@@ -506,11 +527,9 @@ def run_observation(opts, kat):
                     if not above_horizon(katpt_target, horizon=opts.horizon):
                         show_horizon_status = True
                         # warning for cadence targets only when they are due
-                        if (target["cadence"] > 0 and
-                                target["last_observed"] is not None):
+                        if target["cadence"] > 0 and target["last_observed"] is not None:
                             delta_time = time.time() - target["last_observed"]
-                            show_horizon_status = (
-                                delta_time >= target["cadence"])
+                            show_horizon_status = delta_time >= target["cadence"]
                         if show_horizon_status:
                             user_logger.warn(
                                 "Target {} below {} deg horizon,"
@@ -527,8 +546,7 @@ def run_observation(opts, kat):
                         if not tgt:
                             break
                         # check enough time remaining to continue
-                        if (obs_duration > 0 and
-                                time_remaining < tgt["duration"]):
+                        if obs_duration > 0 and time_remaining < tgt["duration"]:
                             done = True
                             break
                         # check target visible before doing anything
@@ -541,9 +559,8 @@ def run_observation(opts, kat):
                         user_logger.trace(
                             "TRACE: observer before track\n {}".format(observer))
                         user_logger.trace(
-                            "TRACE: target observation # {}"
-                            "last observed {}".format(tgt["obs_cntr"],
-                                                      tgt["last_observed"]))
+                            "TRACE: target observation # {} last observed"
+                            "{}".format(tgt["obs_cntr"], tgt["last_observed"]))
                         if above_horizon(
                                 catalogue[tgt["name"]], horizon=opts.horizon):
                             if observe(session, tgt, **obs_plan_params):
@@ -556,9 +573,8 @@ def run_observation(opts, kat):
                             user_logger.trace(
                                 "TRACE: observer after track\n {}" .format(observer))
                             user_logger.trace(
-                                "TRACE: target observation # {} last"
-                                "observed {}".format(tgt["obs_cntr"],
-                                                     tgt["last_observed"]))
+                                "TRACE: target observation # {} last observed"
+                                "{}".format(tgt["obs_cntr"], tgt["last_observed"]))
                         else:
                             cadence_targets.remove(tgt)
                         while_cntr += 1
@@ -580,11 +596,7 @@ def run_observation(opts, kat):
                             "TRACE: target last"
                             "observed {}".format(target['last_observed']))
 
-                        targets_visible += observe(
-                            session,
-                            target,
-                            **obs_plan_params)
-
+                        targets_visible += observe(session, target, **obs_plan_params)
                         user_logger.trace(
                             "TRACE: observer after track\n {}".format(observer))
                         user_logger.trace(
@@ -593,9 +605,8 @@ def run_observation(opts, kat):
                             target["obs_cntr"] += 1
                             target["last_observed"] = time.time()
                         user_logger.trace(
-                            "TRACE: target observation # {} last"
-                            "observed {}".format(target["obs_cntr"],
-                                                 target["last_observed"]))
+                            "TRACE: target observation # {} last observed"
+                            "{}".format(target["obs_cntr"], target["last_observed"]))
                         user_logger.trace(
                             "TRACE: observer after track\n {}".format(observer))
 
@@ -615,8 +626,7 @@ def run_observation(opts, kat):
                             "check:\n{}".format(next_target))
                         # check if there is a cadence target that must be run
                         # instead of next target
-                        for next_cadence_tgt_idx in range(
-                                cnt + 1, len(obs_targets)):
+                        for next_cadence_tgt_idx in range(cnt + 1, len(obs_targets)):
                             next_cadence_target = obs_targets[
                                 next_cadence_tgt_idx % len(obs_targets)]
                             if next_cadence_target["cadence"] > 0:
@@ -644,8 +654,7 @@ def run_observation(opts, kat):
                 observation_timer = time.time()
 
                 if obs_duration < 0:
-                    user_logger.info(
-                        "Observation list completed - ending observation")
+                    user_logger.info("Observation list completed - ending observation")
                     done = True
 
                 # End if there is nothing to do
@@ -672,8 +681,7 @@ def run_observation(opts, kat):
         if len(obs_targets) > 0:
             user_logger.info("Targets observed :")
             for unique_target in np.unique(obs_targets["name"]):
-                cntrs = obs_targets[obs_targets["name"]
-                                    == unique_target]["obs_cntr"]
+                cntrs = obs_targets[obs_targets["name"] == unique_target]["obs_cntr"]
                 durations = obs_targets[obs_targets["name"] == unique_target]["duration"]
                 if np.isnan(durations).any():
                     user_logger.info(

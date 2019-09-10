@@ -179,7 +179,15 @@ def get_lst(yaml_lst):
 
 
 def lst2utc(req_lst, ref_location, date=None):
-    """Find when is LST for date given, else for Today."""
+    """Find when is LST for date given, else for Today.
+
+    Parameters
+    ----------
+    req_lst:
+    ref_location:
+    date:
+
+    """
     def get_lst_range(date):
         date_timestamp = time.mktime(date.timetuple())  # this will be local time
         time_range = katpoint.Timestamp(date_timestamp).secs + \

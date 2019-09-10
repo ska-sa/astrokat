@@ -15,7 +15,14 @@ except ImportError:
 
 
 def drift_pointing_offset(target, duration=60.):
-    """Drift pointing offset observation."""
+    """Drift pointing offset observation.
+
+    Parameters
+    ----------
+    target:
+    duration:
+
+    """
     obs_start_ts = target.antenna.observer.date
     transit_time = obs_start_ts + duration / 2.0
     # Stationary transit point becomes new target
@@ -30,7 +37,16 @@ def drift_pointing_offset(target, duration=60.):
 
 
 def drift_scan(session, target, nd_period=None, duration=60.):
-    """Drift scan observation."""
+    """Drift scan observation.
+
+    Parameters
+    ----------
+    session:
+    target:
+    nd_period:
+    duration:
+
+    """
     # trigger noise diode if set
     trigger(session.kat, session, duration=nd_period)
     target = drift_pointing_offset(target, duration=duration)
@@ -39,7 +55,15 @@ def drift_scan(session, target, nd_period=None, duration=60.):
 
 
 def raster_scan(session, target, nd_period=None, **kwargs):
-    """Raster scan observation."""
+    """Raster scan observation.
+
+    Parameters
+    ----------
+    session:
+    target:
+    nd_period:
+
+    """
     # trigger noise diode if set
     trigger(session.kat, session, duration=nd_period)
     # TODO: ignoring raster_scan, not currently working robustly
@@ -54,7 +78,15 @@ def raster_scan(session, target, nd_period=None, **kwargs):
 
 
 def scan(session, target, nd_period=None, **kwargs):
-    """Scan, basic observation."""
+    """Scan, basic observation.
+
+    Parameters
+    ----------
+    session:
+    target:
+    nd_period:
+
+    """
     # trigger noise diode if set
     trigger(session.kat, session, duration=nd_period)
     try:
@@ -70,11 +102,14 @@ def forwardscan(session, target, nd_period=None, **kwargs):
 
     Call to `scan` method described in this module
 
+    Parameters
+    ----------
+    session:
+    target:
+    nd_period:
+
     """
-    target_visible = scan(session,
-                          target,
-                          nd_period=nd_period,
-                          **kwargs)
+    target_visible = scan(session, target, nd_period=nd_period, **kwargs)
     return target_visible
 
 
@@ -83,14 +118,17 @@ def reversescan(session, target, nd_period=None, **kwargs):
 
     Call to `scan` method described in this module
 
+    Parameters
+    ----------
+    session:
+    target:
+    nd_period:
+
     """
     returnscan = dict(kwargs)
     returnscan["start"] = kwargs["end"]
     returnscan["end"] = kwargs["start"]
-    target_visible = scan(session,
-                          target,
-                          nd_period=nd_period,
-                          **returnscan)
+    target_visible = scan(session, target, nd_period=nd_period, **returnscan)
     return target_visible
 
 
@@ -99,19 +137,19 @@ def return_scan(session, target, nd_period=None, **kwargs):
 
     A temporary fix until raster scan can be fixed
 
+    Parameters
+    ----------
+    session:
+    target:
+    nd_period:
+
     """
     # set up 2way scan
     user_logger.info("Forward scan over target")
-    target_visible = forwardscan(session,
-                                 target,
-                                 nd_period=nd_period,
-                                 **kwargs)
+    target_visible = forwardscan(session, target, nd_period=nd_period, **kwargs)
 
     user_logger.info("Reverse scan over target")
-    target_visible += reversescan(session,
-                                  target,
-                                  nd_period=nd_period,
-                                  **kwargs)
+    target_visible += reversescan(session, target, nd_period=nd_period, **kwargs)
     return target_visible
 
 # -fin-

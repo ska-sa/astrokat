@@ -2,31 +2,23 @@
 from __future__ import division
 from __future__ import absolute_import
 
-from .__main__ import cli  # noqa
+from .__main__ import cli
 
-from . import noisediode  # noqa
-from . import correlator  # noqa
-from . import scans  # noqa
+from . import noisediode
+from . import correlator
+from . import scans
 
-from .simulate import (  # noqa
-    user_logger,
-    verify_and_connect,
-    start_session,
-    )
-from .utility import (  # noqa
-    NoTargetsUpError,
-    NotAllTargetsUpError,
-    read_yaml,
-    katpoint_target,
-    get_lst,
-    lst2utc,
-    datetime2timestamp,
-    timestamp2datetime,
-    )
-from .observatory import (  # noqa
-    Observatory,
-    collect_targets,
-    )
+from .simulate import (user_logger, verify_and_connect, start_session)
+from .utility import (NoTargetsUpError,
+                      NotAllTargetsUpError,
+                      read_yaml,
+                      katpoint_target,
+                      get_lst,
+                      lst2utc,
+                      datetime2timestamp,
+                      timestamp2datetime
+                      )
+from .observatory import (Observatory, collect_targets)
 
 
 # BEGIN VERSION CHECK
@@ -35,7 +27,7 @@ try:
     import katversion as _katversion
 except ImportError:
     import time as _time
-    __version__ = "0.0+unknown.{}".format(_time.strftime('%Y%m%d%H%M'))
+    __version__ = "0.0+unknown.{}".format(_time.strftime("%Y%m%d%H%M"))
 else:
     __version__ = _katversion.get_version(__path__[0])
 # END VERSION CHECK

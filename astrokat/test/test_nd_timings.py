@@ -23,6 +23,7 @@ class TestAstrokatYAML(unittest.TestCase):
 
         the `user_logger_stream` (in-memory buffer) needs to be cleared.
         LoggedTelescope.reset_user_logger_stream()
+
         """
     def test_nd_pattern_sim(self):
         """Tests noisediode simulator."""

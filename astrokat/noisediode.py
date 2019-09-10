@@ -23,9 +23,7 @@ def _katcp_reply_to_log_(dig_katcp_replies):
     return timestamp
 
 
-def _nd_log_msg_(ant,
-                 reply,
-                 informs):
+def _nd_log_msg_(ant, reply, informs):
 
     user_logger.debug("DEBUG: reply = {}".format(reply))
     user_logger.debug(
@@ -45,20 +43,17 @@ def _nd_log_msg_(ant,
     return actual_time
 
 
-# switch noise-source on
-def on(kat,
-       timestamp=None,
-       lead_time=_DEFAULT_LEAD_TIME):
+def on(kat, timestamp=None, lead_time=_DEFAULT_LEAD_TIME):
     """Switch noise-source pattern on.
 
     Parameters
     ----------
-    kat : session kat container-like object
-        Container for accessing KATCP resources allocated to schedule block.
+    kat : Session kat container-like object
+          Container for accessing KATCP resources allocated to schedule block.
     timestamp : float, optional
-        Time since the epoch as a floating point number [sec]
+                Time since the epoch as a floating point number [sec]
     lead_time : float, optional
-        Lead time before the noisediode is switched on [sec]
+                Lead time before the noisediode is switched on [sec]
 
     """
     # Noise Diodes are triggered on all antennas in array simultaneously
@@ -93,12 +88,12 @@ def off(kat,
 
     Parameters
     ----------
-    kat : session kat container-like object
-        Container for accessing KATCP resources allocated to schedule block.
+    kat : Session kat container-like object
+          Container for accessing KATCP resources allocated to schedule block.
     timestamp : float, optional
-        Time since the epoch as a floating point number [sec]
+                Time since the epoch as a floating point number [sec]
     lead_time : float, optional
-        Lead time before the noisediode is switched off [sec]
+                Lead time before the noisediode is switched off [sec]
 
     """
     # Noise Diodes are triggered on all antennas in array simultaneously
@@ -136,11 +131,11 @@ def trigger(kat,
 
     Parameters
     ----------
-    kat : session kat container-like object
-        Container for accessing KATCP resources allocated to schedule block.
+    kat : Session kat container-like object
+          Container for accessing KATCP resources allocated to schedule block.
     session : katcorelib.CaptureSession-like object
     duration : float, optional
-        Duration that the noisediode will be active [sec]
+               Duration that the noisediode will be active [sec]
 
     """
     if duration is None:
@@ -166,27 +161,20 @@ def trigger(kat,
     return True
 
 
-# set noise diode pattern
-def pattern(kat,  # kat subarray object
-            session,  # session object for correcting the time (only for now)
-            nd_setup,  # noise diode pattern setup
-            lead_time=_DEFAULT_LEAD_TIME,  # lead time [sec]
-            ):
+def pattern(kat, session, nd_setup, lead_time=_DEFAULT_LEAD_TIME):
     """Start background noise diode pattern controlled by digitiser hardware.
 
     Parameters
     ----------
-    kat : session kat container-like object
-        Container for accessing KATCP resources allocated to schedule block.
+    kat : Session kat container-like object
+          Container for accessing KATCP resources allocated to schedule block.
     session : katcorelib.CaptureSession-like object
-    nd_setup : dict
-        Noise diode pattern setup, with keys:
-            'antennas':  options are 'all', or blah, or ....,
-            'cycle_len': the cycle length [sec],
-                           - must be less than 20 sec for L-band,
-            etc., etc.
+    nd_setup: dict
+              Noise diode pattern setup, with keys:
+              'antennas':  options are 'all', or blah, or ....,
+              'cycle_len': the cycle length [sec], - must be less than 20 sec for L-band
     lead_time : float, optional
-        Lead time before digitisers pattern is set [sec]
+                Lead time before digitisers pattern is set [sec]
 
     """
     nd_antennas = nd_setup["antennas"]  # selected antennas for nd pattern
@@ -225,9 +213,7 @@ def pattern(kat,  # kat subarray object
     if nd_antennas == "all":
         # Noise Diodes are triggered on all antennas in array simultaneously
         # add a second to ensure all digitisers set at the same time
-        replies = kat.ants.req.dig_noise_source(timestamp,
-                                                on_fraction,
-                                                cycle_length)
+        replies = kat.ants.req.dig_noise_source(timestamp, on_fraction, cycle_length)
         if not kat.dry_run:
             timestamp = _katcp_reply_to_log_(replies)
         else:
@@ -239,15 +225,14 @@ def pattern(kat,  # kat subarray object
         sb_ants = [ant.name for ant in kat.ants]
         if "cycle" not in nd_antennas:
             sb_ants = [ant.strip() for ant in nd_antennas.split(',')
-                       if ant.strip() in sb_ants]
+                       if ant.strip() in sb_ants
+                       ]
             user_logger.info(
                 "Antennas found in subarray, setting ND: {}".format(','.join(sb_ants)))
         # Noise Diodes are triggered for selected antennas in the array
         for ant in sb_ants:
             ped = getattr(kat, ant)
-            the_reply = ped.req.dig_noise_source(timestamp,
-                                                 on_fraction,
-                                                 cycle_length)
+            the_reply = ped.req.dig_noise_source(timestamp, on_fraction, cycle_length)
             if not kat.dry_run:
                 timestamp = _katcp_reply_to_log_({ant: the_reply})
             else:

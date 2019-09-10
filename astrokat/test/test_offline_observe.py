@@ -17,6 +17,7 @@ class TestAstrokatYAML(unittest.TestCase):
 
         The `user_logger_stream` (in-memory buffer) needs to be cleared.
         LoggedTelescope.reset_user_logger_stream()
+
         """
         LoggedTelescope.reset_user_logger_stream()
 
