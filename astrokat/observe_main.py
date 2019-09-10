@@ -27,11 +27,7 @@ except ImportError:
 def read_targets(target_items):
     """Read targets info.
 
-    Unpack targets to katpoint compatible format
-
-    Parameters
-    ----------
-    target_items: sequence
+    Unpack targets target items to a katpoint compatible format
 
     """
     desc = {
@@ -232,6 +228,7 @@ class Telescope(object):
     """The telescope class.
 
     Settings for the telescope components
+
     """
 
     def __init__(self, opts, correlator=None):

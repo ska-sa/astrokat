@@ -134,9 +134,22 @@ class UnpackCatalogue(object):
                        target_duration="",
                        gaincal_duration="",
                        bpcal_duration="",
-                       bpcal_interval=None,
+                       bpcal_interval=None
                        ):
-        """Unpack all targets from catalogue files into list."""
+        """Unpack all targets from catalogue files into list.
+
+        Parameters
+        ----------
+        target_duration:
+                        Duration on target
+        gaincal_duration:
+                        Duration on gain calibrator
+        bpcal_duration:
+                        Duration on bandpass calibrator
+        bpcal_interval:
+                        How frequent to visit the bandpass calibrator
+
+        """
         target_list = []
         header = ""
         with open(self.infile, "r") as fin:
@@ -207,9 +220,9 @@ class BuildObservation(object):
 
     Parameters
     ----------
-        target_list:
-            A list of targets with the format:
-            'name=<name>, radec=<HH:MM:SS.f>,<DD:MM:SS.f>, tags=<tags>, duration=<sec>'
+    target_list: list
+                 A list of targets with the format
+                 'name=<name>, radec=<HH:MM:SS.f>,<DD:MM:SS.f>, tags=<tags>, duration=<sec>'
 
     """
 
@@ -217,21 +230,17 @@ class BuildObservation(object):
         self.target_list = target_list
         self.configuration = None
 
-    def configure(self,
-                  instrument={},
-                  obs_duration=None,
-                  lst=None,
-                  ):
+    def configure(self, instrument={}, obs_duration=None, lst=None):
         """Set up of the MeerKAT telescope for running observation.
 
         Parameters
         ----------
-            instrument: dict
-                Correlator configuration
-            obs_duration: float
-                Duration of observation
-            lst: object
-                Local Sidereal Time at telescope location
+        instrument: dict
+                    Correlator configuration
+        obs_duration: float
+                      Duration of observation
+        lst: time object
+             Local Sidereal Time at telescope location
 
         """
         obs_plan = {}
@@ -242,28 +251,23 @@ class BuildObservation(object):
         if obs_duration is not None:
             obs_plan["durations"] = {"obs_duration": obs_duration}
         # LST times only HH:MM in OPT
-        start_lst = Observatory().start_obs(self.target_list,
-                                            str_flag=True)
+        start_lst = Observatory().start_obs(self.target_list, str_flag=True)
         start_lst = ':'.join(start_lst.split(':')[:-1])
-        end_lst = Observatory().end_obs(self.target_list,
-                                        str_flag=True)
+        end_lst = Observatory().end_obs(self.target_list, str_flag=True)
         end_lst = ':'.join(end_lst.split(':')[:-1])
         if lst is None:
             lst = "{}-{}".format(start_lst, end_lst)
         # observational setup
-        obs_plan["observation_loop"] = [{"lst": lst,
-                                         "target_list": self.target_list,
-                                         }]
+        obs_plan["observation_loop"] = [{"lst": lst, "target_list": self.target_list}]
         self.configuration = obs_plan
         return obs_plan
 
-    def write_yaml(self,
-                   header=None,
-                   configuration=None,
-                   outfile="obs_config.yaml"):
+    def write_yaml(self, header=None, configuration=None, outfile="obs_config.yaml"):
         """Write the yaml observation file.
 
-        Returns configuration file for the observation
+        Returns
+        -------
+        Configuration file for the observation
 
         """
         if configuration is not None:
@@ -319,7 +323,7 @@ if __name__ == "__main__":
             target_duration=args.target_duration,
             gaincal_duration=args.secondary_cal_duration,
             bpcal_duration=args.primary_cal_duration,
-            bpcal_interval=args.primary_cal_cadence,
+            bpcal_interval=args.primary_cal_cadence
             )
     obs_plan = BuildObservation(catalogue)
 
@@ -327,9 +331,8 @@ if __name__ == "__main__":
     obs_plan.configure(
             instrument=instrument,
             obs_duration=args.max_duration,
-            lst=args.lst,
+            lst=args.lst
             )
-    obs_plan.write_yaml(header=header,
-                        outfile=args.outfile)
+    obs_plan.write_yaml(header=header, outfile=args.outfile)
 
 # -fin-

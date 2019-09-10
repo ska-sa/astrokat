@@ -78,7 +78,7 @@ def raster_scan(session, target, nd_period=None, **kwargs):
 
 
 def scan(session, target, nd_period=None, **kwargs):
-    """Scan, basic observation.
+    """Run basic scan observation.
 
     Parameters
     ----------

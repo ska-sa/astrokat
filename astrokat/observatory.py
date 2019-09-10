@@ -122,7 +122,7 @@ class Observatory(object):
         Parameters
         ----------
         horizon: float
-                 horizon angle in degrees
+                 minimum pointing angle in degrees
 
         """
         observer = self.kat.observer

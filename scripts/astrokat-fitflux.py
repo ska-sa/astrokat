@@ -21,16 +21,16 @@ fit_frequencies_mhz = numpy.array([73.8, 232, 247, 275, 296, 312, 328, 344,
 # Listed coefficients in GHz as per reference
 flux_cals = {
     # name : Flux model (Min freq [MHz] Max freq [MHz] [model coefficients, GHz])
-    'J0437+2940': numpy.array([50., 50000., 1.8017, -0.7884, -0.1035, -0.0248]),
-    'J0519-4546': numpy.array([200., 4000., 1.9380, -0.7470, -0.074]),
-    'J0534+2200': numpy.array([50., 4000., 2.9516, -0.217, -0.047, -0.067]),
-    'J0918-1205': numpy.array([50., 12000., 1.7795, -0.9176, -0.084, -0.0139]),
-    'J1230+1223': numpy.array([50., 3000., 2.4466, -0.8116, -0.048]),
-    'J1331+3030': numpy.array([50., 50000., 1.2481, -0.4507, -0.1798, 0.0357]),
-    'J1651+0459': numpy.array([200., 12000., 1.8298, -1.0247, -0.0951]),
-    'J1720-0058': numpy.array([200., 4000., 1.8627, -0.6938, -0.1, -0.032]),
-    'J0137+3309': numpy.array([50., 50000., 1.3253, -0.7553, -0.1914, 0.0498]),
-    'J0521+1638': numpy.array([200., 50000., 1.0088, -0.4981, -0.155, -0.0100]),
+    "J0437+2940": numpy.array([50., 50000., 1.8017, -0.7884, -0.1035, -0.0248]),
+    "J0519-4546": numpy.array([200., 4000., 1.9380, -0.7470, -0.074]),
+    "J0534+2200": numpy.array([50., 4000., 2.9516, -0.217, -0.047, -0.067]),
+    "J0918-1205": numpy.array([50., 12000., 1.7795, -0.9176, -0.084, -0.0139]),
+    "J1230+1223": numpy.array([50., 3000., 2.4466, -0.8116, -0.048]),
+    "J1331+3030": numpy.array([50., 50000., 1.2481, -0.4507, -0.1798, 0.0357]),
+    "J1651+0459": numpy.array([200., 12000., 1.8298, -1.0247, -0.0951]),
+    "J1720-0058": numpy.array([200., 4000., 1.8627, -0.6938, -0.1, -0.032]),
+    "J0137+3309": numpy.array([50., 50000., 1.3253, -0.7553, -0.1914, 0.0498]),
+    "J0521+1638": numpy.array([200., 50000., 1.0088, -0.4981, -0.155, -0.0100]),
     }
 
 
@@ -50,12 +50,7 @@ def calc_flux_density(coeffs, freqs):
 
 
 # Scale the polynomial coefficients using a numpy refit
-def coeffs_ghz2mhz(
-        coeffs,
-        min_freq_mhz=50,
-        max_freq_mhz=50000,
-        verbose=False,
-        ):
+def coeffs_ghz2mhz(coeffs, min_freq_mhz=50, max_freq_mhz=50000, verbose=False):
     """Scaling the flux model coefficients from the GHz used to MHz.
 
     scale coefficients using simple math:

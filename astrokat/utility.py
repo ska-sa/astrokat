@@ -179,13 +179,18 @@ def get_lst(yaml_lst):
 
 
 def lst2utc(req_lst, ref_location, date=None):
-    """Find when is LST for date given, else for Today.
+    """Find LST for given date else for Today.
 
     Parameters
     ----------
-    req_lst:
-    ref_location:
-    date:
+    req_lst: Request LST
+    ref_location: Location where time is being measured
+    date: Date when LST is being measured
+
+    Returns
+    -------
+        reference time range
+        LST range
 
     """
     def get_lst_range(date):

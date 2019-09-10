@@ -26,8 +26,11 @@ def setobserver(update):
 
     Parameters
     ----------
-    update: ephem object
+    update: ephem.Observer object
             The observer object to be set
+    Returns
+    -------
+        ephem.Observer object
 
     """
     global simobserver
@@ -228,12 +231,12 @@ class SimSession(object):
 
         Parameters
         ----------
-        target:
-        num_scans:
-        scan_extent:
-        scan_spacing:
-        scan_in_azimuth:
-        projection:
+        target: katpoint.Target object
+        num_scans: Number of scans
+        scan_extent: Time taken during scan
+        scan_spacing: time between scans
+        scan_in_azimuth: Scan in azimuth direction
+        projection: projection
         announce:
 
         """
@@ -254,8 +257,8 @@ class SimSession(object):
 
         Parameters
         ----------
-        target:
-        duration:
+        target: katpoint.Target object
+        duration: Duration of scan
         start:
         end:
         index:

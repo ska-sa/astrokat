@@ -18,8 +18,9 @@ def session_options(parser, short_opts_to_remove=[], long_opts_to_remove=[]):
     Parameters
     ----------
     parser:
-    short_opts_to_remove: lst
-    long_opts_to_remove: lst
+    short_opts_to_remove: list
+    long_opts_to_remove: list
+
     """
     dryrun = False
     group = parser.add_argument_group(
