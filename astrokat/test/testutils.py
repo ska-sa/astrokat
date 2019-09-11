@@ -33,6 +33,7 @@ def extract_start_time(yaml_file):
     ----------
     yaml_file: str
         full path file name to yaml file
+
     Returns
     -------
      start_time: datetime

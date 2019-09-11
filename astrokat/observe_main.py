@@ -447,7 +447,7 @@ def run_observation(opts, kat):
             start_datetime = timestamp2datetime(time.time())
             observer.date = ephem.Date(start_datetime)
             user_logger.trace(
-                "TRACE: requested start time"
+                "TRACE: requested start time "
                 "({}) {}".format(datetime2timestamp(start_datetime), start_datetime)
             )
 
@@ -466,7 +466,7 @@ def run_observation(opts, kat):
                 )
                 if not in_range:
                     user_logger.error(
-                        "Local LST outside LST range"
+                        "Local LST outside LST range "
                         "{}-{}".format(
                             ephem.hours(str(start_lst)), ephem.hours(str(end_lst))
                         )
@@ -479,7 +479,7 @@ def run_observation(opts, kat):
                 )
                 if out_range:
                     user_logger.error(
-                        "Local LST outside LST range"
+                        "Local LST outside LST range "
                         "{}-{}".format(
                             ephem.hours(str(start_lst)), ephem.hours(str(end_lst))
                         )

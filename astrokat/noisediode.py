@@ -119,7 +119,7 @@ def off(kat, timestamp=None, lead_time=_DEFAULT_LEAD_TIME):
     else:
         # - use integer second boundary as that is most likely be an exact
         #   time that DMC can execute at
-        msg = "Dry-run: Set all noise diodes with timestamp" "{} ({})".format(
+        msg = "Dry-run: Set all noise diodes with timestamp {} ({})".format(
             np.ceil(timestamp), time.ctime(timestamp)
         )
         user_logger.info(msg)
@@ -212,7 +212,7 @@ def pattern(kat, session, nd_setup, lead_time=_DEFAULT_LEAD_TIME):
     #   to be set up
     timestamp = np.ceil(time.time() + lead_time)
     msg = (
-        "Request: Set noise diode pattern to activate at {}"
+        "Request: Set noise diode pattern to activate at {} "
         "(includes {} sec lead time)".format(timestamp, lead_time)
     )
     user_logger.warning(msg)

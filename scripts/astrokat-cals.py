@@ -89,10 +89,10 @@ def cli(prog):
     )
 
     group = parser.add_argument_group(
-        title="Observation target specification (*required*)",
-        description="Multiple targets are added using an input file,"
-        "while for a single target a quick command line"
-        "option is also available -- simultaneous use of"
+        title="Observation target specification (*required*) ",
+        description="Multiple targets are added using an input file, "
+        "while for a single target a quick command line "
+        "option is also available -- simultaneous use of "
         "a catalogue and input target is not allowed.",
     )
     ex_group = group.add_mutually_exclusive_group(required=True)
@@ -104,7 +104,7 @@ def cli(prog):
         nargs=3,
         type=str,
         metavar=("Name", "RA", "Decl"),
-        help="Returns MeerKAT LST range for a celestial target"
+        help="Returns MeerKAT LST range for a celestial target "
         "with coordinates 'HH:MM:SS DD:MM:SS'",
     )
     ex_group.add_argument(
@@ -121,7 +121,7 @@ def cli(prog):
     group.add_argument(
         "--outfile",
         type=str,
-        help="Path and name for observation catalogue CSV file"
+        help="Path and name for observation catalogue CSV file "
         "(if not provided, only target listing will be displayed)",
     )
     group.add_argument(
@@ -142,7 +142,7 @@ def cli(prog):
         metavar="<tag>",
         choices=view_tags,
         default=["elevation"],
-        help="List of plot options for target visualization:"
+        help="List of plot options for target visualization: "
         "elevation solarangle riseset",
     )
 
@@ -164,7 +164,7 @@ def source_solar_angle(catalogue, ref_antenna):
 
     Returns
     --------
-        solar speration angle for a target wrst ref_ant at a given time
+        solar separation angle for a target wrst ref_ant at a given time
 
     """
     date = ref_antenna.observer.date
