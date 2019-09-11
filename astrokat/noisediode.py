@@ -255,7 +255,7 @@ def pattern(kat, session, nd_setup, lead_time=_DEFAULT_LEAD_TIME):
 
     wait_time = timestamp - time.time()
     user_logger.trace(
-        "TRACE: set nd pattern at"
+        "TRACE: set nd pattern at "
         "{} from now {}, sleep {}".format(timestamp, time.time(), wait_time)
     )
     time.sleep(wait_time)

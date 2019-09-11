@@ -238,11 +238,16 @@ class SimSession(object):
         ----------
         target: katpoint.Target object
         num_scans: Number of scans
-        scan_extent: Time taken during scan
-        scan_spacing: time between scans
-        scan_in_azimuth: Scan in azimuth direction
+        scan_duration: float
+            Duration of scan (s)
+        scan_extent: float
+            time allocated to group of scans
+        scan_spacing: float
+            time between scans
+        scan_in_azimuth: float
+            Scan in azimuth direction
         projection: projection
-        announce:
+        announce: bool
 
         """
         duration = scan_duration * num_scans
@@ -288,9 +293,8 @@ class SimSession(object):
         Parameters
         ----------
          target: katpoint.Target
-             a comma-separated description which
-             contains parameters such as the target name,
-             position, flux model.
+             a description which contains parameters such as the
+             target name, position, flux model.
 
         """
         slew_speed = 2.0  # degrees / sec

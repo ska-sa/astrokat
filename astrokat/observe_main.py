@@ -494,7 +494,7 @@ def run_observation(opts, kat):
             # encountered
             session.capture_init()
             user_logger.debug(
-                "DEBUG: Initialise capture start with timestamp"
+                "DEBUG: Initialise capture start with timestamp "
                 "{} ({})".format(int(time.time()), timestamp2datetime(time.time()))
             )
 
@@ -504,7 +504,7 @@ def run_observation(opts, kat):
             # Only start capturing once we are on target
             session.capture_start()
             user_logger.trace(
-                "TRACE: capture start time after slew"
+                "TRACE: capture start time after slew "
                 "({}) {}".format(time.time(), timestamp2datetime(time.time()))
             )
             user_logger.trace("TRACE: observer after slew\n {}".format(observer))
@@ -517,7 +517,7 @@ def run_observation(opts, kat):
                 sanity_cntr += 1
                 if sanity_cntr > 100000:
                     user_logger.error(
-                        "While limit counter has reached {},"
+                        "While limit counter has reached {}, "
                         "exiting".format(sanity_cntr)
                     )
                     break
@@ -545,7 +545,7 @@ def run_observation(opts, kat):
                             show_horizon_status = delta_time >= target["cadence"]
                         if show_horizon_status:
                             user_logger.warn(
-                                "Target {} below {} deg horizon,"
+                                "Target {} below {} deg horizon, "
                                 "continuing".format(target["name"], opts.horizon)
                             )
                         continue
@@ -577,7 +577,7 @@ def run_observation(opts, kat):
                             "TRACE: observer before track\n {}".format(observer)
                         )
                         user_logger.trace(
-                            "TRACE: target observation # {} last observed"
+                            "TRACE: target observation # {} last observed "
                             "{}".format(tgt["obs_cntr"], tgt["last_observed"])
                         )
                         if above_horizon(catalogue[tgt["name"]], horizon=opts.horizon):
@@ -592,7 +592,7 @@ def run_observation(opts, kat):
                                 "TRACE: observer after track\n {}".format(observer)
                             )
                             user_logger.trace(
-                                "TRACE: target observation # {} last observed"
+                                "TRACE: target observation # {} last observed "
                                 "{}".format(tgt["obs_cntr"], tgt["last_observed"])
                             )
                         else:
@@ -616,7 +616,7 @@ def run_observation(opts, kat):
                             "TRACE: ts before observe {}".format(time.time())
                         )
                         user_logger.trace(
-                            "TRACE: target last"
+                            "TRACE: target last "
                             "observed {}".format(target["last_observed"])
                         )
 
@@ -631,7 +631,7 @@ def run_observation(opts, kat):
                             target["obs_cntr"] += 1
                             target["last_observed"] = time.time()
                         user_logger.trace(
-                            "TRACE: target observation # {} last observed"
+                            "TRACE: target observation # {} last observed "
                             "{}".format(target["obs_cntr"], target["last_observed"])
                         )
                         user_logger.trace(
@@ -652,7 +652,7 @@ def run_observation(opts, kat):
 
                         next_target = obs_targets[(cnt + 1) % len(obs_targets)]
                         user_logger.trace(
-                            "TRACE: next target before cadence"
+                            "TRACE: next target before cadence "
                             "check:\n{}".format(next_target)
                         )
                         # check if there is a cadence target that must be run
@@ -671,11 +671,11 @@ def run_observation(opts, kat):
                                 ]
                                 continue
                         user_logger.trace(
-                            "TRACE: next target after cadence"
+                            "TRACE: next target after cadence "
                             "check:\n{}".format(next_target)
                         )
                         user_logger.trace(
-                            "TRACE: time needed for next obs"
+                            "TRACE: time needed for next obs "
                             "{} sec".format(next_target["duration"])
                         )
                         if (
@@ -699,7 +699,7 @@ def run_observation(opts, kat):
                 # End if there is nothing to do
                 if not targets_visible:
                     user_logger.warning(
-                        "No more targets to observe - stopping script"
+                        "No more targets to observe - stopping script "
                         "instead of hanging around"
                     )
                     done = True
