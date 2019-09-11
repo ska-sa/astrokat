@@ -185,14 +185,19 @@ def lst2utc(req_lst, ref_location, date=None):
 
     Parameters
     ----------
-    req_lst: Request LST
-    ref_location: Location where time is being measured
-    date: Date when LST is being measured
+    req_lst: datetime
+        Request LST
+    ref_location: `EarthLocation()`
+        Location on earth where LST is being measured
+    date: datetime
+        Date when LST is being measured
 
     Returns
     -------
-        reference time range
-        LST range
+        time_range: katpoint.Timestamp
+            UTC date and time
+        lst_range: float
+            LST range
 
     """
 

@@ -6,10 +6,12 @@ def set_fengines(session, requant_gains=None, fft_shift=None):
 
     Parameters
     ----------
-    session: object
-    requant_gains:
+    session: `SessionCBF()`
+        Simplify and normalise access to a CBF stream within session
+    requant_gains: int
+        F-engine gain
     fft_shift: int
-               Fast Fourier Transform shift
+        Fast Fourier Transform shift
 
     """
     if not session.cbf.fengine.inputs:

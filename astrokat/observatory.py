@@ -97,8 +97,8 @@ class Observatory(object):
         Parameters
         ----------
         catalogue_file: file
-                        Catalogue of celestial objects that can be observed with
-                        the telescope system running on the current node
+            Catalogue of celestial objects that can be observed with
+            the telescope system running on the current node
 
         """
         if not self.node_config_available:
@@ -125,7 +125,7 @@ class Observatory(object):
         Parameters
         ----------
         horizon: float
-                 minimum pointing angle in degrees
+            minimum pointing angle in degrees
 
         """
         observer = self.kat.observer
@@ -136,15 +136,14 @@ class Observatory(object):
     def set_target(self, target):
         """Set the target.
 
-        MeerKAT Wrapper around a PyEphem.Body object,
-        target is
+        MeerKAT Wrapper around a PyEphem.Body object, target is an object
+        that can be pointed at by an antenna.
 
         Parameters
         ----------
         target: str
-                a comma-separated description which
-                contains parameters such as the target name,
-                position, flux model.
+            A comma-separated description which contains parameters such as
+            the target name, position, flux model.
 
         """
         target = katpoint.Target(target)
@@ -159,8 +158,7 @@ class Observatory(object):
         Parameters
         ----------
         target_item: str
-                     Names and descriptions of target(s)
-                     which can be pointed at by an antenna.
+            Names and descriptions of target(s) which can be pointed at by an antenna
 
         """
         name, target_item = katpoint_target(target_item)
@@ -172,8 +170,7 @@ class Observatory(object):
         Parameters
         -----------
         target_item: str
-                     Names and descriptions of target(s)
-                     which can be pointed at by an antenna.
+            Names and descriptions of target(s) which can be pointed at by an antenna
 
         """
         target_dict = {}
@@ -187,7 +184,8 @@ class Observatory(object):
 
         Parameters
         ----------
-        ephem_lst:
+        ephem_lst: datetime
+            ephem LST datetime
 
         """
         time_ = datetime.strptime("{}".format(ephem_lst), "%H:%M:%S.%f").time()
@@ -206,7 +204,8 @@ class Observatory(object):
 
         Parameters
         ----------
-        target_list:
+        target_list: list
+            List of targets and information about their location, flux etc
         str_flag:
 
         """
@@ -227,7 +226,8 @@ class Observatory(object):
 
         Parameters
         ----------
-        target_list:
+        target_list: list
+            List of targets and information about their location, flux etc
         str_flag:
 
         """
@@ -292,7 +292,7 @@ def collect_targets(kat, args):
     if len(catalogue) == 0:
         raise ValueError("No known targets found in argument list")
     msg = (
-        "Found {} target(s): {} from {} catalogue(s), {} from default catalogue and"
+        "Found {} target(s): {} from {} catalogue(s), {} from default catalogue and "
         "{} as target string(s)".format(
             len(catalogue), from_catalogues, num_catalogues, from_names, from_strings
         )

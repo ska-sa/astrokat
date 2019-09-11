@@ -9,11 +9,15 @@ from astrokat import observe_main, simulate, utility
 def yaml_path(file_path):
     """Find the yaml file absolute path.
 
-    Args:
-        file_path (str): YAML file path
+    Parameters
+    ----------
+    file_path: str
+        YAML file path
 
-    Returns:
-        str: YAML file absolute path
+    Returns
+    -------
+    yaml_file: str
+        YAML file absolute path
 
     """
     tests_path = os.path.abspath(os.path.dirname(__file__))
@@ -25,8 +29,14 @@ def yaml_path(file_path):
 def extract_start_time(yaml_file):
     """Extract start_time from yaml.
 
-    :param yaml_file: full path file name to yaml file
-    :return: start_time if it exists in yaml file
+    Parameters
+    ----------
+    yaml_file: str
+        full path file name to yaml file
+    Returns
+    -------
+     start_time: datetime
+        if it exists in yaml file
 
     """
     yaml = utility.read_yaml(yaml_file)
@@ -39,7 +49,8 @@ def execute_observe_main(file_name):
 
     Parameters
     ----------
-        file_name: relative path to yaml file
+    file_name: str
+        relative path to yaml file
 
     """
     yaml_file = yaml_path(file_name)
@@ -71,12 +82,12 @@ class LoggedTelescope(observe_main.Telescope):
     """Use as class decorator for test case.
 
     The body of the test case class is patched with a new object.
-
     Note: that when the class exits the patch is undone.
 
-    Attributes:
-        user_logger_stream (_io.StringIO): Text I/O implementation using an in-memory
-            buffer.
+    Attributes
+    ----------
+    user_logger_stream: _io.StringIO
+        Text I/O implementation using an in-memory buffer
 
     """
 

@@ -17,14 +17,16 @@ def session_options(parser, short_opts_to_remove=[], long_opts_to_remove=[]):
 
     Parameters
     ----------
-    parser:
+    parser: `optparse.OptionParser`
+        Parser populated with standard script options
     short_opts_to_remove: list
-                          Previous short observation command line options to discard
+        Previous short observation command line options to discard
     long_opts_to_remove: list
-                         Previous long observation command line options to discard
+        Previous long observation command line options to discard
+
     Returns
     -------
-    parser: :class:`optparse.OptionParser` object
+    parser: `optparse.OptionParser`
         Parser populated with standard script options
 
     """
@@ -97,15 +99,16 @@ def cli(
     Parameters
     ----------
 
-    parser: class:`optparse.OptionParser` object
-            Parser populated with standard script options
+    parser: `optparse.OptionParser`
+        Parser populated with standard script options
     short_opts_to_remove: list
-                          Previous short observation command line options to discard
+        Previous short observation command line options to discard
     long_opts_to_remove: list
-                         Previous long observation command line options to discard
+        Previous long observation command line options to discard
+
     Returns
     -------
-    parser: class:`optparse.OptionParser` object
+    parser: `optparse.OptionParser`
         Parser populated with standard script options
 
     """

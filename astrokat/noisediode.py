@@ -50,11 +50,11 @@ def on(kat, timestamp=None, lead_time=_DEFAULT_LEAD_TIME):
     Parameters
     ----------
     kat : Session kat container-like object
-          Container for accessing KATCP resources allocated to schedule block.
+        Container for accessing KATCP resources allocated to schedule block.
     timestamp : float, optional
-                Time since the epoch as a floating point number [sec]
+        Time since the epoch as a floating point number [sec]
     lead_time : float, optional
-                Lead time before the noisediode is switched on [sec]
+        Lead time before the noisediode is switched on [sec]
 
     """
     # Noise Diodes are triggered on all antennas in array simultaneously
@@ -76,7 +76,7 @@ def on(kat, timestamp=None, lead_time=_DEFAULT_LEAD_TIME):
     else:
         # - use integer second boundary as that is most likely be an exact
         #   time that DMC can execute at
-        msg = "Dry-run: Set all noise diodes with timestamp" "{} ({})".format(
+        msg = "Dry-run: Set all noise diodes with timestamp {} ({})".format(
             np.ceil(timestamp), time.ctime(timestamp)
         )
         user_logger.info(msg)
@@ -91,11 +91,11 @@ def off(kat, timestamp=None, lead_time=_DEFAULT_LEAD_TIME):
     Parameters
     ----------
     kat : Session kat container-like object
-          Container for accessing KATCP resources allocated to schedule block.
+        Container for accessing KATCP resources allocated to schedule block.
     timestamp : float, optional
-                Time since the epoch as a floating point number [sec]
+        Time since the epoch as a floating point number [sec]
     lead_time : float, optional
-                Lead time before the noisediode is switched off [sec]
+        Lead time before the noisediode is switched off [sec]
 
     """
     # Noise Diodes are triggered on all antennas in array simultaneously
@@ -134,10 +134,10 @@ def trigger(kat, session, duration=None):
     Parameters
     ----------
     kat : Session kat container-like object
-          Container for accessing KATCP resources allocated to schedule block.
+        Container for accessing KATCP resources allocated to schedule block.
     session : katcorelib.CaptureSession-like object
     duration : float, optional
-               Duration that the noisediode will be active [sec]
+        Duration that the noisediode will be active [sec]
 
     """
     if duration is None:
@@ -171,12 +171,12 @@ def pattern(kat, session, nd_setup, lead_time=_DEFAULT_LEAD_TIME):
     Parameters
     ----------
     kat : Session kat container-like object
-          Container for accessing KATCP resources allocated to schedule block.
+        Container for accessing KATCP resources allocated to schedule block.
     session : katcorelib.CaptureSession-like object
     nd_setup: dict
-              Noise diode pattern setup, with keys:
-              'antennas':  options are 'all', or blah, or ....,
-              'cycle_len': the cycle length [sec], - must be less than 20 sec for L-band
+        Noise diode pattern setup, with keys:
+            'antennas':  options are `ants`, or 'm062',...
+            'cycle_len': the cycle length [sec], - must be less than 20 sec for L-band
     lead_time : float, optional
                 Lead time before digitisers pattern is set [sec]
 
@@ -186,7 +186,7 @@ def pattern(kat, session, nd_setup, lead_time=_DEFAULT_LEAD_TIME):
     on_fraction = nd_setup["on_frac"]  # on fraction of pattern length [%]
     msg = (
         "Repeat noise diode pattern every {} sec, with {} sec on and apply pattern to"
-        "{}".format(cycle_length, float(cycle_length) * float(on_fraction), nd_antennas)
+        " {}".format(cycle_length, float(cycle_length) * float(on_fraction), nd_antennas)
     )
     user_logger.info(msg)
 
@@ -224,7 +224,7 @@ def pattern(kat, session, nd_setup, lead_time=_DEFAULT_LEAD_TIME):
         if not kat.dry_run:
             timestamp = _katcp_reply_to_log_(replies)
         else:
-            msg = "Dry-run: Set all noise diodes with timestamp" "{} ({})".format(
+            msg = "Dry-run: Set all noise diodes with timestamp {} ({})".format(
                 int(timestamp), time.ctime(timestamp)
             )
             user_logger.info(msg)

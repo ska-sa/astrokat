@@ -2,6 +2,7 @@
 """MeerKAT calibrator selection tools.
 
 Returns the closest calibrator(s) per target
+
 """
 
 from __future__ import print_function
@@ -157,9 +158,9 @@ def source_solar_angle(catalogue, ref_antenna):
     Parameters
     ----------
     catalogue: list or file
-               Data on the target objects to be observed
-    ref_antenna: katpoint.Antenna objec
-                 A MeerKAT reference antenna
+        Data on the target objects to be observed
+    ref_antenna: katpoint.Antenna
+        A MeerKAT reference antenna
 
     Returns
     --------
@@ -222,9 +223,10 @@ def source_rise_set(catalogue, ref_antenna):
     Parameters
     ----------
     catalogue: list or file
-               Data on the target objects to be observed
+        Data on the target objects to be observed
     ref_antenna: katpoint.Antenna objec
-                 A MeerKAT reference antenna
+        A MeerKAT reference antenna
+
     Returns
     -------
         The UTC time on the day when the source will be above the prescribed horizon
@@ -293,10 +295,9 @@ def source_elevation(catalogue, ref_antenna):
 
     Parameters
     ----------
-    catalogue:
-             katpoint.Catalogue object
-    ref_antenna: katpoint.Antenna object
-                 A MeerKAT reference antenna
+    catalogue: katpoint.Catalogue
+    ref_antenna: katpoint.Antenna
+        A MeerKAT reference antenna
 
     Returns
     -------
@@ -412,22 +413,22 @@ def table_line(
 
     Parameters
     ----------
-    datetime: date and time
-              ephem.Date object for calculating target information
+    datetime: ephem.Date
+        ephem date and time object
+    target: katpoint.Catalogue
+        target from katpoint.Catalogue object
     horizon: float
-             minimum pointing angle in degrees
-    target: str
-            target from katpoint.Catalogue object
+        minimum pointing angle in degrees
     sep_angle: float
-               separation angle in degrees [optional param]
+        separation angle in degrees [optional param]
     cal_limit: float
-               maximum separation angle between target and calibrator [optional]
+        maximum separation angle between target and calibrator [optional]
     sol_limit: float
-               minimum separation angle between target and Sun [optional]
+        minimum separation angle between target and Sun [optional]
     lst: str
-         display times in LST rather than UTC
+        display times in LST rather than UTC
     notes: str
-           user provided extra information
+        user provided extra information
 
     Returns
     -------
@@ -477,16 +478,20 @@ def obs_table(ref_antenna, catalogue, ref_tgt_list=[], solar_sep=90.0, lst=False
     Parameters
     ----------
     ref_antenna: katpoint Antenna object
-                reference location for pointing calculation
-    catalogue: katpoint.Catalogue object
-               catalogue of targets
+        reference location of antenna for pointing calculation
+    catalogue: katpoint.Catalogue
+        catalogue of targets
     ref_tgt_list: list
-                  reference targets for calibrator selection [optional]
+        reference targets for calibrator selection [optional]
     solar_sep: float
-               minimum solar separation angle [optional]
+        minimum solar separation angle [optional]
+    lst: datetime
+        LST
 
     Returns
     -------
+    observation_table:
+        Observation table file in the form
         <name> <tag> <risetime> <settime> <Separation> <Notes>
 
     """
@@ -584,12 +589,12 @@ def write_catalogue(filename, catalogue_header, katpoint_catalogue):
 
     Parameters
     ----------
-    filename: file
-              The file which contains the targets and calibrators
+    filename: str
+        The file which contains the targets and calibrators
     catalogue_header: str
-                      Header information for targets and calibrators
-    katpoint_catalogue: katpoint.Catalogue object
-                        All katpoint.Catalogue objects to be added to observation csv
+        Header information for targets and calibrators
+    katpoint_catalogue: katpoint.Catalogue
+        All katpoint.Catalogue objects to be added to observation csv
 
     Returns
     -------
@@ -617,12 +622,13 @@ def _separation_angles(katpt_catalogue, target, observer):
 
     Parameters
     ----------
-    katpt_catalogue: katpoint.Catalogue object
-    target: ephem.FixedBody object
-    observer: ephem.Observer object
+    katpt_catalogue: katpoint.Catalogue
+    target: ephem.FixedBody
+    observer: ephem.Observer
 
     Returns
     -------
+    separation_angles: list
         List of separation angles in radians
 
     """
@@ -639,16 +645,16 @@ def _closest_calibrator_(katpt_catalogue, target, observer):
 
     Parameters
     ----------
-    katpt_catalogue: katpoint.Catalogue object
-    target: ephem.FixedBody object
-    observer: ephem.Observer object
+    katpt_catalogue: katpoint.Catalogue
+    target: ephem.FixedBody
+    observer: ephem.Observer
 
     Returns
     -------
     katpoint.Target: katpoint.Target object
-                     closest calibrator
+        closest calibrator
     separation_angle: float
-                      in degrees
+        separation_angle in degrees
 
     """
     separation_angles = _separation_angles(katpt_catalogue, target, observer)
@@ -667,16 +673,16 @@ def get_cal(catalogue, katpt_target, ref_antenna):
 
     Parameters
     ----------
-    catalogue: katpoint.Catalogue object
-    katpt_target: katpoint.Target object
-    ref_antenna: katpoint.Antenna object
+    catalogue: katpoint.Catalogue
+    katpt_target: katpoint.Target
+    ref_antenna: katpoint.Antenna
 
     Returns:
     ------
-    katpoint.Target: katpoint.Target object
-                     closest calibrator
+    calibrator: katpoint.Target
+        closest calibrator
     separation_angle: float
-                      in degrees
+        separation angle in degrees
 
     """
     calibrator, separation = _closest_calibrator_(
@@ -694,20 +700,20 @@ def best_cal_cover(catalogue, katpt_target, ref_antenna):
 
     Parameters
     ----------
-    catalogue: katpoint.Catalogue object
-    katpt_target: katpoint.Target object
-    ref_antenna: katpoint.Antenna object
+    catalogue: katpoint.Catalogue
+    katpt_target: katpoint.Target
+    ref_antenna: katpoint.Antenna
 
     Returns
     -------
-    katpoint.Target: katpoint.Target object
-                     closest calibrator
+    calibrator: katpoint.Target object
+        closest calibrator
     separation_angle: float
-                      in degrees
-    katpoint.Target: katpoint.Target object
-                     additional calibrator for LST coverage
-    additional_separation_angle: float
-                                 in degrees
+        separation angle in degrees
+    pred_calibrator: katpoint.Target object
+        additional calibrator for LST coverage
+    pred_separation: float
+        additional separation_angle in degrees
 
     """
     calibrator, separation = _closest_calibrator_(
@@ -744,11 +750,11 @@ def add_target(target, catalogue, tag=""):
     target: katpoint.Target object
     catalogue: katpoint.Catalogue object
     tag: str
-         target tag
+        target tag
 
     Returns
     -------
-        katpoint.Catalogue
+    catalogue: katpoint.Catalogue
 
     """
     if catalogue.__contains__(target.name):

@@ -25,7 +25,9 @@ def smart_open(filename):
 def cli(prog):
     """Parse command line options.
 
-    Returns arguments
+    Returns
+    -------
+    option arguments
 
     """
     version = "{} 0.1".format(prog)
@@ -147,14 +149,14 @@ class UnpackCatalogue(object):
 
         Parameters
         ----------
-        target_duration:
-                        Duration on target
-        gaincal_duration:
-                        Duration on gain calibrator
-        bpcal_duration:
-                        Duration on bandpass calibrator
-        bpcal_interval:
-                        How frequent to visit the bandpass calibrator
+        target_duration: float
+            Duration on target
+        gaincal_duration: float
+            Duration on gain calibrator
+        bpcal_duration: float
+            Duration on bandpass calibrator
+        bpcal_interval: flat
+            How frequent to visit the bandpass calibrator
 
         """
         target_list = []
@@ -230,8 +232,8 @@ class BuildObservation(object):
     Parameters
     ----------
     target_list: list
-                 A list of targets with the format
-                 'name=<name>, radec=<HH:MM:SS.f>,<DD:MM:SS.f>, tags=<tags>, duration=<sec>'
+        A list of targets with the format
+        'name=<name>, radec=<HH:MM:SS.f>,<DD:MM:SS.f>, tags=<tags>, duration=<sec>'
 
     """
 
@@ -245,11 +247,11 @@ class BuildObservation(object):
         Parameters
         ----------
         instrument: dict
-                    Correlator configuration
+            Correlator configuration
         obs_duration: float
-                      Duration of observation
-        lst: time object
-             Local Sidereal Time at telescope location
+            Duration of observation
+        lst: datetime
+            Local Sidereal Time at telescope location
 
         """
         obs_plan = {}

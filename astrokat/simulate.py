@@ -203,10 +203,10 @@ class SimSession(object):
 
         Parameters
         ----------
-        target: katpoint.Target object
-                The target to be tracked
+        target: katpoint.Target
+            The target to be tracked
         duration: int
-                  The number of seconds tracking
+            Duration of track
 
         """
         self.track_ = True
@@ -287,10 +287,10 @@ class SimSession(object):
 
         Parameters
         ----------
-         target: str
-                 a comma-separated description which
-                 contains parameters such as the target name,
-                 position, flux model.
+         target: katpoint.Target
+             a comma-separated description which
+             contains parameters such as the target name,
+             position, flux model.
 
         """
         slew_speed = 2.0  # degrees / sec

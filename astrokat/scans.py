@@ -19,8 +19,8 @@ def drift_pointing_offset(target, duration=60.0):
 
     Parameters
     ----------
-    target:
-    duration:
+    target: katpoint.Target
+    duration: float
 
     """
     obs_start_ts = target.antenna.observer.date
@@ -41,10 +41,12 @@ def drift_scan(session, target, nd_period=None, duration=60.0):
 
     Parameters
     ----------
-    session:
-    target:
-    nd_period:
-    duration:
+    session: `CaptureSession`
+    target: katpoint.Target
+    nd_period: float
+        noisediode period
+    duration: float
+        scan duration
 
     """
     # trigger noise diode if set
@@ -59,9 +61,10 @@ def raster_scan(session, target, nd_period=None, **kwargs):
 
     Parameters
     ----------
-    session:
-    target:
-    nd_period:
+    session: `CaptureSession`
+    target: katpoint.Target
+    nd_period: float
+        noisediode period
 
     """
     # trigger noise diode if set
@@ -82,9 +85,10 @@ def scan(session, target, nd_period=None, **kwargs):
 
     Parameters
     ----------
-    session:
-    target:
-    nd_period:
+    session: `CaptureSession`
+    target: katpoint.Target
+    nd_period: float
+        noisediode period
 
     """
     # trigger noise diode if set
@@ -104,9 +108,10 @@ def forwardscan(session, target, nd_period=None, **kwargs):
 
     Parameters
     ----------
-    session:
-    target:
-    nd_period:
+    session: `CaptureSession`
+    target: katpoint.Target
+    nd_period: float
+        noisediode period
 
     """
     target_visible = scan(session, target, nd_period=nd_period, **kwargs)
@@ -120,9 +125,10 @@ def reversescan(session, target, nd_period=None, **kwargs):
 
     Parameters
     ----------
-    session:
-    target:
-    nd_period:
+    session: `CaptureSession`
+    target: katpoint.Target
+    nd_period: float
+        noisediode period
 
     """
     returnscan = dict(kwargs)
@@ -139,9 +145,10 @@ def return_scan(session, target, nd_period=None, **kwargs):
 
     Parameters
     ----------
-    session:
-    target:
-    nd_period:
+    session: `CaptureSession`
+    target: katpoint.Target
+    nd_period: float
+        noisediode period
 
     """
     # set up 2way scan

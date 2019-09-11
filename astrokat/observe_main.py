@@ -110,7 +110,7 @@ def observe(session, target_info, **kwargs):
 
     Parameters
     ----------
-    session:
+    session: `CaptureSession`
     target_info:
 
     """
@@ -181,7 +181,7 @@ def observe(session, target_info, **kwargs):
             noisediode.trigger(session.kat, session, duration=nd_period)
             user_logger.trace("TRACE: ts after nd trigger {}".format(time.time()))
         user_logger.debug(
-            "DEBUG: Starting {}s track on target:"
+            "DEBUG: Starting {}s track on target: "
             "{} ({})".format(duration, time.time(), time.ctime(time.time()))
         )
         if session.track(target, duration=duration):
@@ -201,7 +201,8 @@ def cadence_target(target_list):
     Parameters
     ----------
     target_list: list
-                 List of targets and information about their location, flux etc
+        List of targets and information about their location, flux etc
+
     """
     for target in target_list:
         if target["cadence"] > 0:
@@ -278,15 +279,15 @@ class Telescope(object):
 
         Parameters
         ----------
-        instrument: object
-                    An object specifying the configuration of the correlator and frontend
-                    resources to set up telescope for observing
-                    e.g {pool_resources, product, dump_rate, band}. Where
+        instrument: dict
+            An object specifying the configuration of the correlator and frontend
+            resources to set up telescope for observing
+            e.g {pool_resources, product, dump_rate, band}. Where
 
-                        pool_resources = ptuse or specific antennas
-                        product = correlator product
-                        dump_rate = correlator data dumprate
-                        band = observing frequency band (l, s, u, x)
+                pool_resources = ptuse or specific antennas
+                product = correlator product
+                dump_rate = correlator data dumprate
+                band = observing frequency band (l, s, u, x)
 
         """
         user_logger.trace(self.opts.obs_plan_params["instrument"])
@@ -302,7 +303,7 @@ class Telescope(object):
         approved_sb_sensor_value = approved_sb_sensor.get_value()
         if self.array.sb_id_code not in approved_sb_sensor_value:
             user_logger.info(
-                "Skipping instrument checks - {}"
+                "Skipping instrument checks - {} "
                 "not in approved_schedule".format(self.array.sb_id_code)
             )
             return
@@ -330,12 +331,12 @@ class Telescope(object):
                 for param in pool_params:
                     if param not in sub_sensor:
                         raise RuntimeError(
-                            "Subarray configuration {} error, {} required,"
+                            "Subarray configuration {} error, {} required, "
                             "{} found".format(sensor_name, param, sub_sensor)
                         )
             elif conf_param != sub_sensor:
                 raise RuntimeError(
-                    "Subarray configuration {} error, {} required,"
+                    "Subarray configuration {} error, {} required, "
                     "{} found".format(sensor_name, conf_param, sub_sensor)
                 )
 
@@ -662,7 +663,7 @@ def run_observation(opts, kat):
                             ]
                             if next_cadence_target["cadence"] > 0:
                                 user_logger.trace(
-                                    "TRACE: time needed for next obs"
+                                    "TRACE: time needed for next obs "
                                     "{} sec".format(next_cadence_target["cadence"])
                                 )
                                 next_target = obs_targets[
@@ -712,11 +713,11 @@ def run_observation(opts, kat):
             user_logger.info("Single run through observation target list")
         else:
             user_logger.info(
-                "Desired observation time {:.2f} sec"
+                "Desired observation time {:.2f} sec "
                 "({:.2f} min)".format(obs_duration, obs_duration / 60.0)
             )
         user_logger.info(
-            "Total observation time {:.2f} sec"
+            "Total observation time {:.2f} sec "
             "({:.2f} min)".format(total_obs_time, total_obs_time / 60.0)
         )
         if len(obs_targets) > 0:
@@ -771,7 +772,7 @@ def main(args):
     unknown_args = [arg for arg in args if arg.startswith("--")]
     if any("horizon" in arg for arg in unknown_args):
         raise RuntimeError(
-            "Command line option {} not supported."
+            "Command line option {} not supported. "
             "Please specify parameters in YAML file.".format("horizon")
         )
     # TODO: add correlator settings YAML option for config file
