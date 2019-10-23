@@ -7,6 +7,7 @@ import logging
 import numpy
 import time
 import sys
+import katpoint
 
 from collections import namedtuple
 
@@ -194,7 +195,7 @@ class SimSession(object):
             if self.katpt_current is None:
                 slew_time = _DEFAULT_SLEW_TIME
             else:
-                user_logger.debug("Slewing to {}".format(target.name))
+                # user_logger.debug("Slewing to {}".format(target.name))
                 slew_time = self.slew_time(target)
         return slew_time
 
@@ -287,8 +288,8 @@ class SimSession(object):
     def slew_time(self, target):
         """Get slew time.
 
-        How long in seconds, it took to the antennas to move
-        from previous target to the next
+        How long in seconds, it took for the antennas to move
+        from current target to the next
 
         Parameters
         ----------
@@ -297,6 +298,29 @@ class SimSession(object):
              target name, position, flux model.
 
         """
+
+        # now = timestamp2datetime(self.time)
+        # simobserver.date = ephem.Date(now)
+        # # Get the current az, el
+        # az1, el1 = target.azel(simobserver.date, self.katpt_current.antenna)
+        # # and az, el for the next target
+        # az2, el2 = target.azel(now, target.antenna.observer)
+        now = timestamp2datetime(self.time)
+        az1, el1 = self.katpt_current.azel(ephem.Date(now))
+        az2, el2 = target.azel(ephem.Date(now))
+
+        az1 = katpoint.rad2deg(az1)
+        el1 = katpoint.rad2deg(el1)
+        az2 = katpoint.rad2deg(az2)
+        el2 = katpoint.rad2deg(el2)
+
+        az_dist = numpy.abs(az2 - az1)
+        el_dist = numpy.abs(el2 - el1)
+
+        az_dist = az_dist if az_dist < 180. else 360. - az_dist
+
+        new_slew_time = max(0.5 * az_dist, 1.0 * el_dist)
+
         slew_speed = 2.0  # degrees / sec
         self.katpt_current.body.compute(self.katpt_current.antenna.observer)
         target.body.compute(target.antenna.observer)
@@ -308,7 +332,18 @@ class SimSession(object):
             slew_time = _DEFAULT_SLEW_TIME
         else:
             slew_time = numpy.degrees(separation_angle) / slew_speed
+
+        user_logger.info("Slewing to {} az1:{} el1:{} az2:{} el2:{} old_slew:{} new_slew:{}".format(
+            target.name, az1, el1, az2, el2, slew_time, new_slew_time))
+
         return slew_time
+
+    def _azel(self, target, timestamp, antenna):
+        """Target (az, el) position in degrees (including offsets in degrees)."""
+        projection_type, x, y = self.projection
+        az, el = target.plane_to_sphere(katpoint.deg2rad(x), katpoint.deg2rad(y),
+                                        timestamp, antenna, projection_type)
+        return katpoint.rad2deg(az), katpoint.rad2deg(el)
 
 
 def start_session(kat, **kwargs):
