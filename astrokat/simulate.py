@@ -333,8 +333,8 @@ class SimSession(object):
         else:
             slew_time = numpy.degrees(separation_angle) / slew_speed
 
-        user_logger.info("Slewing to {} az1:{} el1:{} az2:{} el2:{} old_slew:{} new_slew:{}".format(
-            target.name, az1, el1, az2, el2, slew_time, new_slew_time))
+        user_logger.info("Slewing to {} az_dist:{} el_dist:{} old_slew:{} new_slew:{}".format(
+            target.name, az_dist, el_dist, slew_time, new_slew_time))
 
         return slew_time
 
