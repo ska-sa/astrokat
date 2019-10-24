@@ -318,8 +318,11 @@ class SimSession(object):
         el_dist = numpy.abs(el2 - el1)
 
         az_dist = az_dist if az_dist < 180. else 360. - az_dist
-
-        new_slew_time = max(0.5 * az_dist, 1.0 * el_dist)
+        # new_slew_time is the adjusted_slew_time, accounting for
+        # az-el motion of antennas. Antennas slew at 2 deg/s in az
+        # while moving at 1 deg/s in el. There is an estimated 2.5
+        # seconds overhead time before slewing
+        new_slew_time = max(0.5 * az_dist, 1.0 * el_dist) + 2.5
 
         slew_speed = 2.0  # degrees / sec
         self.katpt_current.body.compute(self.katpt_current.antenna.observer)
