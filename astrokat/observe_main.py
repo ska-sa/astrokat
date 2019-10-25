@@ -28,6 +28,7 @@ try:
 except ImportError:
     from astrokat import collect_targets, user_logger, start_session, verify_and_connect
 
+SIM_OVERHEAD = 2.5
 
 # TODO: target description defined in function needs to be in configuration
 def read_targets(target_items):
@@ -128,6 +129,7 @@ def observe(session, target_info, **kwargs):
     msg = "Initialising {} {} {}".format(
         obs_type.capitalize(), ", ".join(target.tags[1:]), target_name
     )
+    time.sleep(SIM_OVERHEAD)
     if not np.isnan(duration):  # scan types do not have durations
         msg += " for {} sec".format(duration)
     if np.isnan(duration) or duration > 1:
