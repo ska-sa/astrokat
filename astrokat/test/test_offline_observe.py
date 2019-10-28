@@ -147,7 +147,7 @@ class TestAstrokatYAML(unittest.TestCase):
         )
         self.assertIn("POL calibrators are ['3C286']", result, "one pol calibrator")
         self.assertIn("1827-360 observed for 30.0 sec", result)
-        self.assertIn("1934-638 observed for 120.0 sec", result)
+        self.assertIn("1934-638 observed for 180.0 sec", result)
         self.assertIn("3C286 observed for 80.0 sec", result)
         self.assertIn("T3R04C06 observed for 360.0 sec", result)
         self.assertIn("T4R00C02 observed for 360.0 sec", result)
@@ -159,4 +159,4 @@ class TestAstrokatYAML(unittest.TestCase):
         # do no need to super acurate with this target to allow
         # for slew time discrepancies
         self.assertIn("T4R02C02 observed", result)
-        self.assertIn("T4R02C04 observed for 180.0 sec", result)
+        self.assertIn("T4R02C04 observed for 360.0 sec", result)
