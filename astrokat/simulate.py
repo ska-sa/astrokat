@@ -17,6 +17,7 @@ global simobserver
 simobserver = ephem.Observer()
 
 _DEFAULT_SLEW_TIME = 45.0  # [sec]
+SIM_OVERHEAD = 3
 
 
 def setobserver(update):
@@ -162,6 +163,8 @@ class SimSession(object):
             self.time += seconds
 
         time.sleep = simsleep
+        user_logger.info("Waiting for observation setup")
+        time.sleep(SIM_OVERHEAD)
 
     def __enter__(self):
         return self
@@ -297,7 +300,7 @@ class SimSession(object):
             The slew time is calculated with consideration of az-el motion
             of antennas instead of the current angular distance between sources,
             assuming a slew_speed 2 deg/s. Antennas slew at 2 deg/s in az while
-            moving at 1 deg/s in el. There is about 3 seconds for overhead
+            moving at 1 deg/s in el. There is about 2.5 seconds for overhead
 
         Parameters
         ----------
@@ -324,8 +327,10 @@ class SimSession(object):
         el_dist = numpy.abs(el2 - el1)
 
         az_dist = az_dist if az_dist < 180. else 360. - az_dist
-
-        slew_time = max(0.5 * az_dist, 1.0 * el_dist) + 3
+        az_speed = 2.0  # deg/sec
+        el_speed = 1.0  # deg/sec
+        overhead = 2.5  # sec
+        slew_time = max(az_dist / az_speed, el_dist / el_speed) + overhead
 
         return slew_time
 
