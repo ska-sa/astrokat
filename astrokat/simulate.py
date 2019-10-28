@@ -17,7 +17,7 @@ global simobserver
 simobserver = ephem.Observer()
 
 _DEFAULT_SLEW_TIME = 45.0  # [sec]
-SIM_OVERHEAD = 3
+_SIM_OVERHEAD = 3           # [sec]
 
 
 def setobserver(update):
@@ -164,7 +164,7 @@ class SimSession(object):
 
         time.sleep = simsleep
         user_logger.info("Waiting for observation setup")
-        time.sleep(SIM_OVERHEAD)
+        time.sleep(_SIM_OVERHEAD)
 
     def __enter__(self):
         return self
@@ -199,7 +199,7 @@ class SimSession(object):
                 slew_details = [_DEFAULT_SLEW_TIME]
             else:
                 user_logger.debug("Slewing to {}".format(target.name))
-                slew_details = list(self.slew_time(target))
+                slew_details = list(self.slew_time_details(target))
         return slew_details
 
     def track(self, target, duration=0, announce=False):
@@ -296,55 +296,47 @@ class SimSession(object):
         simobserver.date = ephem.Date(now)
         return True
 
-    def slew_time(self, target):
-        """Get slew time.
+    def slew_time_details(self, target):
+        """Get slew time and angular coordinates of next target.
 
-        How long in seconds, it took for the antennas to move
-        from current target to the next.
-
-        Notes:
-            The slew time is calculated with consideration of az-el motion
-            of antennas instead of the current angular distance between sources,
-            assuming a slew_speed 2 deg/s. Antennas slew at 2 deg/s in az while
-            moving at 1 deg/s in el. There is about 2.5 seconds for overhead
+        The slew time is calculated with consideration of az-el motion.
+        Antennas slew at 2 deg/s in az while moving at 1 deg/s in el.
+        There is about 2.5 seconds for overhead.
 
         Parameters
         ----------
-         target: katpoint.Target
-             a description which contains parameters such as the
-             target name, position, flux model.
+        target: katpoint.Target
+            a description which contains parameters such as the
+            target name, position, flux model.
 
         Returns
         -------
         slew_time: float
             The number of seconds it takes to slew
-        azimuth:
-            The azimuth co-ordinates
-        elevation:
-            The elevation co-ordinates
+        azimuth: float
+            The azimuth co-ordinate in deg
+        elevation: float
+            The elevation co-ordinate in deg
         """
-        try:
-            now = timestamp2datetime(self.time)
-            az1, el1 = self.katpt_current.azel(ephem.Date(now))
-            az2, el2 = target.azel(ephem.Date(now))
+        now = timestamp2datetime(self.time)
+        az1, el1 = self.katpt_current.azel(ephem.Date(now))
+        az2, el2 = target.azel(ephem.Date(now))
 
-            az1 = katpoint.rad2deg(az1)
-            el1 = katpoint.rad2deg(el1)
-            azimuth = katpoint.rad2deg(az2)
-            elevation = katpoint.rad2deg(el2)
+        az1 = katpoint.rad2deg(az1)
+        el1 = katpoint.rad2deg(el1)
+        azimuth = katpoint.rad2deg(az2)
+        elevation = katpoint.rad2deg(el2)
 
-            az_dist = numpy.abs(azimuth - az1)
-            el_dist = numpy.abs(elevation - el1)
+        az_dist = numpy.abs(azimuth - az1)
+        el_dist = numpy.abs(elevation - el1)
 
-            az_dist = az_dist if az_dist < 180. else 360. - az_dist
-            az_speed = 2.0  # deg/sec
-            el_speed = 1.0  # deg/sec
-            overhead = 2.5  # sec
-            slew_time = max(az_dist / az_speed, el_dist / el_speed) + overhead
+        az_dist = az_dist if az_dist < 180. else 360. - az_dist
+        az_speed = 2.0  # deg/sec
+        el_speed = 1.0  # deg/sec
+        overhead = 2.5  # sec
+        slew_time = max(az_dist / az_speed, el_dist / el_speed) + overhead
 
-            return slew_time, azimuth, elevation
-        except AttributeError:
-            return slew_time
+        return slew_time, azimuth, elevation
 
 
 def start_session(kat, **kwargs):
