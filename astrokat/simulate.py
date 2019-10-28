@@ -193,14 +193,14 @@ class SimSession(object):
             )
 
     def _fake_slew_(self, target):
-        slew_time = 0
+        slew_details = []
         if not (target == self.katpt_current):
             if self.katpt_current is None:
-                slew_time = _DEFAULT_SLEW_TIME
+                slew_details = [_DEFAULT_SLEW_TIME]
             else:
                 user_logger.debug("Slewing to {}".format(target.name))
-                slew_time = self.slew_time(target)
-        return slew_time
+                slew_details = list(self.slew_time(target))
+        return slew_details
 
     def track(self, target, duration=0, announce=False):
         """Simulate the track source functionality during observations.
@@ -214,12 +214,18 @@ class SimSession(object):
 
         """
         self.track_ = True
-        time.sleep(self._fake_slew_(target))
+        #if len(self._fake_slew_(target)[0] > 0):
+        try:
+            time.sleep(self._fake_slew_(target)[0])
+        except IndexError:
+            pass # When the list is empty
         now = timestamp2datetime(self.time)
         simobserver.date = ephem.Date(now)
-        az, el = target.azel(ephem.Date(now))
-        az, el = katpoint.rad2deg(az), katpoint.rad2deg(el)
-        user_logger.info("Slewed to %s at azel (%.1f, %.1f) deg", target.name, az, el)
+        if len(self._fake_slew_(target)[1:]) == 2:
+            az, el = self._fake_slew_(target)[1:]
+            user_logger.info("Slewed to %s at azel (%.1f, %.1f) deg", target.name, az, el)
+        else:
+            user_logger.info("Slewed to: %s", target.name)
         time.sleep(duration)
         now = timestamp2datetime(self.time)
         simobserver.date = ephem.Date(now)
@@ -312,27 +318,33 @@ class SimSession(object):
         -------
         slew_time: float
             The number of seconds it takes to slew
-
+        azimuth:
+            The azimuth co-ordinates
+        elevation:
+            The elevation co-ordinates
         """
-        now = timestamp2datetime(self.time)
-        az1, el1 = self.katpt_current.azel(ephem.Date(now))
-        az2, el2 = target.azel(ephem.Date(now))
+        try:
+            now = timestamp2datetime(self.time)
+            az1, el1 = self.katpt_current.azel(ephem.Date(now))
+            az2, el2 = target.azel(ephem.Date(now))
 
-        az1 = katpoint.rad2deg(az1)
-        el1 = katpoint.rad2deg(el1)
-        az2 = katpoint.rad2deg(az2)
-        el2 = katpoint.rad2deg(el2)
+            az1 = katpoint.rad2deg(az1)
+            el1 = katpoint.rad2deg(el1)
+            azimuth = katpoint.rad2deg(az2)
+            elevation = katpoint.rad2deg(el2)
 
-        az_dist = numpy.abs(az2 - az1)
-        el_dist = numpy.abs(el2 - el1)
+            az_dist = numpy.abs(azimuth - az1)
+            el_dist = numpy.abs(elevation - el1)
 
-        az_dist = az_dist if az_dist < 180. else 360. - az_dist
-        az_speed = 2.0  # deg/sec
-        el_speed = 1.0  # deg/sec
-        overhead = 2.5  # sec
-        slew_time = max(az_dist / az_speed, el_dist / el_speed) + overhead
+            az_dist = az_dist if az_dist < 180. else 360. - az_dist
+            az_speed = 2.0  # deg/sec
+            el_speed = 1.0  # deg/sec
+            overhead = 2.5  # sec
+            slew_time = max(az_dist / az_speed, el_dist / el_speed) + overhead
 
-        return slew_time
+            return slew_time, azimuth, elevation
+        except AttributeError:
+            return slew_time
 
 
 def start_session(kat, **kwargs):

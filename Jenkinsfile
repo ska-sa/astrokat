@@ -35,11 +35,11 @@ pipeline {
         stage('Install & Unit Tests') {
             options {
                 timestamps()
-                timeout(time: 30, unit: 'MINUTES') 
+                timeout(time: 30, unit: 'MINUTES')
             }
 
 	    environment {
-                test_flags = "--with-xunit --with-xcoverage --cover-package=${KATPACKAGE} --cover-inclusive"
+                test_flags = "${KATPACKAGE}"
             }
 
             parallel {
