@@ -38,5 +38,4 @@ setup(
     use_katversion=True,
     install_requires=["pyephem", "katpoint", "matplotlib<3", "numpy", "pyyaml"],
     extras_require={"live": ["katcorelib", "katconf"]},
-    tests_require=["nose", "coverage", "nosexcover", "mock", "unittest2"],
 )
