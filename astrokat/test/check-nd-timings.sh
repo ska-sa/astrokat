@@ -10,14 +10,13 @@ NOCOLOR="\033[0m"
 INPUT=(
 nd-pattern-sim
 nd-pattern-ants
-nd-pattern-cycle
-nd-pattern-plus-off
+# nd-pattern-plus-off
 nd-trigger)
 
 for infile in ${INPUT[@]}
 do
     echo
-    CMD="astrokat-observe.py --yaml test_nd/$infile.yaml --trace"
+    CMD="astrokat-observe.py --yaml test_nd/$infile.yaml"
     echo -e "${YELLOW} Testing: $CMD ${NOCOLOR}"
     if $CMD
     then

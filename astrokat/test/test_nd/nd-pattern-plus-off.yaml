@@ -3,6 +3,9 @@ noise_diode:
   antennas: all
   cycle_len: 0.9
   on_frac: 0.5
+durations:
+  start_time: 2019-02-11 08:10:47
+  obs_duration: 120
 observation_loop:
   - LST: 18.0-20.0
     target_list:
