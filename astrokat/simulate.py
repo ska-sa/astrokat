@@ -193,14 +193,14 @@ class SimSession(object):
             )
 
     def _fake_slew_(self, target):
-        slew_details = []
+        slew_time, az, el = 0, 0, 0
         if not (target == self.katpt_current):
             if self.katpt_current is None:
-                slew_details = [_DEFAULT_SLEW_TIME]
+                slew_time, az, el = _DEFAULT_SLEW_TIME, 0, 0
             else:
                 user_logger.debug("Slewing to {}".format(target.name))
-                slew_details = list(self.slew_time_details(target))
-        return slew_details
+                slew_time, az, el = self.slew_time_details(target)
+        return slew_time, az, el
 
     def track(self, target, duration=0, announce=False):
         """Simulate the track source functionality during observations.
@@ -214,14 +214,11 @@ class SimSession(object):
 
         """
         self.track_ = True
-        try:
-            time.sleep(self._fake_slew_(target)[0])
-        except IndexError:
-            pass # When the list is empty
+        slew_time, az,el = self._fake_slew_(target)
+        time.sleep(slew_time)
         now = timestamp2datetime(self.time)
         simobserver.date = ephem.Date(now)
-        if len(self._fake_slew_(target)[1:]) == 2:
-            az, el = self._fake_slew_(target)[1:]
+        if az and el > 0:
             user_logger.info("Slewed to %s at azel (%.1f, %.1f) deg", target.name, az, el)
         else:
             user_logger.info("Slewed to: %s", target.name)
