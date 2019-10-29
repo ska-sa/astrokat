@@ -81,8 +81,6 @@ def on(kat,
         Lead time before the noisediode is switched on [sec]
     """
 
-    # Noise Diodes are triggered on all antennas in array simultaneously
-    # add some lead to ensure all digitisers set at the same time
     if timestamp is None:
         user_logger.trace('TRACE: ts + leadtime = {} + {}'
                           .format(time.time(),
@@ -96,7 +94,7 @@ def on(kat,
     user_logger.info(msg)
 
     # Noise Diodes are triggered on all antennas in array simultaneously
-    # add lead time to ensure all digitisers set at the same time
+    # add some lead to ensure all digitisers set at the same time
     replies = kat.ants.req.dig_noise_source(timestamp, 1)
     if not kat.dry_run:
         timestamp = _katcp_reply_to_log_(replies)
@@ -127,8 +125,6 @@ def off(kat,
         Lead time before the noisediode is switched off [sec]
     """
 
-    # Noise Diodes are triggered on all antennas in array simultaneously
-    # add some lead to ensure all digitisers set at the same time
     if timestamp is None:
         user_logger.trace('TRACE: ts + leadtime = {} + {}'
                           .format(time.time(),
@@ -142,7 +138,7 @@ def off(kat,
     user_logger.info(msg)
 
     # Noise Diodes are triggered on all antennas in array simultaneously
-    # add lead time to ensure all digitisers set at the same time
+    # add some lead to ensure all digitisers set at the same time
     replies = kat.ants.req.dig_noise_source(timestamp, 0)
     if not kat.dry_run:
         timestamp = _katcp_reply_to_log_(replies)
