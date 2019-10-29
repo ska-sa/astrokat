@@ -14,6 +14,33 @@ except ImportError:
 _DEFAULT_LEAD_TIME = 5.0  # lead time [sec]
 
 
+def _nd_log_msg_(ant,
+                 reply,
+                 informs):
+
+    user_logger.debug('DEBUG: reply = {}'
+                      .format(reply))
+    user_logger.debug('DEBUG: arguments ({})= {}'
+                      .format(len(reply.arguments),
+                              reply.arguments))
+    user_logger.debug('DEBUG: informs = {}'
+                      .format(informs))
+
+    actual_time = float(reply.arguments[1])
+    actual_on_frac = float(reply.arguments[2])
+    actual_cycle = float(reply.arguments[3])
+    msg = ('Noise diode for antenna {} set at {}. '
+           .format(ant,
+                   actual_time))
+    user_logger.debug(msg)
+    msg = ('Pattern set as {} sec ON for {} sec cycle length'
+           .format(actual_on_frac*actual_cycle,
+                   actual_cycle))
+    user_logger.debug(msg)
+
+    return actual_time
+
+
 def _katcp_reply_to_log_(dig_katcp_replies):
     for ant in sorted(dig_katcp_replies):
         reply, informs = dig_katcp_replies[ant]
@@ -21,27 +48,6 @@ def _katcp_reply_to_log_(dig_katcp_replies):
         # only return timestamp of the last antenna set
         timestamp = _nd_log_msg_(ant, reply, informs)
     return timestamp
-
-
-def _nd_log_msg_(ant, reply, informs):
-
-    user_logger.debug("DEBUG: reply = {}".format(reply))
-    user_logger.debug(
-        "DEBUG: arguments ({}) = {}".format(len(reply.arguments), reply.arguments)
-    )
-    user_logger.debug("DEBUG: informs = {}".format(informs))
-
-    actual_time = float(reply.arguments[1])
-    actual_on_frac = float(reply.arguments[2])
-    actual_cycle = float(reply.arguments[3])
-    msg = "Noise diode for antenna {} set at {}. ".format(ant, actual_time)
-    user_logger.info(msg)
-    msg = "Pattern set as {} sec ON for" "{} sec cycle length".format(
-        actual_on_frac * actual_cycle, actual_cycle
-    )
-    user_logger.info(msg)
-
-    return actual_time
 
 
 def on(kat, timestamp=None, lead_time=_DEFAULT_LEAD_TIME):
