@@ -192,16 +192,6 @@ class SimSession(object):
                 self.obs_params["observation_loop"][self.kat._session_cnt]["LST"]
             )
 
-    def _fake_slew_(self, target):
-        slew_time, az, el = 0, 0, 0
-        if not (target == self.katpt_current):
-            if self.katpt_current is None:
-                slew_time, az, el = _DEFAULT_SLEW_TIME, 0, 0
-            else:
-                user_logger.debug("Slewing to {}".format(target.name))
-                slew_time, az, el = self.slew_time_details(target)
-        return slew_time, az, el
-
     def track(self, target, duration=0, announce=False):
         """Simulate the track source functionality during observations.
 
@@ -214,14 +204,11 @@ class SimSession(object):
 
         """
         self.track_ = True
-        slew_time, az,el = self._fake_slew_(target)
+        slew_time, az, el = self._fake_slew_(target)
         time.sleep(slew_time)
         now = timestamp2datetime(self.time)
         simobserver.date = ephem.Date(now)
-        if az and el > 0:
-            user_logger.info("Slewed to %s at azel (%.1f, %.1f) deg", target.name, az, el)
-        else:
-            user_logger.info("Slewed to: %s", target.name)
+        user_logger.info("Slewed to %s at azel (%.1f, %.1f) deg", target.name, az, el)
         time.sleep(duration)
         now = timestamp2datetime(self.time)
         simobserver.date = ephem.Date(now)
@@ -292,8 +279,26 @@ class SimSession(object):
         simobserver.date = ephem.Date(now)
         return True
 
-    def slew_time_details(self, target):
-        """Get slew time and angular coordinates of next target.
+    def _target_azel(self, target):
+        now = timestamp2datetime(self.time)
+        az, el = target.azel(ephem.Date(now))
+        az = katpoint.rad2deg(az)
+        el = katpoint.rad2deg(el)
+        return az, el
+
+    def _fake_slew_(self, target):
+        slew_time = 0
+        az, el = self._target_azel(target)
+        if target != self.katpt_current:
+            if self.katpt_current is None:
+                slew_time = _DEFAULT_SLEW_TIME
+            else:
+                user_logger.debug("Slewing to {}".format(target.name))
+                slew_time = self._slew_time(az, el)
+        return slew_time, az, el
+
+    def _slew_time(self, new_az, new_el):
+        """Get estimated slew time to next target.
 
         The slew time is calculated with consideration of az-el motion.
         Antennas slew at 2 deg/s in az while moving at 1 deg/s in el.
@@ -301,38 +306,27 @@ class SimSession(object):
 
         Parameters
         ----------
-        target: katpoint.Target
-            a description which contains parameters such as the
-            target name, position, flux model.
+        new_az: float
+            The azimuth co-ordinate of the new target in degrees.
+        new_el: float
+            The elevation co-ordinate of the new target in degrees.
 
         Returns
         -------
         slew_time: float
-            The number of seconds it takes to slew
-        azimuth: float
-            The azimuth co-ordinate in deg
-        elevation: float
-            The elevation co-ordinate in deg
+            The number of seconds it takes to slew.
+
         """
-        now = timestamp2datetime(self.time)
-        az1, el1 = self.katpt_current.azel(ephem.Date(now))
-        az2, el2 = target.azel(ephem.Date(now))
+        current_az, current_el = self._target_azel(self.katpt_current)
 
-        az1 = katpoint.rad2deg(az1)
-        el1 = katpoint.rad2deg(el1)
-        azimuth = katpoint.rad2deg(az2)
-        elevation = katpoint.rad2deg(el2)
-
-        az_dist = numpy.abs(azimuth - az1)
-        el_dist = numpy.abs(elevation - el1)
+        az_dist = numpy.abs(new_az - current_az)
+        el_dist = numpy.abs(new_el - current_el)
 
         az_dist = az_dist if az_dist < 180. else 360. - az_dist
         az_speed = 2.0  # deg/sec
         el_speed = 1.0  # deg/sec
         overhead = 2.5  # sec
-        slew_time = max(az_dist / az_speed, el_dist / el_speed) + overhead
-
-        return slew_time, azimuth, elevation
+        return max(az_dist / az_speed, el_dist / el_speed) + overhead
 
 
 def start_session(kat, **kwargs):
