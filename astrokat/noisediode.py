@@ -42,6 +42,7 @@ def _nd_log_msg_(ant,
 
 
 def _katcp_reply_to_log_(dig_katcp_replies):
+    timestamps = []
     for ant in sorted(dig_katcp_replies):
         reply, informs = dig_katcp_replies[ant]
         if len(reply.argument) < 2:
@@ -49,10 +50,17 @@ def _katcp_reply_to_log_(dig_katcp_replies):
             user_logger.warn(msg.format(ant))
             user_logger.debug('DEBUG: {}'.format(reply.arguments))
             continue
-        # assuming ND for all antennas set at the same time
-        # only return timestamp of the last antenna set
-        timestamp = _nd_log_msg_(ant, reply, informs)
-    return timestamp
+        timestamps.extend(_nd_log_msg_(ant,
+                                       reply,
+                                       informs))
+    # assuming ND for all antennas must be the same
+    # only display single timestamp
+    if np.sum(np.diff(timestamps) > 1e6):
+        user_logger.error('Noise diode activation not in sync')
+    else:
+        msg = ('Noise diode for antennas set at {}. '
+               .format(np.mean(timestamps)))
+        user_logger.info(msg)
 
 
 def on(kat, timestamp=None, lead_time=_DEFAULT_LEAD_TIME):
