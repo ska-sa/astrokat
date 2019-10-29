@@ -126,12 +126,12 @@ def cli(prog):
     )
     group.add_argument(
         "--text-only",
-        action="Store_true",
+        action="store_true",
         help="Output observation target information text only",
     )
     group.add_argument(
         "--all-cals",
-        action="Store_true",
+        action="store_true",
         help="Show all primary calibrators in catalogue",
     )
     view_tags = ["elevation", "solarangle", "riseset"]
