@@ -147,6 +147,7 @@ class SimSession(object):
                 )
         self.time = self.start_time
         self.katpt_current = None
+        self.capture_initialised = False
 
         # Taken from mkat_session.py to ensure similar behaviour than site
         # systems
@@ -166,8 +167,6 @@ class SimSession(object):
             simobserver.date = ephem.Date(now)
 
         time.sleep = simsleep
-        user_logger.info("Waiting for observation setup")
-        time.sleep(_SIM_OVERHEAD)
 
     def __enter__(self):
         return self
@@ -194,6 +193,14 @@ class SimSession(object):
             self.kat._lst, _ = get_lst(
                 self.obs_params["observation_loop"][self.kat._session_cnt]["LST"]
             )
+
+    def capture_init(self):
+        """Simulate data capturing initialisation (if not already done)."""
+        if not self.capture_initialised:
+            user_logger.info("Waiting for observation setup")
+            time.sleep(_SIM_OVERHEAD)
+            user_logger.info('INIT')
+            self.capture_initialised = True
 
     def track(self, target, duration=0, announce=False):
         """Simulate the track source functionality during observations.
