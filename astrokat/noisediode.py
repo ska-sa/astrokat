@@ -81,6 +81,10 @@ def on(kat,
         Lead time before the noisediode is switched on [sec]
     """
 
+    msg = ('Apply command lead time of {}s'
+           .format(lead_time))
+    user_logger.info(msg)
+
     if timestamp is None:
         user_logger.trace('TRACE: ts + leadtime = {} + {}'
                           .format(time.time(),
