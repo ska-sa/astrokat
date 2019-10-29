@@ -17,7 +17,7 @@ global simobserver
 simobserver = ephem.Observer()
 
 _DEFAULT_SLEW_TIME = 45.0  # [sec]
-_SIM_OVERHEAD = 3           # [sec]
+_SIM_OVERHEAD = 3  # [sec]
 
 
 def setobserver(update):
