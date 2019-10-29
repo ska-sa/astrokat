@@ -55,12 +55,14 @@ def _katcp_reply_to_log_(dig_katcp_replies):
                                        informs))
     # assuming ND for all antennas must be the same
     # only display single timestamp
+    timestamp = np.mean(timestamps)
     if np.sum(np.diff(timestamps) > 1e6):
         user_logger.error('Noise diode activation not in sync')
     else:
         msg = ('Noise diode for antennas set at {}. '
-               .format(np.mean(timestamps)))
+               .format(timestamp))
         user_logger.info(msg)
+    return timestamp
 
 
 def on(kat, timestamp=None, lead_time=_DEFAULT_LEAD_TIME):
