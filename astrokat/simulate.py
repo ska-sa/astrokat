@@ -214,7 +214,6 @@ class SimSession(object):
 
         """
         self.track_ = True
-        #if len(self._fake_slew_(target)[0] > 0):
         try:
             time.sleep(self._fake_slew_(target)[0])
         except IndexError:
