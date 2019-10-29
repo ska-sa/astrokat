@@ -44,6 +44,11 @@ def _nd_log_msg_(ant,
 def _katcp_reply_to_log_(dig_katcp_replies):
     for ant in sorted(dig_katcp_replies):
         reply, informs = dig_katcp_replies[ant]
+        if len(reply.argument) < 2:
+            msg = 'Unexpected response after noise diode instruction'
+            user_logger.warn(msg.format(ant))
+            user_logger.debug('DEBUG: {}'.format(reply.arguments))
+            continue
         # assuming ND for all antennas set at the same time
         # only return timestamp of the last antenna set
         timestamp = _nd_log_msg_(ant, reply, informs)
