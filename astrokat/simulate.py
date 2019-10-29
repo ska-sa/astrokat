@@ -161,6 +161,9 @@ class SimSession(object):
 
             """
             self.time += seconds
+            global simobserver
+            now = timestamp2datetime(self.time)
+            simobserver.date = ephem.Date(now)
 
         time.sleep = simsleep
         user_logger.info("Waiting for observation setup")
@@ -206,12 +209,8 @@ class SimSession(object):
         self.track_ = True
         slew_time, az, el = self._fake_slew_(target)
         time.sleep(slew_time)
-        now = timestamp2datetime(self.time)
-        simobserver.date = ephem.Date(now)
         user_logger.info("Slewed to %s at azel (%.1f, %.1f) deg", target.name, az, el)
         time.sleep(duration)
-        now = timestamp2datetime(self.time)
-        simobserver.date = ephem.Date(now)
         user_logger.info("Tracked %s for %d seconds", target.name, duration)
         self.katpt_current = target
         return True
@@ -247,8 +246,6 @@ class SimSession(object):
         """
         duration = scan_duration * num_scans
         time.sleep(duration)
-        now = timestamp2datetime(self.time)
-        simobserver.date = ephem.Date(now)
         return True
 
     def scan(
@@ -275,13 +272,25 @@ class SimSession(object):
 
         """
         time.sleep(duration)
-        now = timestamp2datetime(self.time)
-        simobserver.date = ephem.Date(now)
         return True
 
     def _target_azel(self, target):
-        now = timestamp2datetime(self.time)
-        az, el = target.azel(ephem.Date(now))
+        """Get azimuth and elevation co-ordinates for a target at the current time.
+
+        Parameters
+        ----------
+        target: katpoint.Target
+            The target of interest.
+
+        Returns
+        -------
+        az: float
+            The azimuth co-ordinate of the target in degrees.
+        el: float
+            The elevation co-ordinate of the target in degrees.
+
+        """
+        az, el = target.azel(simobserver.date)
         az = katpoint.rad2deg(az)
         el = katpoint.rad2deg(el)
         return az, el
