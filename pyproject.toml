@@ -38,10 +38,6 @@ lines_between_types = 1
 sections = ['FUTURE', 'STDLIB', 'THIRDPARTY', 'FIRSTPARTY', 'LOCALFOLDER']
 # A list of known imports that will be forced to display within their specified category.
 known_first_party = [
-    'astrokat', 'katcapture', 'katcomp', 'katconf', 'katcore', 'katcorelib', 'katcp',
-    'katdeploy', 'katgui', 'katlogger', 'katmisc', 'katnodeman', 'katobs', 'katopc',
-    'katpoint', 'katportal', 'katportalclient', 'katproxy', 'katscripts', 'katsdisp',
-    'katsdpcatalogues', 'katsdpcontroller', 'katsdpscripts', 'katsdpservices',
-    'katsdptelstate', 'katsim', 'katuilib', 'katusescripts', 'katversion', 'mkat_tango', 'mkatstore',
-    'nosekatreport', 'pylibmodbus', 'spead', 'tango_simlib'
+    'astrokat', 'katcp', 'katpoint', 'katportalclient', 'katversion', 'nosekatreport',
+    'tango_simlib'
     ]
