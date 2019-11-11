@@ -7,6 +7,7 @@ import logging
 import numpy
 import time
 import sys
+import katpoint
 
 from collections import namedtuple
 
@@ -16,6 +17,7 @@ global simobserver
 simobserver = ephem.Observer()
 
 _DEFAULT_SLEW_TIME = 45.0  # [sec]
+_SIM_OVERHEAD = 3  # [sec]
 
 
 def setobserver(update):
@@ -145,6 +147,7 @@ class SimSession(object):
                 )
         self.time = self.start_time
         self.katpt_current = None
+        self.capture_initialised = False
 
         # Taken from mkat_session.py to ensure similar behaviour than site
         # systems
@@ -159,6 +162,9 @@ class SimSession(object):
 
             """
             self.time += seconds
+            global simobserver
+            now = timestamp2datetime(self.time)
+            simobserver.date = ephem.Date(now)
 
         time.sleep = simsleep
 
@@ -188,15 +194,13 @@ class SimSession(object):
                 self.obs_params["observation_loop"][self.kat._session_cnt]["LST"]
             )
 
-    def _fake_slew_(self, target):
-        slew_time = 0
-        if not (target == self.katpt_current):
-            if self.katpt_current is None:
-                slew_time = _DEFAULT_SLEW_TIME
-            else:
-                user_logger.debug("Slewing to {}".format(target.name))
-                slew_time = self.slew_time(target)
-        return slew_time
+    def capture_init(self):
+        """Simulate data capturing initialisation (if not already done)."""
+        if not self.capture_initialised:
+            user_logger.info("Waiting for observation setup")
+            time.sleep(_SIM_OVERHEAD)
+            user_logger.info('INIT')
+            self.capture_initialised = True
 
     def track(self, target, duration=0, announce=False):
         """Simulate the track source functionality during observations.
@@ -210,13 +214,10 @@ class SimSession(object):
 
         """
         self.track_ = True
-        time.sleep(self._fake_slew_(target))
-        now = timestamp2datetime(self.time)
-        simobserver.date = ephem.Date(now)
-        user_logger.info("Slewed to %s", target.name)
+        slew_time, az, el = self._fake_slew_(target)
+        time.sleep(slew_time)
+        user_logger.info("Slewed to %s at azel (%.1f, %.1f) deg", target.name, az, el)
         time.sleep(duration)
-        now = timestamp2datetime(self.time)
-        simobserver.date = ephem.Date(now)
         user_logger.info("Tracked %s for %d seconds", target.name, duration)
         self.katpt_current = target
         return True
@@ -252,8 +253,6 @@ class SimSession(object):
         """
         duration = scan_duration * num_scans
         time.sleep(duration)
-        now = timestamp2datetime(self.time)
-        simobserver.date = ephem.Date(now)
         return True
 
     def scan(
@@ -280,35 +279,70 @@ class SimSession(object):
 
         """
         time.sleep(duration)
-        now = timestamp2datetime(self.time)
-        simobserver.date = ephem.Date(now)
         return True
 
-    def slew_time(self, target):
-        """Get slew time.
-
-        How long in seconds, it took to the antennas to move
-        from previous target to the next
+    def _target_azel(self, target):
+        """Get azimuth and elevation co-ordinates for a target at the current time.
 
         Parameters
         ----------
-         target: katpoint.Target
-             a description which contains parameters such as the
-             target name, position, flux model.
+        target: katpoint.Target
+            The target of interest.
+
+        Returns
+        -------
+        az: float
+            The azimuth co-ordinate of the target in degrees.
+        el: float
+            The elevation co-ordinate of the target in degrees.
 
         """
-        slew_speed = 2.0  # degrees / sec
-        self.katpt_current.body.compute(self.katpt_current.antenna.observer)
-        target.body.compute(target.antenna.observer)
-        try:
-            separation_angle = ephem.separation(self.katpt_current.body, target.body)
-        # TODO: need to find a clean implementation with
-        # ephem_extra.StationaryBody
-        except TypeError:
-            slew_time = _DEFAULT_SLEW_TIME
-        else:
-            slew_time = numpy.degrees(separation_angle) / slew_speed
-        return slew_time
+        az, el = target.azel(simobserver.date)
+        az = katpoint.rad2deg(az)
+        el = katpoint.rad2deg(el)
+        return az, el
+
+    def _fake_slew_(self, target):
+        slew_time = 0
+        az, el = self._target_azel(target)
+        if target != self.katpt_current:
+            if self.katpt_current is None:
+                slew_time = _DEFAULT_SLEW_TIME
+            else:
+                user_logger.debug("Slewing to {}".format(target.name))
+                slew_time = self._slew_time(az, el)
+        return slew_time, az, el
+
+    def _slew_time(self, new_az, new_el):
+        """Get estimated slew time to next target.
+
+        The slew time is calculated with consideration of az-el motion.
+        Antennas slew at 2 deg/s in az while moving at 1 deg/s in el.
+        There is about 2.5 seconds for overhead.
+
+        Parameters
+        ----------
+        new_az: float
+            The azimuth co-ordinate of the new target in degrees.
+        new_el: float
+            The elevation co-ordinate of the new target in degrees.
+
+        Returns
+        -------
+        slew_time: float
+            The number of seconds it takes to slew.
+
+        """
+        current_az, current_el = self._target_azel(self.katpt_current)
+
+        az_dist = numpy.abs(new_az - current_az)
+        el_dist = numpy.abs(new_el - current_el)
+
+        az_dist = az_dist if az_dist < 180. else 360. - az_dist
+        az_speed = 2.0  # deg/sec
+        el_speed = 1.0  # deg/sec
+        overhead = 2.5  # sec
+        return max(az_dist / az_speed, el_dist / el_speed) + overhead
 
 
 def start_session(kat, **kwargs):
