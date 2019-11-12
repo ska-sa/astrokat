@@ -163,6 +163,30 @@ def cli(prog):
     return parser.parse_args()
 
 
+def get_filter_tags(catalogue, targets=False, calibrators=False):
+    obs_tags = []
+    for cat_tgt in catalogue:
+        obs_tags.extend(cat_tgt.tags)
+    obs_tags = list(set(obs_tags))
+
+    # only create filter list for calibrators
+    if targets:
+        return ['~' + tag for tag in obs_tags if tag[-3:] == "cal"]
+    # only create filter list for targets
+    if calibrators:
+        return [tag for tag in obs_tags if tag[-3:] == "cal"]
+
+    # create filter lists for targets and calibrators
+    cal_tags = []
+    tgt_tags = []
+    for tag in obs_tags:
+        if tag[-3:] == "cal":
+            cal_tags.append(tag)
+            # targets are not calibrators
+            tgt_tags.append('~' + tag)
+    return cal_tags, tgt_tags
+
+
 def source_solar_angle(catalogue, ref_antenna):
     """Source solar angle.
 
@@ -188,11 +212,8 @@ def source_solar_angle(catalogue, ref_antenna):
     date_list = [date - timedelta(days=x) for x in range(0, numdays)]
 
     sun = katpoint.Target("Sun, special")
-    katpt_targets = catalogue.filter(['~bpcal',
-                                      '~fluxcal',
-                                      '~polcal',
-                                      '~gaincal',
-                                      '~delaycal'])
+    target_tags = get_filter_tags(catalogue, targets=True)
+    katpt_targets = catalogue.filter(target_tags)
 
     for cnt, katpt_target in enumerate(katpt_targets):
         plt.figure(figsize=(17, 7), facecolor="white")
@@ -254,11 +275,8 @@ def source_rise_set(catalogue, ref_antenna):
     numdays = 365
     date_list = [date - timedelta(days=x) for x in range(0, numdays)]
 
-    katpt_targets = catalogue.filter(['~bpcal',
-                                      '~fluxcal',
-                                      '~polcal',
-                                      '~gaincal',
-                                      '~delaycal'])
+    target_tags = get_filter_tags(catalogue, targets=True)
+    katpt_targets = catalogue.filter(target_tags)
 
     for cnt, katpt_target in enumerate(katpt_targets):
         plt.figure(figsize=(17, 7), facecolor="white")
@@ -540,11 +558,11 @@ def obs_table(ref_antenna,
 
     sun = katpoint.Target("Sun, special")
     sun.body.compute(ref_antenna.observer)
-    # targets are not calibrators
-    target_tags = ["~bpcal", "~gaincal", "~fluxcal", "~polcal", "~delaycal"]
+
+    calibrator_tags, target_tags = get_filter_tags(catalogue)
     katpt_targets = catalogue.filter(target_tags)
-    calibrator_tags = ["bpcal", "fluxcal", "polcal", "gaincal", "delaycal"]
     katpt_calibrators = catalogue.filter(calibrator_tags)
+
     for cnt, target in enumerate(katpt_targets):
         note = ""
         if cnt < 1:
