@@ -14,6 +14,30 @@ except ImportError:
 _DEFAULT_LEAD_TIME = 5.0  # lead time [sec]
 
 
+def _katcp_reply_to_log_(dig_katcp_replies):
+    timestamps = []
+    for ant in sorted(dig_katcp_replies):
+        reply, informs = dig_katcp_replies[ant]
+        if len(reply.argument) < 2:
+            msg = 'Unexpected response after noise diode instruction'
+            user_logger.warn(msg.format(ant))
+            user_logger.debug('DEBUG: {}'.format(reply.arguments))
+            continue
+        timestamps.extend(_nd_log_msg_(ant,
+                                       reply,
+                                       informs))
+    # assuming ND for all antennas must be the same
+    # only display single timestamp
+    timestamp = np.mean(timestamps)
+    if np.sum(np.diff(timestamps) > 1e6):
+        user_logger.error('Noise diode activation not in sync')
+    else:
+        msg = ('Noise diode for antennas set at {}. '
+               .format(timestamp))
+        user_logger.info(msg)
+    return timestamp
+
+
 def _nd_log_msg_(ant,
                  reply,
                  informs):
@@ -39,30 +63,6 @@ def _nd_log_msg_(ant,
     user_logger.debug(msg)
 
     return actual_time
-
-
-def _katcp_reply_to_log_(dig_katcp_replies):
-    timestamps = []
-    for ant in sorted(dig_katcp_replies):
-        reply, informs = dig_katcp_replies[ant]
-        if len(reply.argument) < 2:
-            msg = 'Unexpected response after noise diode instruction'
-            user_logger.warn(msg.format(ant))
-            user_logger.debug('DEBUG: {}'.format(reply.arguments))
-            continue
-        timestamps.extend(_nd_log_msg_(ant,
-                                       reply,
-                                       informs))
-    # assuming ND for all antennas must be the same
-    # only display single timestamp
-    timestamp = np.mean(timestamps)
-    if np.sum(np.diff(timestamps) > 1e6):
-        user_logger.error('Noise diode activation not in sync')
-    else:
-        msg = ('Noise diode for antennas set at {}. '
-               .format(timestamp))
-        user_logger.info(msg)
-    return timestamp
 
 
 # switch noise-source on
@@ -98,7 +98,7 @@ def on(kat,
     user_logger.info(msg)
 
     # Noise Diodes are triggered on all antennas in array simultaneously
-    # add some lead to ensure all digitisers set at the same time
+    # add lead time to ensure all digitisers set at the same time
     replies = kat.ants.req.dig_noise_source(timestamp, 1)
     if not kat.dry_run:
         timestamp = _katcp_reply_to_log_(replies)
@@ -142,7 +142,7 @@ def off(kat,
     user_logger.info(msg)
 
     # Noise Diodes are triggered on all antennas in array simultaneously
-    # add some lead to ensure all digitisers set at the same time
+    # add lead time to ensure all digitisers set at the same time
     replies = kat.ants.req.dig_noise_source(timestamp, 0)
     if not kat.dry_run:
         timestamp = _katcp_reply_to_log_(replies)
