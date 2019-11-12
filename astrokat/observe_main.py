@@ -124,6 +124,12 @@ def observe(session, target_info, **kwargs):
     # simple way to get telescope to slew to target
     if "slewonly" in kwargs:
         return session.track(target, duration=0.0, announce=False)
+    # set special lead time for ND fire from YAML
+    special_nd_lead = None
+    if 'special' in kwargs:
+        specials = kwargs['special']
+        if 'lead_time' in specials:
+            special_nd_lead = specials['lead_time']
 
     msg = "Initialising {} {} {}".format(
         obs_type.capitalize(), ", ".join(target.tags[1:]), target_name
@@ -138,6 +144,7 @@ def observe(session, target_info, **kwargs):
     nd_period = None
     if target_info["noise_diode"] is not None:
         if "off" in target_info["noise_diode"]:
+            user_logger.info('Observation: No ND for target')
             # if pattern specified, remember settings to reset
             if "noise_diode" in kwargs:
                 if kwargs["noise_diode"] is not None:
@@ -190,7 +197,18 @@ def observe(session, target_info, **kwargs):
 
     if nd_setup is not None:
         # restore pattern if programmed at setup
-        noisediode.pattern(session.kat, session, nd_setup)
+        user_logger.info('Observation: Restoring ND pattern')
+        if special_nd_lead is not None:
+            noisediode.pattern(session.kat,
+                               session,
+                               nd_setup,
+                               lead_time=special_nd_lead,
+                               )
+        else:
+            noisediode.pattern(session.kat,
+                               session,
+                               nd_setup,
+                               )
 
     return target_visible
 
@@ -230,6 +248,15 @@ class Telescope(object):
     def __init__(self, opts, correlator=None):
         user_logger.info("Setting up telescope for observation")
         self.opts = opts
+        self.nd_lead_time = noisediode._DEFAULT_LEAD_TIME
+
+        # some debugging is required as the system is being developed, these are
+        # special features that either will become standard options,
+        # or will die out when not needed anymore
+        if 'special' in opts.obs_plan_params.keys():
+            temp_features = opts.obs_plan_params['special']
+            if 'lead_time' in temp_features.keys():
+                self.nd_lead_time = temp_features['lead_time']
 
         # unpack user specified correlator setup values
         if correlator is not None:
@@ -356,6 +383,11 @@ def run_observation(opts, kat):
     if abs(obs_duration) < 1e-5:
         user_logger.error("Unexpected value: obs_duration: {}".format(obs_duration))
         return
+    # switch mode to only capture during target observation
+    switch_mode = False
+    if 'special' in obs_plan_params:
+        if 'switchmode' in obs_plan_params['special']:
+            switch_mode = obs_plan_params['special']['switchmode']
 
     # Each observation loop contains a number of observation cycles over LST ranges
     # For a single observation loop, only a start LST and duration is required
@@ -488,7 +520,11 @@ def run_observation(opts, kat):
             # TODO: setup of noise diode pattern should be moved to sessions
             #  so it happens in the line above
             if "noise_diode" in obs_plan_params.keys():
-                noisediode.pattern(kat.array, session, obs_plan_params["noise_diode"])
+                noisediode.pattern(kat.array,
+                                   session,
+                                   obs_plan_params['noise_diode'],
+                                   lead_time=kat.nd_lead_time,
+                                   )
 
             # Adding explicit init after "Capture-init failed" exception was
             # encountered
@@ -499,15 +535,16 @@ def run_observation(opts, kat):
             )
 
             # Go to first target before starting capture
-            user_logger.info("Slewing to first target")
-            observe(session, obs_targets[0], slewonly=True)
-            # Only start capturing once we are on target
-            session.capture_start()
-            user_logger.trace(
-                "TRACE: capture start time after slew "
-                "({}) {}".format(time.time(), timestamp2datetime(time.time()))
-            )
-            user_logger.trace("TRACE: observer after slew\n {}".format(observer))
+            if not switch_mode:
+                user_logger.info("Slewing to first target")
+                observe(session, obs_targets[0], slewonly=True)
+                # Only start capturing once we are on target
+                session.capture_start()
+                user_logger.trace(
+                    "TRACE: capture start time after slew "
+                    "({}) {}".format(time.time(), timestamp2datetime(time.time()))
+                )
+                user_logger.trace("TRACE: observer after slew\n {}".format(observer))
 
             done = False
             sanity_cntr = 0
@@ -619,6 +656,23 @@ def run_observation(opts, kat):
                             "TRACE: target last "
                             "observed {}".format(target["last_observed"])
                         )
+
+
+                        if switch_mode:
+                            # session.capture_stop()
+                            user_logger.info('Slewing to {}'.format(
+                                target.name))
+                            targets_visible += observe(
+                                    session,
+                                    target,
+                                    slewonly=True)
+                            session.capture_start()
+                        targets_visible += observe(
+                                session,
+                                target,
+                                **obs_plan_params)
+                        if switch_mode:
+                            session.capture_stop()
 
                         targets_visible += observe(session, target, **obs_plan_params)
                         user_logger.trace(
