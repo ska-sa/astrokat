@@ -14,7 +14,7 @@ setup(
     author_email="cam@ska.ac.za",
     packages=find_packages(),
     scripts=[
-        "scripts/astrokat-cals.py",
+        "scripts/astrokat-targets.py",
         "scripts/astrokat-catalogue2obsfile.py",
         "scripts/astrokat-fitflux.py",
         "scripts/astrokat-lst.py",
