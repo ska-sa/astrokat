@@ -139,6 +139,11 @@ def cli(prog):
         help="output observation target information text only",
     )
     group.add_argument(
+        "--save-fig",
+        action="store_true",
+        help="save elevation output fig",
+    )
+    group.add_argument(
         "--all-cals",
         action="store_true",
         help="show all primary calibrators in catalogue",
@@ -397,9 +402,6 @@ def source_elevation(catalogue, ref_antenna):
     ax2.set_xlabel('Time (UTC) starting from {}'.format(datetime.utcfromtimestamp(
         creation_timestamp).strftime('%Y-%m-%d %H:%M:%S')))
 
-    imfile = "elevation_utc_lst.png"
-    print("Elevation plot {}".format(imfile))
-    plt.savefig(imfile, dpi=300)
     return fig
 
 
@@ -522,25 +524,26 @@ def obs_table(ref_antenna,
     """
     creation_time = ref_antenna.observer.date
     horizon = numpy.degrees(ref_antenna.observer.horizon)
-    observation_table = "\nObservation Table for {} (UTC)\n".format(creation_time)
+    observation_table = "\nObservation Table for {} (UTC)\n".format(
+        creation_time)
     date_str = "UTC"
     if lst:
         date_str = "LST"
     observation_table += "Times listed in {} for target rise and set times\n".format(
-        date_str
-    )
-    observation_table += "Target visible when above {} degrees\n".format(horizon)
+        date_str)
+    observation_table += "Target visible when above {} degrees\n".format(
+        horizon)
     _table = "{: <16}{: <32}{: <16}{: <16}{: <16}{: <16}{: <16}{: <16}\n".format(
         "Sources", "Class", "RA", "Decl", "Rise Time", "Set Time", "Separation", "Notes"
     )
     observation_table += _table
 
-    # targets are not calibrators
-    target_tags = ["~bpcal", "~gaincal", "~fluxcal", "~polcal", "~delaycal"]
     sun = katpoint.Target("Sun, special")
     sun.body.compute(ref_antenna.observer)
+    # targets are not calibrators
+    target_tags = ["~bpcal", "~gaincal", "~fluxcal", "~polcal", "~delaycal"]
     katpt_targets = catalogue.filter(target_tags)
-    calibrator_tags = ["bpcal", "fluxcal", "polcal", "gaincal"]
+    calibrator_tags = ["bpcal", "fluxcal", "polcal", "gaincal", "delaycal"]
     katpt_calibrators = catalogue.filter(calibrator_tags)
     for cnt, target in enumerate(katpt_targets):
         note = ""
@@ -568,21 +571,21 @@ def obs_table(ref_antenna,
             tgt.body.compute(ref_antenna.observer)
             sep_angles.append(ephem.separation(calibrator.body, tgt.body))
         note = ""
-        tgt_idx = numpy.argmin(sep_angles)
-        target = ref_tgt_list[tgt_idx]
-        separation_angle = numpy.degrees(sep_angles[tgt_idx])
-        if current_target != target.name:
-            note = "Separation from {}".format(target.name)
-            current_target = target.name
-        observation_table += table_line(
-            ref_antenna.observer.date,
-            calibrator,
-            horizon,
-            sep_angle=separation_angle,
-            cal_limit=15,
-            lst=lst,
-            notes=note,
-        )
+        separation_angle = None
+        if len(sep_angles) > 0:
+            tgt_idx = numpy.argmin(sep_angles)
+            target = ref_tgt_list[tgt_idx]
+            separation_angle = numpy.degrees(sep_angles[tgt_idx])
+            if current_target != target.name:
+                note = "Separation from {}".format(target.name)
+                current_target = target.name
+        observation_table += table_line(ref_antenna.observer.date,
+                                        calibrator,
+                                        horizon,
+                                        sep_angle=separation_angle,
+                                        cal_limit=15,
+                                        lst=lst,
+                                        notes=note)
 
     return observation_table
 
@@ -804,7 +807,7 @@ def main(args):
 
     caltag_dict = {
         "bp": "bandpass",
-        "delay": "dela",
+        "delay": "delay",
         "flux": "flux",
         "gain": "gain",
         "pol": "polarisation",
@@ -892,7 +895,8 @@ def main(args):
         # read calibrator catalogues and calibrators to catalogue
         for cal_tag in args.cal_tags:
             cal_catalogue = os.path.join(
-                catalogue_path, "Lband-{}-calibrators.csv".format(caltag_dict[cal_tag])
+                catalogue_path,
+                "Lband-{}-calibrators.csv".format(caltag_dict[cal_tag])
             )
             try:
                 if config_file_available:
@@ -977,7 +981,12 @@ def main(args):
         obs_catalogue = catalogue_header
         for target in catalogue_data:
             obs_catalogue += "{}\n".format(target)
-        source_elevation(observation_catalogue, ref_antenna)
+        source_elevation(observation_catalogue,
+                         ref_antenna)
+        if args.save_fig:
+            imfile = "elevation_utc_lst.png"
+            print("Elevation plot {}".format(imfile))
+            plt.savefig(imfile, dpi=300)
         plt.show()
         plt.close()
 
