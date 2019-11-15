@@ -18,6 +18,8 @@ def _katcp_reply_to_log_(dig_katcp_replies):
     timestamps = []
     for ant in sorted(dig_katcp_replies):
         reply, informs = dig_katcp_replies[ant]
+#         # test incorrect reply check
+#         if True:
         if len(reply.argument) < 2:
             msg = 'Unexpected response after noise diode instruction'
             user_logger.warn(msg.format(ant))
@@ -81,15 +83,13 @@ def on(kat,
         Lead time before the noisediode is switched on [sec]
     """
 
-    msg = ('Apply command lead time of {}s'
-           .format(lead_time))
-    user_logger.info(msg)
-
+    user_logger.trace('TRACE: ND on with lead time {}s'
+                      .format(lead_time))
     if timestamp is None:
         user_logger.trace('TRACE: ts + leadtime = {} + {}'
                           .format(time.time(),
                                   lead_time))
-        timestamp = np.ceil(time.time() + lead_time)
+        timestamp = time.time() + lead_time
     user_logger.trace('TRACE: nd on at {} ({})'
                       .format(timestamp,
                               time.ctime(timestamp)))
@@ -101,22 +101,39 @@ def on(kat,
     # add lead time to ensure all digitisers set at the same time
     replies = kat.ants.req.dig_noise_source(timestamp, 1)
     if not kat.dry_run:
+#         print(len(replies), len(kat.ants))
+#         if len(replies) < len(kat.ants):
+#         # test incorrect reply check
+#         if True:
+#             msg = 'did not receive on reply from all antennas'
+#             user_logger.warning(err_msg)
         timestamp = _katcp_reply_to_log_(replies)
     else:
         # - use integer second boundary as that is most likely be an exact
         #   time that DMC can execute at
-        msg = ('Dry-run: Set all noise diodes with timestamp {} ({})'
+        msg = ('Dry-run: Noise diodes timestamp {} ({})'
                .format(np.ceil(timestamp),
                        time.ctime(timestamp)))
         user_logger.info(msg)
 
-    return timestamp
+    sleeptime = timestamp - time.time()
+    user_logger.debug('DEBUG: now {}, sleep {}'
+                      .format(time.time(),
+                              sleeptime))
+    time.sleep(sleeptime)  # default sleep to see for signal to get through
+    user_logger.debug('DEBUG: now {}, slept {}'
+                      .format(time.time(),
+                              sleeptime))
+    msg = ('Report: noise-diode on at {}'
+           .format(time.time()))
+    user_logger.info(msg)
+    return True
 
 
 # switch noise-source pattern off
 def off(kat,
         timestamp=None,
-        lead_time=_DEFAULT_LEAD_TIME):
+        lead_time=None):
     """Switch noise-source pattern off.
 
     Parameters
@@ -129,11 +146,14 @@ def off(kat,
         Lead time before the noisediode is switched off [sec]
     """
 
+    user_logger.trace('TRACE: ND off')
+
+    lead_time = float(lead_time or _DEFAULT_LEAD_TIME)
     if timestamp is None:
         user_logger.trace('TRACE: ts + leadtime = {} + {}'
                           .format(time.time(),
                                   lead_time))
-        timestamp = np.ceil(time.time() + lead_time)
+        timestamp = time.time() + lead_time
     user_logger.trace('TRACE: nd off at {} ({})'
                       .format(timestamp,
                               time.ctime(timestamp)))
@@ -145,22 +165,29 @@ def off(kat,
     # add lead time to ensure all digitisers set at the same time
     replies = kat.ants.req.dig_noise_source(timestamp, 0)
     if not kat.dry_run:
+#         print(len(replies), len(kat.ants))
+#         if len(replies) < len(kat.ants):
+#         # test incorrect reply check
+#         if True:
+#             msg = 'did not receive on reply from all antennas'
+#             user_logger.warning(err_msg)
         timestamp = _katcp_reply_to_log_(replies)
     else:
         # - use integer second boundary as that is most likely be an exact
         #   time that DMC can execute at
-        msg = ('Dry-run: Set all noise diodes with timestamp {} ({})'
-               .format(np.ceil(timestamp),
+        msg = ('Dry-run: Noise diodes timestamp {} ({})'
+               .format(timestamp,
                        time.ctime(timestamp)))
         user_logger.info(msg)
 
-    return timestamp
+    return True
 
 
 # fire noise diode before track
 def trigger(kat,
             session,
-            duration=None):
+            duration=None,
+            lead_time=None):
     """Fire the noise diode before track.
 
     Parameters
@@ -170,32 +197,61 @@ def trigger(kat,
     session : katcorelib.CaptureSession-like object
     duration : float, optional
         Duration that the noisediode will be active [sec]
+    lead_time : float, optional
+        Lead time before the noisediode is switched on [sec]
     """
 
     if duration is None:
         return True  # nothing to do
+
+    # if not given, apply default value
+    lead_time = float(lead_time or _DEFAULT_LEAD_TIME)
+
     msg = ('Firing noise diode for {}s before target observation'
            .format(duration))
     user_logger.info(msg)
+    user_logger.info('Add lead time of {}s'
+                     .format(lead_time))
     user_logger.debug('DEBUG: issue command to switch ND on @ {}'
                       .format(time.time()))
     user_logger.trace('TRACE: ts before issue nd on command {}'
                       .format(time.time()))
-    timestamp_on_set = on(kat)
-    user_logger.debug('DEBUG: on {} ({})'
-                      .format(timestamp_on_set,
-                              time.ctime(timestamp_on_set)))
-    user_logger.debug('DEBUG: fire nd for {}'
-                      .format(duration))
-    sleeptime = timestamp_on_set - time.time() + duration
-    time.sleep(sleeptime)  # default sleep to see for signal to get through
-    user_logger.trace('TRACE: ts after issue nd on sleep {}'
-                      .format(time.time()))
-    timestamp_off_set = off(kat)
+    if duration > lead_time:
+        on_time = time.time() + lead_time
+        on(kat, timestamp=on_time)
+        now = time.time()
+        user_logger.debug('DEBUG: on {} ({})'
+                          .format(now,
+                                  time.ctime(now)))
+        user_logger.debug('DEBUG: fire nd for {}'
+                          .format(duration))
+        sleeptime = duration - lead_time
+        user_logger.debug('DEBUG: sleeping for {} [sec]'
+                          .format(sleeptime))
+        time.sleep(sleeptime)
+        user_logger.trace('TRACE: ts after issue nd on sleep {}'
+                          .format(time.time()))
+        off_time = time.time() + lead_time
+    else:
+        cycle_len = float(lead_time + duration)
+        nd_setup = {'antennas': 'all',
+                    'cycle_len': cycle_len,
+                    'on_frac': float(duration)/cycle_len,
+                    }
+        user_logger.debug('DEBUG: fire nd for {} using pattern'
+                          .format(duration))
+        pattern(kat, session, nd_setup, lead_time=lead_time)
+        now = time.time()
+        user_logger.debug('DEBUG: pattern set {} ({})'
+                          .format(now,
+                                  time.ctime(now)))
+        off_time = time.time() + lead_time
+
     user_logger.debug('DEBUG: off {} ({})'
-                      .format(timestamp_off_set,
-                              time.ctime(timestamp_off_set)))
-    sleeptime = timestamp_off_set - time.time()
+                      .format(off_time,
+                              time.ctime(off_time)))
+    off(kat, timestamp=off_time)
+    sleeptime = off_time - time.time()
     user_logger.debug('DEBUG: now {}, sleep {}'
                       .format(time.time(),
                               sleeptime))
@@ -203,6 +259,9 @@ def trigger(kat,
     user_logger.debug('DEBUG: now {}, slept {}'
                       .format(time.time(),
                               sleeptime))
+    msg = ('Report: noise-diode off at {}'
+           .format(time.time()))
+    user_logger.info(msg)
     return True
 
 
@@ -210,7 +269,7 @@ def trigger(kat,
 def pattern(kat,  # kat subarray object
             session,  # session object for correcting the time (only for now)
             nd_setup,  # noise diode pattern setup
-            lead_time=_DEFAULT_LEAD_TIME,  # lead time [sec]
+            lead_time=None,  # lead time [sec]
             ):
     """Start background noise diode pattern controlled by digitiser hardware.
 
@@ -228,6 +287,10 @@ def pattern(kat,  # kat subarray object
     lead_time : float, optional
         Lead time before digitisers pattern is set [sec]
     """
+
+    # add special lead time option
+    # if not given, apply default value
+    lead_time = float(lead_time or _DEFAULT_LEAD_TIME)
 
     # selected antennas for nd pattern
     nd_antennas = nd_setup['antennas']
@@ -262,7 +325,7 @@ def pattern(kat,  # kat subarray object
     #   into a double precision float accurately
     # - add a default lead time to ensure enough time for all digitisers
     #   to be set up
-    timestamp = np.ceil(time.time() + lead_time)
+    timestamp = time.time() + lead_time
     msg = ('Request: Set noise diode pattern to activate at {} '
            '(includes {} sec lead time)'
            .format(timestamp,
@@ -276,6 +339,13 @@ def pattern(kat,  # kat subarray object
                                                 on_fraction,
                                                 cycle_length)
         if not kat.dry_run:
+#             print(len(replies), len(kat.ants))
+#             if len(replies) < len(kat.ants):
+#             # test incorrect reply check
+#             if True:
+#                 err_msg = 'Noise diode activation not in sync'
+#                 user_logger.error(err_msg)
+#                 raise RuntimeError(err_msg)
             timestamp = _katcp_reply_to_log_(replies)
         else:
             msg = ('Dry-run: Set all noise diodes with timestamp {} ({})'
@@ -299,9 +369,8 @@ def pattern(kat,  # kat subarray object
             if not kat.dry_run:
                 timestamp = _katcp_reply_to_log_({ant: the_reply})
             else:
-                msg = ('Dry-run: Set noise diode for antenna {} at timestamp {}'
-                       .format(ant,
-                               timestamp))
+                msg = ('Dry-run: Set noise diode for antenna {} at '
+                       'timestamp {}'.format(ant, timestamp))
                 user_logger.info(msg)
             if nd_antennas == 'cycle':
                 # add time [sec] to ensure all digitisers set at the same time
@@ -313,7 +382,12 @@ def pattern(kat,  # kat subarray object
                               time.time(),
                               wait_time))
     time.sleep(wait_time)
+    msg = ('Report: pattern set at {}'
+           .format(time.time()))
+    user_logger.info(msg)
     user_logger.trace('TRACE: ts after wait period {}'
                       .format(time.time()))
+
+    return True
 
 # -fin-

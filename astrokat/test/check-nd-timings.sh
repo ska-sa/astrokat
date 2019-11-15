@@ -10,8 +10,9 @@ NOCOLOR="\033[0m"
 INPUT=(
 nd-pattern-sim
 nd-pattern-ants
-# nd-pattern-plus-off
-nd-trigger)
+nd-pattern-plus-off
+nd-trigger
+)
 
 for infile in ${INPUT[@]}
 do

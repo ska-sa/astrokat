@@ -1,15 +1,15 @@
 # scan observation with noise diode trigger
-instrument:
-  integration_time: 2
 durations:
-  start_time: 2019-02-11 02:10:47
-  obs_duration: 300
+  start_time: 2019-11-14 07:00:00
+noise_diode:
+  # set lead time for trigger command
+  lead_time: 3.
 observation_loop:
-  - LST: 10.0
+  - LST: 0:00
     target_list:
-      # trigger noise diode before track for 0.8 sec as with pattern
-      - name=azel, azel=50.26731 43.70517, tags=target, duration=120.0, nd=0.8
-      # trigger noise diode before track with 3.8 sec
-      - name=azel, azel=50.26731 43.70517, tags=target, duration=120.0, nd=3.8
-      # dummy track firing noise diode for 20 sec
-      - name=azel, azel=50.26731 43.70517, tags=target, duration=0.0, nd=20
+      # trigger noise diode before track for 10 sec as with pattern
+      - name=azel, azel=50.26731 43.70517, tags=target, duration=120.0, nd=10
+      # trigger noise diode before track with 2 sec
+      - name=azel, azel=50.26731 43.70517, tags=target, duration=120.0, nd=2
+      # dummy track firing noise diode for 5 sec
+      - name=azel, azel=50.26731 43.70517, tags=target, duration=0.0, nd=5
