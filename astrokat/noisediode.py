@@ -18,14 +18,13 @@ def _katcp_reply_to_log_(dig_katcp_replies):
     timestamps = []
     for ant in sorted(dig_katcp_replies):
         reply, informs = dig_katcp_replies[ant]
-#         # test incorrect reply check
-#         if True:
-        if len(reply.argument) < 2:
+        # test incorrect reply check
+        if len(reply.arguments) < 2:
             msg = 'Unexpected response after noise diode instruction'
             user_logger.warn(msg.format(ant))
             user_logger.debug('DEBUG: {}'.format(reply.arguments))
             continue
-        timestamps.extend(_nd_log_msg_(ant,
+        timestamps.append(_nd_log_msg_(ant,
                                        reply,
                                        informs))
     # assuming ND for all antennas must be the same
@@ -101,12 +100,10 @@ def on(kat,
     # add lead time to ensure all digitisers set at the same time
     replies = kat.ants.req.dig_noise_source(timestamp, 1)
     if not kat.dry_run:
-#         print(len(replies), len(kat.ants))
-#         if len(replies) < len(kat.ants):
-#         # test incorrect reply check
-#         if True:
-#             msg = 'did not receive on reply from all antennas'
-#             user_logger.warning(err_msg)
+        # test incorrect reply check
+        if len(replies) < len(kat.ants):
+            err_msg = 'did not receive on reply from all antennas'
+            user_logger.warning(err_msg)
         timestamp = _katcp_reply_to_log_(replies)
     else:
         # - use integer second boundary as that is most likely be an exact
@@ -165,12 +162,10 @@ def off(kat,
     # add lead time to ensure all digitisers set at the same time
     replies = kat.ants.req.dig_noise_source(timestamp, 0)
     if not kat.dry_run:
-#         print(len(replies), len(kat.ants))
-#         if len(replies) < len(kat.ants):
-#         # test incorrect reply check
-#         if True:
-#             msg = 'did not receive on reply from all antennas'
-#             user_logger.warning(err_msg)
+        # test incorrect reply check
+        if len(replies) < len(kat.ants):
+            err_msg = 'did not receive on reply from all antennas'
+            user_logger.warning(err_msg)
         timestamp = _katcp_reply_to_log_(replies)
     else:
         # - use integer second boundary as that is most likely be an exact
@@ -339,13 +334,11 @@ def pattern(kat,  # kat subarray object
                                                 on_fraction,
                                                 cycle_length)
         if not kat.dry_run:
-#             print(len(replies), len(kat.ants))
-#             if len(replies) < len(kat.ants):
-#             # test incorrect reply check
-#             if True:
-#                 err_msg = 'Noise diode activation not in sync'
-#                 user_logger.error(err_msg)
-#                 raise RuntimeError(err_msg)
+            # test incorrect reply check
+            if len(replies) < len(kat.ants):
+                err_msg = 'Noise diode activation not in sync'
+                user_logger.error(err_msg)
+                raise RuntimeError(err_msg)
             timestamp = _katcp_reply_to_log_(replies)
         else:
             msg = ('Dry-run: Set all noise diodes with timestamp {} ({})'
