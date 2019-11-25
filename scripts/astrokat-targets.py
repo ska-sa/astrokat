@@ -28,6 +28,16 @@ try:
 except ImportError:  # not a processing node
     text_only = True
 
+# hard coded globals
+caltag_dict = {
+    "bp": "bandpass",
+    "delay": "delay",
+    "flux": "flux",
+    "gain": "gain",
+    "pol": "polarisation",
+}
+cal_tags = caltag_dict.keys()
+
 
 def cli(prog):
     """Define command line input arguments."""
@@ -56,7 +66,6 @@ def cli(prog):
         "--prop-id",
         type=str,
         help="proposal ID")
-    cal_tags = ["gain", "bp", "flux", "pol", "delay"]
     parser.add_argument(
         "--cal-tags",
         type=str,
@@ -64,7 +73,7 @@ def cli(prog):
         metavar="<tag>",
         choices=cal_tags,
         help="list of tags specifying types of calibrators to provide: "
-             "gain bp flux pol",
+             "{}".format(' '.join(cal_tags)),
     )
     parser.add_argument(
         "--cat-path",
@@ -823,15 +832,6 @@ def main(args):
     ref_antenna.observer.date = ephem.Date(creation_time)
     ref_antenna.observer.horizon = ephem.degrees(str(args.horizon))
 
-    caltag_dict = {
-        "bp": "bandpass",
-        "delay": "delay",
-        "flux": "flux",
-        "gain": "gain",
-        "pol": "polarisation",
-    }
-
-    # TODO: think about moving this to a separate script
     if args.view:
         # check if view file in CSV or YAML
         data_dict = read_yaml(args.view)
