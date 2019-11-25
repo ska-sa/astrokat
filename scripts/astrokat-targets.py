@@ -173,27 +173,29 @@ def cli(prog):
 
 
 def get_filter_tags(catalogue, targets=False, calibrators=False):
-    obs_tags = []
+    observation_tags = []
     for cat_tgt in catalogue:
-        obs_tags.extend(cat_tgt.tags)
-    obs_tags = list(set(obs_tags))
+        observation_tags.extend(cat_tgt.tags)
+    observation_tags = list(set(observation_tags))
 
     # only create filter list for calibrators
     if targets:
-        return ['~' + tag for tag in obs_tags if tag[-3:] == "cal"]
+        return ['~' + tag for tag in observation_tags if tag[-3:] == "cal"]
     # only create filter list for targets
     if calibrators:
-        return [tag for tag in obs_tags if tag[-3:] == "cal"]
+        return [tag for tag in observation_tags if tag[-3:] == "cal"]
 
     # create filter lists for targets and calibrators
-    cal_tags = []
-    tgt_tags = []
-    for tag in obs_tags:
+    calibrator_tags = []
+    for tag in observation_tags:
         if tag[-3:] == "cal":
-            cal_tags.append(tag)
-            # targets are not calibrators
-            tgt_tags.append('~' + tag)
-    return cal_tags, tgt_tags
+            calibrator_tags.append(tag)
+    # targets are not calibrators
+    if not calibrator_tags:
+        calibrator_tags = cal_tags  # all targets set default
+    target_tags = ['~' + tag for tag in calibrator_tags]
+
+    return calibrator_tags, target_tags
 
 
 def source_solar_angle(catalogue, ref_antenna):
@@ -616,7 +618,6 @@ def obs_table(ref_antenna,
 
     return observation_table
 
-
 # --Output observation target stats--
 
 
@@ -849,6 +850,7 @@ def main(args):
             ref_antenna, catalogue=catalogue, solar_sep=args.solar_angle, lst=args.lst
         )
         print(obs_summary)
+
         if not (args.text_only or text_only):
             for view_option in args.view_tags:
                 cp_cat = deepcopy(catalogue)
