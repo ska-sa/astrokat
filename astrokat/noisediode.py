@@ -11,7 +11,7 @@ except ImportError:
     from .simulate import user_logger
 
 
-_DEFAULT_LEAD_TIME = 5.0  # lead time [sec]
+_DEFAULT_LEAD_TIME = 3.0  # lead time [sec]
 
 
 def _katcp_reply_to_log_(dig_katcp_replies):
