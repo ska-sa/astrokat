@@ -1,15 +1,16 @@
 # Set noise diode pattern, but switch off for target observation
 noise_diode:
   antennas: all
-  cycle_len: 0.9
-  on_frac: 0.5
+  # cycle_len: 0.9  # 900ms
+  cycle_len: 0.1  # 100ms
+  on_frac: 0.5  # 50%
 durations:
   start_time: 2019-11-14 07:00:00
-  obs_duration: 120
+  obs_duration: 300
 observation_loop:
   - LST: 0:00
     target_list:
-      - name=azel, azel=50.26731 43.70517, tags=target, duration=20.0
+      - name=azel, azel=50.26731 43.70517, tags=target, duration=60.0
       # ability to disable the noise diode pattern for this target
-      - name=azel, azel=50.26731 43.70517, tags=target, duration=20.0, nd=off
-      - name=azel, azel=50.26731 43.70517, tags=target, duration=20.0
+      - name=azel, azel=50.26731 43.70517, tags=target, duration=120.0, nd=off
+      - name=azel, azel=50.26731 43.70517, tags=target, duration=60.0

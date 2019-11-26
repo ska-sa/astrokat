@@ -3,17 +3,16 @@
 noise_diode:
   # set pattern with one or list of antennas
   antennas: m011,m022
-  # set noise diode pattern to fire every 32 seconds and be on for 16s
-  cycle_len: 32.
-  on_frac: 0.5
-  # set lead time for trigger command
+  # set noise diode pattern to fire every 16 seconds and be on for 8s
+  cycle_len: 16
+  on_frac: 0.25
+  # set lead time for noise diode command execute
   lead_time: 2.
 durations:
   start_time: 2019-11-14 07:00:00
-  obs_duration: 650
-special:
+  obs_duration: 320
 observation_loop:
   - LST: 0:00
     target_list:
       # set noise diode pattern
-      - name=azel, azel=50.26731 43.70517, tags=target, duration=65.0
+      - name=azel, azel=50.26731 43.70517, tags=target, duration=64.0
