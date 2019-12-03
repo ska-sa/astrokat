@@ -2,6 +2,10 @@
 from __future__ import division
 from __future__ import absolute_import
 
+# Constants and defaults
+_DEFAULT_LEAD_TIME = 3.0  # lead time [sec]
+# Constants and defaults
+
 from .__main__ import cli
 
 from . import noisediode
