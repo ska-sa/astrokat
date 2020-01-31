@@ -219,7 +219,6 @@ class SimSession(object):
         user_logger.info("Slewed to %s at azel (%.1f, %.1f) deg", target.name, az, el)
         time.sleep(duration)
         user_logger.info("Tracked %s for %d seconds", target.name, duration)
-        self.katpt_current = target
         return True
 
     def raster_scan(
@@ -311,6 +310,7 @@ class SimSession(object):
             else:
                 user_logger.debug("Slewing to {}".format(target.name))
                 slew_time = self._slew_time(az, el)
+            self.katpt_current = target
         return slew_time, az, el
 
     def _slew_time(self, new_az, new_el):
