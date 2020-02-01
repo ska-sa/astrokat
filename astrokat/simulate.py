@@ -16,8 +16,20 @@ from .utility import get_lst, datetime2timestamp, timestamp2datetime
 global simobserver
 simobserver = ephem.Observer()
 
-_DEFAULT_SLEW_TIME = 45.0  # [sec]
-_SIM_OVERHEAD = 3  # [sec]
+
+# MeerKAT receptor parameters for azimuth and elevation slewing
+# (some from specifications, some from empirical data - see JIRA MT-1206).
+_DEFAULT_SLEW_TIME_SEC = 45.0
+_SIM_OVERHEAD_SEC = 3.0
+_SLEW_INIT_OVERHEAD = 2.3
+_EL_SPEED_DEG_PER_SEC = 1.0
+_EL_ACCEL_DEG_PER_SEC_SQ = 0.5
+_EL_LONG_SLEW_DEG = 7.0
+_EL_LONG_SLEW_SETTLE_TIME_SEC = 8.1
+_AZ_SPEED_DEG_PER_SEC = 2.0
+_AZ_ACCEL_DEG_PER_SEC_SQ = 1.0
+_AZ_LONG_SLEW_DEG = 0.0
+_AZ_LONG_SLEW_SETTLE_TIME_SEC = 6.1
 
 
 def setobserver(update):
@@ -198,7 +210,7 @@ class SimSession(object):
         """Simulate data capturing initialisation (if not already done)."""
         if not self.capture_initialised:
             user_logger.info("Waiting for observation setup")
-            time.sleep(_SIM_OVERHEAD)
+            time.sleep(_SIM_OVERHEAD_SEC)
             user_logger.info('INIT')
             self.capture_initialised = True
 
@@ -306,7 +318,7 @@ class SimSession(object):
         az, el = self._target_azel(target)
         if target != self.katpt_current:
             if self.katpt_current is None:
-                slew_time = _DEFAULT_SLEW_TIME
+                slew_time = _DEFAULT_SLEW_TIME_SEC
             else:
                 user_logger.debug("Slewing to {}".format(target.name))
                 slew_time = self._slew_time(az, el)
@@ -315,10 +327,6 @@ class SimSession(object):
 
     def _slew_time(self, new_az, new_el):
         """Get estimated slew time to next target.
-
-        The slew time is calculated with consideration of az-el motion.
-        Antennas slew at 2 deg/s in az while moving at 1 deg/s in el.
-        There is about 2.5 seconds for overhead.
 
         Parameters
         ----------
@@ -338,11 +346,46 @@ class SimSession(object):
         az_dist = numpy.abs(new_az - current_az)
         el_dist = numpy.abs(new_el - current_el)
 
-        az_dist = az_dist if az_dist < 180. else 360. - az_dist
-        az_speed = 2.0  # deg/sec
-        el_speed = 1.0  # deg/sec
-        overhead = 2.5  # sec
-        return max(az_dist / az_speed, el_dist / el_speed) + overhead
+        # wrap angle into +-180, ignoring receptor cable wrapping
+        if az_dist > 180.0:
+            az_dist = numpy.abs((az_dist + 180.) % 360. - 180.)
+
+        # Time, t, to accelerate to full speed: v = u + at
+        t_el = (_EL_SPEED_DEG_PER_SEC - 0.0) / _EL_ACCEL_DEG_PER_SEC_SQ
+        t_az = (_AZ_SPEED_DEG_PER_SEC - 0.0) / _AZ_ACCEL_DEG_PER_SEC_SQ
+        # Corresponding displacement to accelerate
+        # up to full speed:  s = ut + (at^2)/2
+        s_el = 0.0 * t_el + (_EL_ACCEL_DEG_PER_SEC_SQ * t_el ** 2) / 2.0
+        s_az = 0.0 * t_az + (_AZ_ACCEL_DEG_PER_SEC_SQ * t_az ** 2) / 2.0
+
+        # The factors of 2 account for acceleration and deceleration
+        # i.e., ramping up to full speed, and then ramping down to stop
+        if el_dist > 2.0 * s_el:
+            el_left = el_dist - 2.0 * s_el
+            el_slew_time = 2.0 * t_el + el_left / _EL_SPEED_DEG_PER_SEC
+            if el_left > _EL_LONG_SLEW_DEG:
+                el_slew_time = el_slew_time + _EL_LONG_SLEW_SETTLE_TIME_SEC
+        else:
+            # Time taken to cover distance: s = ut + (at^2)/2
+            s_el = el_dist / 2.0
+            el_slew_time = 2.0 * 2.0 * numpy.sqrt(s_el / _EL_ACCEL_DEG_PER_SEC_SQ)
+
+        # The factors of 2 account for acceleration and deceleration
+        if az_dist > 2.0 * s_az:
+            az_left = az_dist - 2.0 * s_az
+            az_slew_time = 2.0 * t_az + az_left / _AZ_SPEED_DEG_PER_SEC
+            if az_left > _AZ_LONG_SLEW_DEG:
+                az_slew_time = az_slew_time + _AZ_LONG_SLEW_SETTLE_TIME_SEC
+        else:
+            # Time taken to cover distance: s = ut + (at^2)/2
+            s_az = az_dist / 2.0
+            az_slew_time = 2.0 * 2.0 * numpy.sqrt(s_az / _AZ_ACCEL_DEG_PER_SEC_SQ)
+
+        # Add additional overhead between initialising and slewing
+        az_slew_time += _SLEW_INIT_OVERHEAD
+        el_slew_time += _SLEW_INIT_OVERHEAD
+
+        return max([az_slew_time, el_slew_time])
 
 
 def start_session(kat, **kwargs):
