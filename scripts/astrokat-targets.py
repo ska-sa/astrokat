@@ -73,7 +73,7 @@ def cli(prog):
         metavar="<tag>",
         choices=cal_tags,
         help="list of tags specifying types of calibrators to provide: "
-             "{}".format(' '.join(cal_tags)),
+             "{}".format(' '.join(sorted(cal_tags))),
     )
     parser.add_argument(
         "--cat-path",
