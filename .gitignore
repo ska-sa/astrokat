@@ -8,5 +8,4 @@ nosetests.xml
 .idea/
 .pyenv*/
 
-venv/
-venv2/
+venv*/
