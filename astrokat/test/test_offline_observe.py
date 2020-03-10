@@ -161,3 +161,32 @@ class TestAstrokatYAML(unittest.TestCase):
         # for slew time discrepancies
         self.assertIn("T4R02C02 observed", result)
         self.assertIn("T4R02C04 observed for 360.0 sec", result)
+
+    def test_below_horizon(self):
+        """Test image sim."""
+        execute_observe_main("test_obs/below-horizon-sim.yaml")
+
+        # get result and make sure everything ran properly
+        result = LoggedTelescope.user_logger_stream.getvalue()
+        self.assertIn(
+            "Observation list completed - ending observation",
+            result,
+            "Observation list completed",
+        )
+
+        expected_results = 'Tracked J1733-1304 for 600 seconds'
+        self.assertIn(expected_results, result, "Tracked J1733-1304")
+
+        # MAXIJ1810-22 started off above horizon, but at end of the duration,
+        # it would be below horizon
+        expected_results = 'Target MAXIJ1810-22 below 20.0 deg horizon, continuing'
+        self.assertIn(
+            expected_results, result, "MAXIJ1810-22 skipped"
+        )
+
+        # J1833-2103 with cadence started off above horizon, but at end of the duration,
+        # it would be below horizon
+        expected_results = 'Target J1833-2103 below 20.0 deg horizon, continuing'
+        self.assertIn(
+            expected_results, result, "J1833-2103 skipped"
+        )
