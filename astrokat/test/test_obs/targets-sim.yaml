@@ -1,7 +1,5 @@
 instrument:
   product: c856M4k
-  band: l
-  integration_time: 1.33
 durations:
   start_time: 2018-07-23 18:00:00Z
 observation_loop:
