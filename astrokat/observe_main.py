@@ -321,7 +321,11 @@ class Telescope(object):
             conf_param = instrument[key]
             if key == "integration_time":
                 key = "dump_rate"
-                instrument[key] = round(1.0 / float(conf_param), 2)
+                integration_time = float(conf_param)
+                if integration_time == 1.33:
+                    instrument[key] = 0.75
+                else:
+                    instrument[key] = 1.0 / integration_time
                 conf_param = instrument[key]
             user_logger.trace("{}: {}".format(key, conf_param))
             sensor_name = "sub_{}".format(key)
