@@ -221,8 +221,6 @@ def above_horizon(katpt_target, horizon=20.0, duration=0.0):
         return False
 
     if duration:
-        x = time.time()
-        y = time.time() + duration
         [azim, elev] = katpt_target.azel(time.time() + duration)
         return elev > ephem.degrees(str(horizon))
 
