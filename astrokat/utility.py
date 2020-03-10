@@ -41,7 +41,7 @@ def read_yaml(filename):
         if instrument is not None:
             if "integration_time" in instrument.keys():
                 integration_time = float(instrument["integration_time"])
-                instrument["dump_rate"] = 1.0 / integration_time
+                instrument["dump_rate"] = round(1.0 / integration_time, 2)
                 del instrument["integration_time"]
 
     # verify required information in observation loop before continuing
