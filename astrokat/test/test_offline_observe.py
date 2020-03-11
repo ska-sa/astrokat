@@ -163,7 +163,7 @@ class TestAstrokatYAML(unittest.TestCase):
         self.assertIn("T4R02C04 observed for 360.0 sec", result)
 
     def test_below_horizon(self):
-        """Test image sim."""
+        """Below horizon test."""
         execute_observe_main("test_obs/below-horizon-sim.yaml")
 
         # get result and make sure everything ran properly
@@ -174,7 +174,7 @@ class TestAstrokatYAML(unittest.TestCase):
             "Observation list completed",
         )
 
-        expected_results = 'Tracked J1733-1304 for 600 seconds'
+        expected_results = 'J1733-1304 observed for 600.0 sec'
         self.assertIn(expected_results, result, "Tracked J1733-1304")
 
         # MAXIJ1810-22 started off above horizon, but at end of the duration,
