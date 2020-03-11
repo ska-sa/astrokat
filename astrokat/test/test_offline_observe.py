@@ -175,7 +175,7 @@ class TestAstrokatYAML(unittest.TestCase):
         )
 
         expected_results = 'J1733-1304 observed for 600.0 sec'
-        self.assertIn(expected_results, result, "Tracked J1733-1304")
+        self.assertIn(expected_results, result, "J1733-1304 observed for 600.0 sec")
 
         # MAXIJ1810-22 started off above horizon, but at end of the duration,
         # it would be below horizon
