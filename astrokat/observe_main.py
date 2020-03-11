@@ -29,6 +29,10 @@ except ImportError:
     from astrokat import collect_targets, user_logger, start_session, verify_and_connect
 
 
+# Maximum difference allowed between requested and actual dump rate (Hz)
+DUMP_RATE_TOLERANCE = 0.002
+
+
 # TODO: target description defined in function needs to be in configuration
 def read_targets(target_items):
     """Read targets info.
@@ -317,14 +321,6 @@ class Telescope(object):
 
         for key in instrument.keys():
             conf_param = instrument[key]
-            if key == "integration_time":
-                key = "dump_rate"
-                integration_time = float(conf_param)
-                if integration_time == 1.33:
-                    instrument[key] = 0.75
-                else:
-                    instrument[key] = 1.0 / integration_time
-                conf_param = instrument[key]
             user_logger.trace("{}: {}".format(key, conf_param))
             sensor_name = "sub_{}".format(key)
             user_logger.trace("{}".format(sensor_name))
@@ -345,6 +341,15 @@ class Telescope(object):
                             "Subarray configuration {} error, {} required, "
                             "{} found".format(sensor_name, param, sub_sensor)
                         )
+            elif key == "dump_rate":
+                delta = abs(conf_param - sub_sensor)
+                if delta > DUMP_RATE_TOLERANCE:
+                    raise RuntimeError(
+                        "Subarray configuration {} error, {} required, "
+                        "{} found, delta > tolerance ({} > {})".format(
+                            sensor_name, conf_param, sub_sensor, delta,
+                            DUMP_RATE_TOLERANCE)
+                    )
             elif conf_param != sub_sensor:
                 raise RuntimeError(
                     "Subarray configuration {} error, {} required, "
