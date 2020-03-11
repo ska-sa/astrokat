@@ -1,0 +1,10 @@
+instrument:
+  product: c856M4k
+durations:
+  start_time: 2018-03-10 09:20:00Z
+observation_loop:
+  - LST: 0.0-23.9
+    target_list:
+      - name=J1733-1304 | NRAO530, radec=17:33:2.7058 -13:04:49.548, tags=gaincal, duration=600
+      - name=MAXIJ1810-22, radec=18:12:39.66 -22:19:25.0, tags=target, duration=7200
+      - name=J1833-2103 | 1830-210, radec=18:33:39.9150 -21:03:40.050, tags=bpcal delaycal, duration=7200.0, cadence=1800.0

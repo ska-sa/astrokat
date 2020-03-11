@@ -29,6 +29,10 @@ except ImportError:
     from astrokat import collect_targets, user_logger, start_session, verify_and_connect
 
 
+# Maximum difference allowed between requested and actual dump rate (Hz)
+DUMP_RATE_TOLERANCE = 0.002
+
+
 # TODO: target description defined in function needs to be in configuration
 def read_targets(target_items):
     """Read targets info.
@@ -214,10 +218,17 @@ def cadence_target(target_list):
     return False
 
 
-def above_horizon(katpt_target, horizon=20.0):
+def above_horizon(katpt_target, horizon=20.0, duration=0.0):
     """Check target visibility."""
     [azim, elev] = katpt_target.azel(time.time())
-    return elev >= ephem.degrees(str(horizon))
+    if not elev > ephem.degrees(str(horizon)):
+        return False
+
+    if duration:
+        [azim, elev] = katpt_target.azel(time.time() + duration)
+        return elev > ephem.degrees(str(horizon))
+
+    return True
 
 
 class Telescope(object):
@@ -310,10 +321,6 @@ class Telescope(object):
 
         for key in instrument.keys():
             conf_param = instrument[key]
-            if key == "integration_time":
-                key = "dump_rate"
-                instrument[key] = 1.0 / float(conf_param)
-                conf_param = instrument[key]
             user_logger.trace("{}: {}".format(key, conf_param))
             sensor_name = "sub_{}".format(key)
             user_logger.trace("{}".format(sensor_name))
@@ -334,6 +341,15 @@ class Telescope(object):
                             "Subarray configuration {} error, {} required, "
                             "{} found".format(sensor_name, param, sub_sensor)
                         )
+            elif key == "dump_rate":
+                delta = abs(conf_param - sub_sensor)
+                if delta > DUMP_RATE_TOLERANCE:
+                    raise RuntimeError(
+                        "Subarray configuration {} error, {} required, "
+                        "{} found, delta > tolerance ({} > {})".format(
+                            sensor_name, conf_param, sub_sensor, delta,
+                            DUMP_RATE_TOLERANCE)
+                    )
             elif conf_param != sub_sensor:
                 raise RuntimeError(
                     "Subarray configuration {} error, {} required, "
@@ -534,7 +550,10 @@ def run_observation(opts, kat):
                         "TRACE: initial observer for target\n {}".format(observer)
                     )
                     # check target visible before doing anything
-                    if not above_horizon(katpt_target, horizon=opts.horizon):
+                    # make sure the target would be visible for the entire duration
+                    target_duration = target['duration']
+                    if not above_horizon(katpt_target, horizon=opts.horizon,
+                                         duration=target_duration):
                         show_horizon_status = True
                         # warning for cadence targets only when they are due
                         if (
@@ -580,7 +599,8 @@ def run_observation(opts, kat):
                             "TRACE: target observation # {} last observed "
                             "{}".format(tgt["obs_cntr"], tgt["last_observed"])
                         )
-                        if above_horizon(catalogue[tgt["name"]], horizon=opts.horizon):
+                        if above_horizon(catalogue[tgt["name"]], horizon=opts.horizon,
+                                         duration=tgt["duration"]):
                             if observe(session, tgt, **obs_plan_params):
                                 targets_visible += True
                                 tgt["obs_cntr"] += 1
