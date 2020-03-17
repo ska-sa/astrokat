@@ -4,7 +4,7 @@ instrument:
   product: c856M4k
   integration_time: 2
 durations:
-  start_time: 2018-10-31 14:00
+  start_time: 2018-10-31 14:00Z
   # > python astrokat-lst.py --lst 18.
   # 2018-10-31 18.0 LST corresponds to 2018-10-31 13:56:00Z UTC
   obs_duration: 120.
