@@ -7,7 +7,7 @@ GREEN="\033[1;32m"
 YELLOW="\033[0;33m"
 NOCOLOR="\033[0m"
 
-CMD="astrokat-cals.py --cat-path ../../catalogues/"
+CMD="astrokat-targets.py --cat-path ../../catalogues/"
 
 echo
 name='NGC641_03D03'
