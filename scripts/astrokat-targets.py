@@ -913,21 +913,22 @@ def main(args):
             cal_targets = [observation_catalogue.targets[0]]
 
     for target in cal_targets:
-        # read calibrator catalogues and calibrators to catalogue
+        # add calibrator catalogues and calibrators to catalogue
         for cal_tag in args.cal_tags:
             cal_catalogue = os.path.join(
                 catalogue_path,
                 "Lband-{}-calibrators.csv".format(caltag_dict[cal_tag])
             )
             try:
+                fin = open(cal_catalogue, 'r')
                 if config_file_available:
-                    calibrators = katpoint.Catalogue(file(cal_catalogue))
+                    calibrators = katpoint.Catalogue(fin)
                 elif node_config_available:
                     calibrators = katpoint.Catalogue(
                         observatory.read_file_from_node_config(cal_catalogue)
                     )
                 else:  # user specified calibrator file
-                    calibrators = katpoint.Catalogue(file(cal_catalogue))
+                    calibrators = katpoint.Catalogue(fin)
             except (AssertionError, IOError):
                 msg = bcolors.WARNING
                 msg += "Unable to open {}\n".format(cal_catalogue)
