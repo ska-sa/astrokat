@@ -845,7 +845,8 @@ def main(args):
                     catalogue.add(katpoint.Target(target))
         else:  # assume CSV
             # output observation stats for catalogue
-            catalogue = katpoint.Catalogue(file(args.view))
+            with open(args.view, 'r') as fin:
+                catalogue = katpoint.Catalogue(fin)
         obs_summary = obs_table(
             ref_antenna, catalogue=catalogue, solar_sep=args.solar_angle, lst=args.lst
         )
