@@ -375,7 +375,8 @@ def source_elevation(catalogue, ref_antenna):
 
         label = "{} ".format(target.name)
         target.tags.remove("radec")
-        target.tags.remove("target") if "target" in target.tags else None
+        if "target" in target.tags:
+            target.tags.remove("target")
         label += ", ".join(target.tags)
 
         myplot, = plt.plot_date(timestamps,
