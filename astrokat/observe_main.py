@@ -220,14 +220,30 @@ def cadence_target(target_list):
 
 def above_horizon(katpt_target, horizon=20.0, duration=0.0):
     """Check target visibility."""
-    [azim, elev] = katpt_target.azel(time.time())
+    # use local copies so you do not overwrite target time attribute
+    local_target = katpt_target.body.copy()
+    local_observer = katpt_target.antenna.observer.copy()
+
+    # check that target is visible at start of track
+    start_ = timestamp2datetime(time.time())
+    local_observer.date = ephem.date(start_)
+    local_target.compute(local_observer)
+    [azim, elev] = [local_target.az, local_target.alt]
+    user_logger.trace(
+        "TRACE: target at start (az, el)= ({}, {})".format(azim, elev)
+    )
     if not elev > ephem.degrees(str(horizon)):
         return False
 
+    # check that target will be visible at end of track
     if duration:
-        [azim, elev] = katpt_target.azel(time.time() + duration)
-        # dummy call to reset timestamp for logger since azel() changes timestampe
-        [x, y] = katpt_target.azel(time.time())
+        end_ = timestamp2datetime(time.time() + duration)
+        local_observer.date = ephem.date(end_)
+        local_target.compute(local_observer)
+        [azim, elev] = [local_target.az, local_target.alt]
+        user_logger.trace(
+            "TRACE: target at end (az, el)= ({}, {})".format(azim, elev)
+        )
         return elev > ephem.degrees(str(horizon))
 
     return True
@@ -554,8 +570,10 @@ def run_observation(opts, kat):
                     # check target visible before doing anything
                     # make sure the target would be visible for the entire duration
                     target_duration = target['duration']
-                    if not above_horizon(katpt_target, horizon=opts.horizon,
-                                         duration=target_duration):
+                    visible = above_horizon(katpt_target,
+                                            horizon=opts.horizon,
+                                            duration=target_duration)
+                    if not visible:
                         show_horizon_status = True
                         # warning for cadence targets only when they are due
                         if (
