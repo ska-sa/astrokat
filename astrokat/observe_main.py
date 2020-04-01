@@ -226,6 +226,8 @@ def above_horizon(katpt_target, horizon=20.0, duration=0.0):
 
     if duration:
         [azim, elev] = katpt_target.azel(time.time() + duration)
+        # dummy call to reset timestamp for logger since azel() changes timestampe
+        [x, y] = katpt_target.azel(time.time())
         return elev > ephem.degrees(str(horizon))
 
     return True
