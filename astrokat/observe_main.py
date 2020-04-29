@@ -221,8 +221,14 @@ def cadence_target(target_list):
 def above_horizon(katpt_target, horizon=20.0, duration=0.0):
     """Check target visibility."""
     # use local copies so you do not overwrite target time attribute
+
     if 'azel' in katpt_target.tags:
-        return True
+        # check pointing altitude is above minimum elevation limit
+        if katpt_target.body.alt < horizon:
+            return False
+        else:
+            return True
+
 
     # must be celestial target (ra, dec)
     local_target = katpt_target.body.copy()
