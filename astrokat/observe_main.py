@@ -33,6 +33,13 @@ except ImportError:
 DUMP_RATE_TOLERANCE = 0.002
 
 
+def __horizontal_coordinates__(target, observer, datetime_):
+    """Utility function to calculate ephem horizontal coordinates"""
+    observer.date = ephem.date(datetime_)
+    target.compute(observer)
+    return target.az, target.alt
+
+
 # TODO: target description defined in function needs to be in configuration
 def read_targets(target_items):
     """Read targets info.
@@ -240,9 +247,9 @@ def above_horizon(target,
     # must be celestial target (ra, dec)
     # check that target is visible at start of track
     start_ = timestamp2datetime(time.time())
-    observer.date = ephem.date(start_)
-    target.compute(observer)
-    [azim, elev] = [target.az, target.alt]
+    [azim, elev] = __horizontal_coordinates__(target,
+                                              observer,
+                                              start_)
     user_logger.trace(
         "TRACE: target at start (az, el)= ({}, {})".format(azim, elev)
     )
@@ -252,9 +259,9 @@ def above_horizon(target,
     # check that target will be visible at end of track
     if duration:
         end_ = timestamp2datetime(time.time() + duration)
-        observer.date = ephem.date(end_)
-        target.compute(observer)
-        [azim, elev] = [target.az, target.alt]
+        [azim, elev] = __horizontal_coordinates__(target,
+                                                  observer,
+                                                  end_)
         user_logger.trace(
             "TRACE: target at end (az, el)= ({}, {})".format(azim, elev)
         )
