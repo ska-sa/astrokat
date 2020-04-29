@@ -3,3 +3,4 @@ development.
 
 ./check-cals-select.sh
 ./check-csv-convert.sh
+./check-offline-observe.sh
