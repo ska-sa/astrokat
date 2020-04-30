@@ -9,7 +9,7 @@ import numpy
 import katpoint
 
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from .simulate import user_logger, setobserver
 from .utility import katpoint_target, lst2utc
@@ -65,12 +65,17 @@ class Observatory(object):
             self.observer.date = datetime
 
     def _ephem_risetime_(self, ephem_target, lst=True):
+        midnight = datetime.now().replace(hour=0,
+                                          minute=0,
+                                          second=0,
+                                          microsecond=0)
+        midnight_plus_one = ephem.date(midnight + timedelta(seconds=1))
         try:
             rise_time = self.observer.next_rising(ephem_target)
         except ephem.AlwaysUpError:
-            return ephem.hours("0:0:01.0")
+            return midnight_plus_one
         except AttributeError:
-            return ephem.hours("0:0:01.0")
+            return midnight_plus_one
 
         if not lst:
             return rise_time
@@ -78,13 +83,19 @@ class Observatory(object):
         return self.observer.sidereal_time()
 
     def _ephem_settime_(self, ephem_target, lst=True):
+        midnight = datetime.now().replace(hour=0,
+                                          minute=0,
+                                          second=0,
+                                          microsecond=0)
+        midnight += timedelta(days=1)
+        midnight_minus_one = ephem.date(midnight - timedelta(seconds=1))
         try:
             rise_time = self.observer.next_rising(ephem_target)
             set_time = self.observer.next_setting(ephem_target, start=rise_time)
         except ephem.AlwaysUpError:
-            return ephem.hours("23:59:59.0")
+            return midnight_minus_one
         except AttributeError:
-            return ephem.hours("23:59:59.0")
+            return midnight_minus_one
 
         if not lst:
             return set_time

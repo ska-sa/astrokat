@@ -2,7 +2,8 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-import unittest2 as unittest
+import unittest
+
 from mock import patch
 
 from .testutils import LoggedTelescope, execute_observe_main
@@ -147,7 +148,7 @@ class TestAstrokatYAML(unittest.TestCase):
         )
         self.assertIn("POL calibrators are ['3C286']", result, "one pol calibrator")
         self.assertIn("1827-360 observed for 30.0 sec", result)
-        self.assertIn("1934-638 observed for 120.0 sec", result)
+        self.assertIn("1934-638 observed for 180.0 sec", result)
         self.assertIn("3C286 observed for 80.0 sec", result)
         self.assertIn("T3R04C06 observed for 360.0 sec", result)
         self.assertIn("T4R00C02 observed for 360.0 sec", result)
@@ -156,7 +157,36 @@ class TestAstrokatYAML(unittest.TestCase):
         self.assertIn("T4R01C01 observed for 360.0 sec", result)
         self.assertIn("T4R01C03 observed for 360.0 sec", result)
         self.assertIn("T4R01C05 observed for 360.0 sec", result)
-        # do no need to super acurate with this target to allow
+        # do no need to be super accurate with this target to allow
         # for slew time discrepancies
         self.assertIn("T4R02C02 observed", result)
-        self.assertIn("T4R02C04 observed for 180.0 sec", result)
+        self.assertIn("T4R02C04 observed for 360.0 sec", result)
+
+    def test_below_horizon(self):
+        """Below horizon test."""
+        execute_observe_main("test_obs/below-horizon-sim.yaml")
+
+        # get result and make sure everything ran properly
+        result = LoggedTelescope.user_logger_stream.getvalue()
+        self.assertIn(
+            "Observation list completed - ending observation",
+            result,
+            "Observation list completed",
+        )
+
+        expected_results = 'J1733-1304 observed for 600.0 sec'
+        self.assertIn(expected_results, result, "J1733-1304 observed for 600.0 sec")
+
+        # MAXIJ1810-22 started off above horizon, but at end of the duration,
+        # it would be below horizon
+        expected_results = 'Target MAXIJ1810-22 below 20.0 deg horizon, continuing'
+        self.assertIn(
+            expected_results, result, "MAXIJ1810-22 skipped"
+        )
+
+        # J1833-2103 with cadence started off above horizon, but at end of the duration,
+        # it would be below horizon
+        expected_results = 'Target J1833-2103 below 20.0 deg horizon, continuing'
+        self.assertIn(
+            expected_results, result, "J1833-2103 skipped"
+        )
