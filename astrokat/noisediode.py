@@ -15,6 +15,7 @@ _DEFAULT_LEAD_TIME = 3.0  # lead time [sec]
 
 
 def _katcp_reply_to_log_(dig_katcp_replies):
+    """ KATCP timestamp return logs"""
     timestamps = []
     for ant in sorted(dig_katcp_replies):
         reply, informs = dig_katcp_replies[ant]
@@ -42,7 +43,7 @@ def _katcp_reply_to_log_(dig_katcp_replies):
 def _nd_log_msg_(ant,
                  reply,
                  informs):
-
+    """construct debug log messages for noisediode"""
     user_logger.debug('DEBUG: reply = {}'
                       .format(reply))
     user_logger.debug('DEBUG: arguments ({})= {}'
@@ -59,7 +60,7 @@ def _nd_log_msg_(ant,
                    actual_time))
     user_logger.debug(msg)
     msg = ('Pattern set as {} sec ON for {} sec cycle length'
-           .format(actual_on_frac*actual_cycle,
+           .format(actual_on_frac * actual_cycle,
                    actual_cycle))
     user_logger.debug(msg)
 
@@ -231,7 +232,7 @@ def trigger(kat,
         cycle_len = float(lead_time + duration)
         nd_setup = {'antennas': 'all',
                     'cycle_len': cycle_len,
-                    'on_frac': float(duration)/cycle_len,
+                    'on_frac': float(duration) / cycle_len,
                     }
         user_logger.debug('DEBUG: fire nd for {} using pattern'
                           .format(duration))
@@ -308,7 +309,7 @@ def pattern(kat,  # kat subarray object
         # Set noise diode period to multiple of correlator integration time.
         dump_period = session.cbf.correlator.sensor.int_time.get_value()
         user_logger.warning('Correlator integration time {} [sec]'
-                            .format(1./dump_period))
+                            .format(1. / dump_period))
         cycle_length = int(cycle_length / dump_period) * dump_period
         msg = 'Set noise diode period to multiple of correlator dump period:'
         msg += ' cycle length = {} [sec]'.format(cycle_length)
