@@ -239,10 +239,7 @@ def above_horizon(target,
             raise RuntimeError('Unknown target type, exiting...')
         # 'StationaryBody' objects do not have RaDec coordinates
         # check pointing altitude is above minimum elevation limit
-        if target.alt < horizon:
-            return False
-        else:
-            return True
+        return bool(target.alt < horizon)
 
     # must be celestial target (ra, dec)
     # check that target is visible at start of track
