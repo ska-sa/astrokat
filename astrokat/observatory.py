@@ -263,7 +263,6 @@ def collect_targets(kat, args):
     from_names = from_strings = from_catalogues = num_catalogues = 0
     catalogue = katpoint.Catalogue()
     catalogue.antenna = katpoint.Antenna(_ref_location)
-    catalogue.antenna.observer.date = lst2utc(kat._lst, _ref_location)
 
     setobserver(catalogue.antenna.observer)
 
