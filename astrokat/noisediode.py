@@ -67,6 +67,48 @@ def _nd_log_msg_(ant,
     return actual_time
 
 
+def _switch_on_off_(kat,
+                    timestamp,
+                    switch=0):  # false=off (default)
+    """Switch noise-source on or off.
+
+    Parameters
+    ----------
+    kat : session kat container-like object
+        Container for accessing KATCP resources allocated to schedule block.
+    timestamp : float, optional
+        Time since the epoch as a floating point number [sec]
+    switch: int, optional
+        off = 0 (default), on = 1
+    """
+
+    on_off = {0: 'off', 1: 'on'}
+    user_logger.trace('TRACE: ND {} @ {}s'
+                      .format(on_off[switch], timestamp))
+    msg = ('Request: Switch noise-diode {} at {}'
+           .format(on_off[switch], timestamp))
+    user_logger.info(msg)
+
+    # Noise Diodes are triggered on all antennas in array simultaneously
+    # add lead time to ensure all digitisers set at the same time
+    replies = kat.ants.req.dig_noise_source(timestamp, switch)
+    if not kat.dry_run:
+        # test incorrect reply check
+        if len(replies) < len(kat.ants):
+            err_msg = 'did not receive on reply from all antennas'
+            user_logger.warning(err_msg)
+        timestamp = _katcp_reply_to_log_(replies)
+    else:
+        # - use integer second boundary as that is most likely be an exact
+        #   time that DMC can execute at
+        msg = ('Dry-run: Noise diodes timestamp {} ({})'
+               .format(timestamp,
+                       time.ctime(timestamp)))
+        user_logger.info(msg)
+
+    return timestamp
+
+
 # switch noise-source on
 def on(kat,
        timestamp=None,
@@ -83,38 +125,20 @@ def on(kat,
         Lead time before the noisediode is switched on [sec]
     """
 
+    # some calls may cause lead_time=None
+    lead_time = float(lead_time or _DEFAULT_LEAD_TIME)
     user_logger.trace('TRACE: ND on with lead time {}s'
                       .format(lead_time))
-    if timestamp is None:
-        user_logger.trace('TRACE: ts + leadtime = {} + {}'
-                          .format(time.time(),
-                                  lead_time))
-        timestamp = time.time() + lead_time
+    timestamp = time.time() + lead_time
     user_logger.trace('TRACE: nd on at {} ({})'
                       .format(timestamp,
                               time.ctime(timestamp)))
-    msg = ('Request: Switch noise-diode on at {}'
-           .format(timestamp))
-    user_logger.info(msg)
 
-    # Noise Diodes are triggered on all antennas in array simultaneously
-    # add lead time to ensure all digitisers set at the same time
-    replies = kat.ants.req.dig_noise_source(timestamp, 1)
-    if not kat.dry_run:
-        # test incorrect reply check
-        if len(replies) < len(kat.ants):
-            err_msg = 'did not receive on reply from all antennas'
-            user_logger.warning(err_msg)
-        timestamp = _katcp_reply_to_log_(replies)
-    else:
-        # - use integer second boundary as that is most likely be an exact
-        #   time that DMC can execute at
-        msg = ('Dry-run: Noise diodes timestamp {} ({})'
-               .format(np.ceil(timestamp),
-                       time.ctime(timestamp)))
-        user_logger.info(msg)
+    true_timestamp = _switch_on_off_(kat,
+                                     timestamp,
+                                     switch=1)  # on
 
-    sleeptime = timestamp - time.time()
+    sleeptime = true_timestamp - time.time()
     user_logger.debug('DEBUG: now {}, sleep {}'
                       .format(time.time(),
                               sleeptime))
@@ -125,13 +149,13 @@ def on(kat,
     msg = ('Report: noise-diode on at {}'
            .format(time.time()))
     user_logger.info(msg)
-    return True
+    return true_timestamp
 
 
 # switch noise-source pattern off
 def off(kat,
         timestamp=None,
-        lead_time=None):
+        lead_time=_DEFAULT_LEAD_TIME):
     """Switch noise-source pattern off.
 
     Parameters
@@ -144,39 +168,16 @@ def off(kat,
         Lead time before the noisediode is switched off [sec]
     """
 
-    user_logger.trace('TRACE: ND off')
-
+    # some calls may cause lead_time=None
     lead_time = float(lead_time or _DEFAULT_LEAD_TIME)
-    if timestamp is None:
-        user_logger.trace('TRACE: ts + leadtime = {} + {}'
-                          .format(time.time(),
-                                  lead_time))
-        timestamp = time.time() + lead_time
+    user_logger.trace('TRACE: ND off with lead time {}s'
+                      .format(lead_time))
+    timestamp = time.time() + lead_time
     user_logger.trace('TRACE: nd off at {} ({})'
                       .format(timestamp,
                               time.ctime(timestamp)))
-    msg = ('Request: Switch noise-diode off at {}'
-           .format(timestamp))
-    user_logger.info(msg)
-
-    # Noise Diodes are triggered on all antennas in array simultaneously
-    # add lead time to ensure all digitisers set at the same time
-    replies = kat.ants.req.dig_noise_source(timestamp, 0)
-    if not kat.dry_run:
-        # test incorrect reply check
-        if len(replies) < len(kat.ants):
-            err_msg = 'did not receive on reply from all antennas'
-            user_logger.warning(err_msg)
-        timestamp = _katcp_reply_to_log_(replies)
-    else:
-        # - use integer second boundary as that is most likely be an exact
-        #   time that DMC can execute at
-        msg = ('Dry-run: Noise diodes timestamp {} ({})'
-               .format(timestamp,
-                       time.ctime(timestamp)))
-        user_logger.info(msg)
-
-    return True
+    true_timestamp = _switch_on_off_(kat, timestamp)  # default off
+    return true_timestamp
 
 
 # fire noise diode before track
