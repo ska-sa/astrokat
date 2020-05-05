@@ -33,6 +33,13 @@ except ImportError:
 DUMP_RATE_TOLERANCE = 0.002
 
 
+def __horizontal_coordinates__(target, observer, datetime_):
+    """Utility function to calculate ephem horizontal coordinates"""
+    observer.date = ephem.date(datetime_)
+    target.compute(observer)
+    return target.az, target.alt
+
+
 # TODO: target description defined in function needs to be in configuration
 def read_targets(target_items):
     """Read targets info.
@@ -83,16 +90,16 @@ def read_targets(target_items):
             # TODO: need to add "duration =" as well for user stupidity
             prefix = "duration="
             if item_.startswith(prefix):
-                duration = item_[len(prefix) :]
+                duration = item_[len(prefix):]
             prefix = "type="
             if item_.startswith(prefix):
-                obs_type = item_[len(prefix) :]
+                obs_type = item_[len(prefix):]
             prefix = "cadence="
             if item_.startswith(prefix):
-                cadence = item_[len(prefix) :]
+                cadence = item_[len(prefix):]
             prefix = "nd="
             if item_.startswith(prefix):
-                nd = item_[len(prefix) :]
+                nd = item_[len(prefix)]
         durations.append(duration)
         obs_types.append(obs_type)
         cadences.append(cadence)
@@ -218,17 +225,44 @@ def cadence_target(target_list):
     return False
 
 
-def above_horizon(katpt_target, horizon=20.0, duration=0.0):
+def above_horizon(target,
+                  observer,
+                  horizon=20.0,
+                  duration=0.0):
     """Check target visibility."""
-    [azim, elev] = katpt_target.azel(time.time())
-    if not elev > ephem.degrees(str(horizon)):
+    # use local copies so you do not overwrite target time attribute
+    horizon = ephem.degrees(str(horizon))
+
+    if type(target) is not ephem.FixedBody:
+        # anticipate katpoint special target for AzEl targets
+        if 'alt' not in vars(target):
+            raise RuntimeError('Unknown target type, exiting...')
+        # 'StationaryBody' objects do not have RaDec coordinates
+        # check pointing altitude is above minimum elevation limit
+        return bool(target.alt >= horizon)
+
+    # must be celestial target (ra, dec)
+    # check that target is visible at start of track
+    start_ = timestamp2datetime(time.time())
+    [azim, elev] = __horizontal_coordinates__(target,
+                                              observer,
+                                              start_)
+    user_logger.trace(
+        "TRACE: target at start (az, el)= ({}, {})".format(azim, elev)
+    )
+    if not elev > horizon:
         return False
 
+    # check that target will be visible at end of track
     if duration:
-        [azim, elev] = katpt_target.azel(time.time() + duration)
-        # dummy call to reset timestamp for logger since azel() changes timestampe
-        [x, y] = katpt_target.azel(time.time())
-        return elev > ephem.degrees(str(horizon))
+        end_ = timestamp2datetime(time.time() + duration)
+        [azim, elev] = __horizontal_coordinates__(target,
+                                                  observer,
+                                                  end_)
+        user_logger.trace(
+            "TRACE: target at end (az, el)= ({}, {})".format(azim, elev)
+        )
+        return elev > horizon
 
     return True
 
@@ -554,8 +588,11 @@ def run_observation(opts, kat):
                     # check target visible before doing anything
                     # make sure the target would be visible for the entire duration
                     target_duration = target['duration']
-                    if not above_horizon(katpt_target, horizon=opts.horizon,
-                                         duration=target_duration):
+                    visible = above_horizon(target=katpt_target.body,
+                                            observer=katpt_target.antenna.observer.copy(),
+                                            horizon=opts.horizon,
+                                            duration=target_duration)
+                    if not visible:
                         show_horizon_status = True
                         # warning for cadence targets only when they are due
                         if (
@@ -601,7 +638,10 @@ def run_observation(opts, kat):
                             "TRACE: target observation # {} last observed "
                             "{}".format(tgt["obs_cntr"], tgt["last_observed"])
                         )
-                        if above_horizon(catalogue[tgt["name"]], horizon=opts.horizon,
+                        cat_target = catalogue[tgt["name"]]
+                        if above_horizon(target=cat_target.body,
+                                         observer=cat_target.antenna.observer.copy(),
+                                         horizon=opts.horizon,
                                          duration=tgt["duration"]):
                             if observe(session, tgt, **obs_plan_params):
                                 targets_visible += True
