@@ -9,9 +9,22 @@ try:
     from katcorelib import user_logger
 except ImportError:
     from .simulate import user_logger
+from . import _DEFAULT_LEAD_TIME
 
-# TODO: add this to __init__ (as well as the lead_time check)
-_DEFAULT_LEAD_TIME = 3.0  # lead time [sec]
+
+def _eval_lead_time_(lead_time):
+    # if not given, apply default value
+    lead_time = float(lead_time or _DEFAULT_LEAD_TIME)
+    user_logger.trace('TRACE: Add lead time {}s to ND'
+                      .format(lead_time))
+    return lead_time
+
+
+def _set_time_(lead_time):
+    # some calls may cause lead_time=None
+    lead_time = _eval_lead_time_(lead_time)
+    timestamp = time.time() + lead_time
+    return timestamp
 
 
 def _set_dig_nd_(kat,
@@ -79,7 +92,6 @@ def _set_dig_nd_(kat,
     return timestamp
 
 
-# def _katcp_reply_to_log_(dig_katcp_replies):
 def _katcp_reply_(dig_katcp_replies):
     """ KATCP timestamp return logs"""
     for ant in sorted(dig_katcp_replies):
@@ -168,12 +180,7 @@ def on(kat,
         Lead time before the noisediode is switched on [sec]
     """
 
-    # some calls may cause lead_time=None
-    lead_time = float(lead_time or _DEFAULT_LEAD_TIME)
-    user_logger.trace('TRACE: ND on with lead time {}s'
-                      .format(lead_time))
-    if timestamp is None:
-        timestamp = time.time() + lead_time
+    timestamp = float(timestamp or _set_time_(lead_time))
     user_logger.trace('TRACE: nd on at {} ({})'
                       .format(timestamp,
                               time.ctime(timestamp)))
@@ -212,12 +219,7 @@ def off(kat,
         Lead time before the noisediode is switched off [sec]
     """
 
-    # some calls may cause lead_time=None
-    lead_time = float(lead_time or _DEFAULT_LEAD_TIME)
-    user_logger.trace('TRACE: ND off with lead time {}s'
-                      .format(lead_time))
-    if timestamp is None:
-        timestamp = time.time() + lead_time
+    timestamp = float(timestamp or _set_time_(lead_time))
     user_logger.trace('TRACE: nd off at {} ({})'
                       .format(timestamp,
                               time.ctime(timestamp)))
@@ -244,8 +246,7 @@ def trigger(kat,
     if duration is None:
         return True  # nothing to do
 
-    # if not given, apply default value
-    lead_time = float(lead_time or _DEFAULT_LEAD_TIME)
+    lead_time = _eval_lead_time_(lead_time)
 
     msg = ('Firing noise diode for {}s before target observation'
            .format(duration))
@@ -257,7 +258,7 @@ def trigger(kat,
     user_logger.trace('TRACE: ts before issue nd on command {}'
                       .format(time.time()))
     if duration > lead_time:
-        on_time = time.time() + lead_time
+        on_time = _set_time_(lead_time)
         on(kat, timestamp=on_time)
         now = time.time()
         user_logger.debug('DEBUG: on {} ({})'
@@ -271,7 +272,6 @@ def trigger(kat,
         time.sleep(sleeptime)
         user_logger.trace('TRACE: ts after issue nd on sleep {}'
                           .format(time.time()))
-        off_time = time.time() + lead_time
     else:
         cycle_len = float(lead_time + duration)
         nd_setup = {'antennas': 'all',
@@ -285,8 +285,8 @@ def trigger(kat,
         user_logger.debug('DEBUG: pattern set {} ({})'
                           .format(now,
                                   time.ctime(now)))
-        off_time = time.time() + lead_time
 
+    off_time = _set_time_(lead_time)
     user_logger.debug('DEBUG: off {} ({})'
                       .format(off_time,
                               time.ctime(off_time)))
@@ -325,6 +325,8 @@ def pattern(kat,  # kat subarray object
     lead_time : float, optional
         Lead time before digitisers pattern is set [sec]
     """
+    lead_time = _eval_lead_time_(lead_time)
+
     # nd pattern length [sec]
     cycle_length = nd_setup['cycle_len']
     if not kat.dry_run:
@@ -333,17 +335,13 @@ def pattern(kat,  # kat subarray object
             msg = 'Maximum cycle length of L-band is 20 seconds'
             raise RuntimeError(msg)
 
-    # add special lead time option
-    # if not given, apply default value
-    lead_time = float(lead_time or _DEFAULT_LEAD_TIME)
-
     # Try to trigger noise diodes on all antennas in array simultaneously.
     # - use integer second boundary as that is most likely be an exact
     #   time that DMC can execute at, and also fit a unix epoch time
     #   into a double precision float accurately
     # - add a default lead time to ensure enough time for all digitisers
     #   to be set up
-    timestamp = time.time() + lead_time
+    timestamp = _set_time_(lead_time)
     msg = ('Request: Set noise diode pattern to activate at {} '
            '(includes {} sec lead time)'
            .format(timestamp,
