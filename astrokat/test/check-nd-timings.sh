@@ -12,10 +12,11 @@ INPUT=(
 nd-pattern-sim
 # set pattern for only 2 antennas and apply user defined lead time
 nd-pattern-ants
-# # deactivate noise diode for target
-# nd-pattern-plus-off
-# # set trigger time to shorter and longer than lead time
-# nd-trigger
+# deactivate noise diode for target
+nd-pattern-plus-off
+# set trigger time to shorter and longer than lead time
+nd-trigger-long
+nd-trigger-short
 )
 
 for infile in ${INPUT[@]}
