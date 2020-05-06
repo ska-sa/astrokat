@@ -4,6 +4,12 @@ from __future__ import absolute_import
 
 # Constants and defaults
 _DEFAULT_LEAD_TIME = 3.0  # lead time [sec]
+def max_cycle_len(band):
+    if band.lower() == 'u':
+        raise RuntimeError('Update U-band max buffer len')
+    else:
+        # default is L-band
+        return 20.  # buffer len [sec]
 # Constants and defaults
 
 from .__main__ import cli
