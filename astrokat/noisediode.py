@@ -10,6 +10,14 @@ try:
 except ImportError:
     from .simulate import user_logger
 from . import _DEFAULT_LEAD_TIME
+from . import max_cycle_len
+
+
+def _get_max_cycle_len(kat):
+    if not kat.dry_run:
+        return max_cycle_len(kat.sensor.sub_band.get_value())
+    else:
+        return max_cycle_len('l')
 
 
 def _eval_lead_time_(lead_time):
@@ -82,7 +90,6 @@ def _set_dig_nd_(kat,
         if len(timestamps) < len(nd_antennas):
             err_msg = 'Noise diode activation not in sync'
             user_logger.error(err_msg)
-        #         raise RuntimeError(err_msg)
         timestamp = np.mean(timestamps)
     msg = ('Set all noise diodes with timestamp {} ({})'
            .format(int(timestamp),
@@ -248,6 +255,9 @@ def trigger(kat,
 
     lead_time = _eval_lead_time_(lead_time)
 
+    user_logger.trace('TRACE: Trigger duration {}, lead {}'
+                      .format(duration, lead_time))
+
     msg = ('Firing noise diode for {}s before target observation'
            .format(duration))
     user_logger.info(msg)
@@ -258,22 +268,42 @@ def trigger(kat,
     user_logger.trace('TRACE: ts before issue nd on command {}'
                       .format(time.time()))
     if duration > lead_time:
+        user_logger.trace('TRACE: Trigger duration > lead_time')
         on_time = _set_time_(lead_time)
-        on(kat, timestamp=on_time)
-        now = time.time()
+        user_logger.trace('TRACE: now {} ({})'
+                          .format(time.time(),
+                                  time.ctime(time.time())))
+        user_logger.trace('TRACE: on time {} ({})'
+                          .format(on_time,
+                                  time.ctime(on_time)))
+        user_logger.trace('TRACE: delta {}'
+                          .format(on_time - time.time()))
+        # allow lead time for all to switch on simultaneously
+        # timestamp on = now + lead
+        on_time = on(kat, timestamp=on_time)
         user_logger.debug('DEBUG: on {} ({})'
-                          .format(now,
-                                  time.ctime(now)))
+                          .format(on_time,
+                                  time.ctime(on_time)))
         user_logger.debug('DEBUG: fire nd for {}'
                           .format(duration))
-        sleeptime = duration - lead_time
+        sleeptime = min(duration - lead_time, lead_time)
+        user_logger.trace('TRACE: sleep {}'
+                          .format(sleeptime))
+        off_time = on_time + duration
+        user_logger.trace('TRACE: desired off_time {} ({})'
+                          .format(off_time,
+                                  time.ctime(off_time)))
+        user_logger.trace('TRACE: delta {}'
+                          .format(off_time - on_time))
         user_logger.debug('DEBUG: sleeping for {} [sec]'
                           .format(sleeptime))
         time.sleep(sleeptime)
-        user_logger.trace('TRACE: ts after issue nd on sleep {}'
-                          .format(time.time()))
+        user_logger.trace('TRACE: ts after sleep {} ({})'
+                          .format(time.time(),
+                                  time.ctime(time.time())))
     else:
-        cycle_len = float(lead_time + duration)
+        user_logger.trace('TRACE: Trigger duration <= lead_time')
+        cycle_len = _get_max_cycle_len(kat)
         nd_setup = {'antennas': 'all',
                     'cycle_len': cycle_len,
                     'on_frac': float(duration) / cycle_len,
@@ -281,12 +311,14 @@ def trigger(kat,
         user_logger.debug('DEBUG: fire nd for {} using pattern'
                           .format(duration))
         pattern(kat, nd_setup, lead_time=lead_time)
-        now = time.time()
         user_logger.debug('DEBUG: pattern set {} ({})'
-                          .format(now,
-                                  time.ctime(now)))
+                          .format(time.time(),
+                                  time.ctime(time.time())))
+        off_time = _set_time_(lead_time)
+        user_logger.trace('TRACE: desired off_time {} ({})'
+                          .format(off_time,
+                                  time.ctime(off_time)))
 
-    off_time = _set_time_(lead_time)
     user_logger.debug('DEBUG: off {} ({})'
                       .format(off_time,
                               time.ctime(off_time)))
@@ -302,6 +334,7 @@ def trigger(kat,
     msg = ('Report: noise-diode off at {}'
            .format(time.time()))
     user_logger.info(msg)
+
     return True
 
 
@@ -328,12 +361,13 @@ def pattern(kat,  # kat subarray object
     lead_time = _eval_lead_time_(lead_time)
 
     # nd pattern length [sec]
-    cycle_length = nd_setup['cycle_len']
-    if not kat.dry_run:
-        if (kat.sensor.sub_band.get_value() == 'l'
-                and float(cycle_length) > 20.0):
-            msg = 'Maximum cycle length of L-band is 20 seconds'
-            raise RuntimeError(msg)
+    _MAX_CYCLE_LEN = _get_max_cycle_len(kat)
+    if float(nd_setup['cycle_len']) > _MAX_CYCLE_LEN:
+        msg = 'Maximum cycle length is {} seconds'.format(_MAX_CYCLE_LEN)
+        raise RuntimeError(msg)
+
+    user_logger.trace('TRACE: max cycle len {}'
+                      .format(_MAX_CYCLE_LEN))
 
     # Try to trigger noise diodes on all antennas in array simultaneously.
     # - use integer second boundary as that is most likely be an exact
@@ -341,10 +375,13 @@ def pattern(kat,  # kat subarray object
     #   into a double precision float accurately
     # - add a default lead time to ensure enough time for all digitisers
     #   to be set up
-    timestamp = _set_time_(lead_time)
+    start_time = _set_time_(lead_time)
+    user_logger.trace('TRACE: desired start_time {} ({})'
+                      .format(start_time,
+                              time.ctime(start_time)))
     msg = ('Request: Set noise diode pattern to activate at {} '
            '(includes {} sec lead time)'
-           .format(timestamp,
+           .format(start_time,
                    lead_time))
     user_logger.warning(msg)
 
@@ -366,22 +403,25 @@ def pattern(kat,  # kat subarray object
     # Noise Diodes are triggered on all antennas in array simultaneously
     # add a second to ensure all digitisers set at the same time
     timestamp = _set_dig_nd_(kat,
-                             timestamp,
+                             start_time,
                              nd_setup=nd_setup,
                              cycle=cycle)
-
-    wait_time = timestamp - time.time()
-    user_logger.trace('TRACE: set nd pattern at {} from now {}, sleep {}'
+    user_logger.trace('TRACE: now {} ({})'
+                      .format(time.time(),
+                              time.ctime(time.time())))
+    user_logger.trace('TRACE: timestamp {} ({})'
                       .format(timestamp,
-                              time.time(),
-                              wait_time))
-    time.sleep(wait_time)
+                              time.ctime(timestamp)))
+    user_logger.trace('TRACE: delta {}'
+                      .format(timestamp - time.time()))
+    wait_time = timestamp - time.time()
     msg = ('Report: pattern set at {}'
            .format(time.time()))
     user_logger.info(msg)
-    user_logger.trace('TRACE: ts after wait period {}'
-                      .format(time.time()))
-
+    time.sleep(wait_time)
+    user_logger.trace('TRACE: set nd pattern at {}, sleep {}'
+                      .format(timestamp,
+                              wait_time))
     return True
 
 # -fin-
