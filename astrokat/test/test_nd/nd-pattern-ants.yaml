@@ -3,7 +3,7 @@
 noise_diode:
   # set pattern with one or list of antennas
   antennas: m011,m022
-  # set noise diode pattern to fire every 16 seconds and be on for 8s
+  # set noise diode pattern to fire every 16 seconds and be on for 4s
   cycle_len: 16
   on_frac: 0.25
   # set lead time for noise diode command execute

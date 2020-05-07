@@ -1,7 +1,6 @@
 # Set noise diode pattern, but switch off for target observation
 noise_diode:
   antennas: all
-  # cycle_len: 0.9  # 900ms
   cycle_len: 0.1  # 100ms
   on_frac: 0.5  # 50%
 durations:
