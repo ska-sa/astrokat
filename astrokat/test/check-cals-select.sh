@@ -8,7 +8,7 @@ YELLOW="\033[0;33m"
 NOCOLOR="\033[0m"
 
 CMD="astrokat-cals.py --cat-path ../../catalogues/"
-date='2018-08-06 12:34'
+DATE='2018-08-06 12:34'
 
 echo
 name='NGC641_03D03'
