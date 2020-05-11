@@ -61,6 +61,7 @@ def cli(prog):
 
 
 def gal2icrs_skycoord(coord_x, coord_y):
+    """Create galactic SkyCoord and transformed ICRS SkyCoord"""
     gal_coord = SkyCoord(l=coord_x,
                          b=coord_y,
                          frame=Galactic)
@@ -68,6 +69,7 @@ def gal2icrs_skycoord(coord_x, coord_y):
 
 
 def icrs_skycoord(coord_x, coord_y):
+    """Create ICRS SkyCoord"""
     return SkyCoord(ra=coord_x,
                     dec=coord_y,
                     unit=(u.hourangle, u.deg),
@@ -75,6 +77,7 @@ def icrs_skycoord(coord_x, coord_y):
 
 
 def format_str(astropy_x, astropy_y):
+    """ICRS string format HH:MM:SS.f, DD:MM:SS.f"""
     x_str = astropy_x.to_string(unit=u.hourangle,
                                 sep=':',
                                 precision=4,
@@ -111,6 +114,7 @@ def display_galactic(astropy_gal, name=None):
 
 
 def gal2radec(infile, outfile, verbose=False):
+    """Read all targets in catalogue and make all ICRS in returned catalogue"""
     with open(infile, 'r') as fin:
         targets = fin.readlines()
 
@@ -167,6 +171,5 @@ if __name__ == '__main__':
         if (arg[0] == '-') and arg[1].isdigit():
             sys.argv[i] = ' ' + arg
     main(cli(sys.argv[0]))
-
 
 # -fin-
