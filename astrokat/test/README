@@ -14,10 +14,9 @@ development.
 `./check-nd-timings.sh`
 
 
-## Use python nose tests
+## Use python unit tests
 ```
 pip install mock
-pip install coverage
 pip install tox
 ```
 
@@ -32,10 +31,7 @@ python -m unittest astrokat.test.test_offline_observe.TestAstrokatYAML.test_targ
 ```
 Using tox
 ```
-coverage run --source=astrokat -m nose --xunit-file=nosetests_py27.xml
-coverage xml -o coverage_py27.xml
-
-LC_ALL=C test_flags= tox -e py27
+LC_ALL=C test_flags=astrokat tox -e py27
 ```
 
 -fin-
