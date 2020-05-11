@@ -6,7 +6,7 @@ from __future__ import absolute_import
 _DEFAULT_LEAD_TIME = 3.0  # lead time [sec]
 def max_cycle_len(band):
     if band.lower() == 'u':
-        raise RuntimeError('Update U-band max buffer len')
+        return 31.  # buffer len [sec]
     else:
         # default is L-band
         return 20.  # buffer len [sec]
