@@ -419,6 +419,9 @@ def pattern(kat,  # kat subarray object
            .format(time.time()))
     user_logger.info(msg)
     time.sleep(wait_time)
+    msg = ('Switch noise-diode on at {}'
+           .format(time.time()))
+    user_logger.info(msg)
     user_logger.trace('TRACE: set nd pattern at {}, sleep {}'
                       .format(timestamp,
                               wait_time))

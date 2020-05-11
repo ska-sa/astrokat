@@ -87,5 +87,6 @@ class TestAstrokatYAML(unittest.TestCase):
         self.assertIn("Add lead time of 5.0s", result)
         self.assertIn("Set noise diode pattern", result)
         self.assertIn("pattern set at 1573714848.0", result)
+        self.assertIn("Switch noise-diode on at 1573714853.0", result)
         self.assertIn("Switch noise-diode off at 1573714858.0", result)
         self.assertIn("noise-diode off at 1573714858.0", result)
