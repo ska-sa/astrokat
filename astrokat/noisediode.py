@@ -20,7 +20,7 @@ def _get_max_cycle_len(kat):
         return max_cycle_len('l')
 
 
-def _set_time_(lead_time):
+def _get_nd_timestamp_(lead_time):
     return time.time() + lead_time
 
 
@@ -177,7 +177,7 @@ def on(kat,
     """
 
     if timestamp is None:
-        timestamp = _set_time_(lead_time)
+        timestamp = _get_nd_timestamp_(lead_time)
 
     user_logger.trace('TRACE: nd on at {} ({})'
                       .format(timestamp,
@@ -218,7 +218,7 @@ def off(kat,
     """
 
     if timestamp is None:
-        timestamp = _set_time_(lead_time)
+        timestamp = _get_nd_timestamp_(lead_time)
 
     user_logger.trace('TRACE: nd off at {} ({})'
                       .format(timestamp,
@@ -260,7 +260,7 @@ def trigger(kat,
                       .format(time.time()))
     if duration > lead_time:
         user_logger.trace('TRACE: Trigger duration > lead_time')
-        on_time = _set_time_(lead_time)
+        on_time = _get_nd_timestamp_(lead_time)
         user_logger.trace('TRACE: now {} ({})'
                           .format(time.time(),
                                   time.ctime(time.time())))
@@ -305,7 +305,7 @@ def trigger(kat,
         user_logger.debug('DEBUG: pattern set {} ({})'
                           .format(time.time(),
                                   time.ctime(time.time())))
-        off_time = _set_time_(lead_time)
+        off_time = _get_nd_timestamp_(lead_time)
         user_logger.trace('TRACE: desired off_time {} ({})'
                           .format(off_time,
                                   time.ctime(off_time)))
@@ -365,7 +365,7 @@ def pattern(kat,  # kat subarray object
     #   into a double precision float accurately
     # - add a default lead time to ensure enough time for all digitisers
     #   to be set up
-    start_time = _set_time_(lead_time)
+    start_time = _get_nd_timestamp_(lead_time)
     user_logger.trace('TRACE: desired start_time {} ({})'
                       .format(start_time,
                               time.ctime(start_time)))
