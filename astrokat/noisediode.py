@@ -92,13 +92,13 @@ def _katcp_reply_(dig_katcp_replies):
     """ KATCP timestamp return logs"""
     for ant in sorted(dig_katcp_replies):
         reply, informs = dig_katcp_replies[ant]
-        # test incorrect reply check
-        if len(reply.arguments) < 2:
+        if reply.succeeded():
+            timestamp = _nd_log_msg_(ant, reply, informs)
+        else:
             msg = 'Unexpected response after noise diode instruction'
             user_logger.warn(msg.format(ant))
             user_logger.debug('DEBUG: {}'.format(reply.arguments))
             continue
-        timestamp = _nd_log_msg_(ant, reply, informs)
     return timestamp
 
 
