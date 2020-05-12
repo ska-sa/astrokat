@@ -90,16 +90,17 @@ def _set_dig_nd_(kat,
 
 def _katcp_reply_(dig_katcp_replies):
     """ KATCP timestamp return logs"""
+    ant_ts_list = []
     for ant in sorted(dig_katcp_replies):
         reply, informs = dig_katcp_replies[ant]
         if reply.succeeded():
-            timestamp = _nd_log_msg_(ant, reply, informs)
+            ant_ts_list.append(_nd_log_msg_(ant, reply, informs))
         else:
-            msg = 'Unexpected response after noise diode instruction'
-            user_logger.warn(msg.format(ant))
+            msg = 'Unexpected noise diode reply from ant {}'.format(ant)
+            user_logger.warn(msg)
             user_logger.debug('DEBUG: {}'.format(reply.arguments))
             continue
-    return timestamp
+    return np.mean(ant_ts_list)
 
 
 def _nd_log_msg_(ant,
