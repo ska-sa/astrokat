@@ -9,12 +9,13 @@ import time
 import astrokat
 from astrokat.utility import datetime2timestamp, timestamp2datetime
 from astrokat import (
+    _DEFAULT_LEAD_TIME,
     NoTargetsUpError,
     NotAllTargetsUpError,
-    read_yaml,
     get_lst,
     katpoint_target,
     noisediode,
+    read_yaml,
     scans,
 )
 
@@ -143,12 +144,12 @@ def observe(session, target_info, **kwargs):
 
     # set noise diode behaviour
     nd_setup = None
-    special_nd_lead = None
+    nd_lead = _DEFAULT_LEAD_TIME
     if "noise_diode" in kwargs:
         nd_setup = kwargs["noise_diode"]
         # user specified lead time
         if "lead_time" in nd_setup:
-            special_nd_lead = nd_setup['lead_time']
+            nd_lead = nd_setup['lead_time']
         # not a ND pattern
         if "cycle_len" not in nd_setup:
             nd_setup = None
@@ -162,7 +163,7 @@ def observe(session, target_info, **kwargs):
             nd_restore = True
             # disable noise diode pattern for target
             noisediode.off(session.kat,
-                           lead_time=special_nd_lead)
+                           lead_time=nd_lead)
         else:
             nd_period = float(target_info["noise_diode"])
 
@@ -207,7 +208,7 @@ def observe(session, target_info, **kwargs):
             )
             noisediode.trigger(session.kat,
                                duration=nd_period,
-                               lead_time=special_nd_lead)
+                               lead_time=nd_lead)
             user_logger.trace("TRACE: ts after nd trigger {}".format(time.time()))
         user_logger.debug(
             "DEBUG: Starting {}s track on target: "
@@ -222,7 +223,7 @@ def observe(session, target_info, **kwargs):
         user_logger.info('Observation: Restoring ND pattern')
         noisediode.pattern(session.kat,
                            nd_setup,
-                           lead_time=special_nd_lead,
+                           lead_time=nd_lead,
                            )
 
     return target_visible
@@ -566,7 +567,7 @@ def run_observation(opts, kat):
             #  so it happens in the line above
             if "noise_diode" in obs_plan_params:
                 nd_setup = obs_plan_params["noise_diode"]
-                nd_lead = None
+                nd_lead = _DEFAULT_LEAD_TIME
                 if "lead_time" in nd_setup:
                     nd_lead = nd_setup['lead_time']
 

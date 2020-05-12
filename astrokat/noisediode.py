@@ -20,19 +20,8 @@ def _get_max_cycle_len(kat):
         return max_cycle_len('l')
 
 
-def _eval_lead_time_(lead_time):
-    # if not given, apply default value
-    lead_time = float(lead_time or _DEFAULT_LEAD_TIME)
-    user_logger.trace('TRACE: Add lead time {}s to ND'
-                      .format(lead_time))
-    return lead_time
-
-
 def _set_time_(lead_time):
-    # some calls may cause lead_time=None
-    lead_time = _eval_lead_time_(lead_time)
-    timestamp = time.time() + lead_time
-    return timestamp
+    return time.time() + lead_time
 
 
 def _set_dig_nd_(kat,
@@ -187,7 +176,9 @@ def on(kat,
         Lead time before the noisediode is switched on [sec]
     """
 
-    timestamp = float(timestamp or _set_time_(lead_time))
+    if timestamp is None:
+        timestamp = _set_time_(lead_time)
+
     user_logger.trace('TRACE: nd on at {} ({})'
                       .format(timestamp,
                               time.ctime(timestamp)))
@@ -226,7 +217,9 @@ def off(kat,
         Lead time before the noisediode is switched off [sec]
     """
 
-    timestamp = float(timestamp or _set_time_(lead_time))
+    if timestamp is None:
+        timestamp = _set_time_(lead_time)
+
     user_logger.trace('TRACE: nd off at {} ({})'
                       .format(timestamp,
                               time.ctime(timestamp)))
@@ -237,7 +230,7 @@ def off(kat,
 # fire noise diode before track
 def trigger(kat,
             duration=None,
-            lead_time=None):
+            lead_time=_DEFAULT_LEAD_TIME):
     """Fire the noise diode before track.
 
     Parameters
@@ -252,8 +245,6 @@ def trigger(kat,
 
     if duration is None:
         return True  # nothing to do
-
-    lead_time = _eval_lead_time_(lead_time)
 
     user_logger.trace('TRACE: Trigger duration {}, lead {}'
                       .format(duration, lead_time))
@@ -341,7 +332,7 @@ def trigger(kat,
 # set noise diode pattern
 def pattern(kat,  # kat subarray object
             nd_setup,  # noise diode pattern setup
-            lead_time=None,  # lead time [sec]
+            lead_time=_DEFAULT_LEAD_TIME,
             ):
     """Start background noise diode pattern controlled by digitiser hardware.
 
@@ -358,7 +349,6 @@ def pattern(kat,  # kat subarray object
     lead_time : float, optional
         Lead time before digitisers pattern is set [sec]
     """
-    lead_time = _eval_lead_time_(lead_time)
 
     # nd pattern length [sec]
     _MAX_CYCLE_LEN = _get_max_cycle_len(kat)
