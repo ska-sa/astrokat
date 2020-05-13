@@ -120,6 +120,7 @@ def _katcp_reply_(dig_katcp_replies):
             user_logger.warn(msg)
             user_logger.debug('DEBUG: {}'.format(reply.arguments))
             continue
+    # assume all ND timestamps similar and return average
     return np.mean(ant_ts_list)
 
 
@@ -217,7 +218,7 @@ def on(kat,
                       .format(time.time(),
                               sleeptime))
     msg = ('Report: noise-diode on at {}'
-           .format(time.time()))
+           .format(true_timestamp))
     user_logger.info(msg)
     return true_timestamp
 
