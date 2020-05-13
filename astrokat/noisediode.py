@@ -14,6 +14,8 @@ from . import max_cycle_len
 
 
 def _get_max_cycle_len(kat):
+    """Get maximum cycle length for noise diode switching
+    """
     if not kat.dry_run:
         return max_cycle_len(kat.sensor.sub_band.get_value())
     else:
@@ -21,14 +23,32 @@ def _get_max_cycle_len(kat):
 
 
 def _get_nd_timestamp_(lead_time):
+    """Timestamp for ND switch command with lead time
+    """
     return time.time() + lead_time
 
 
 def _set_dig_nd_(kat,
                  timestamp,
                  nd_setup=None,  # no pattern set
-                 switch=0,  # all nd off
+                 switch=0,
                  cycle=False):
+    """Setting and implementing digitiser noise diode command
+    Parameters
+    ----------
+    kat : session kat container-like object
+        Container for accessing KATCP resources allocated to schedule block.
+    timestamp : float
+        Linux timestamp in seconds at which to switch noise diode
+    nd_setup : dict, optional (default = None)
+        Noise diode pattern setup, with keys:
+            'antennas':  options are 'all', or 'm062', or ....,
+            'cycle_len': the cycle length [sec],
+                           - must be less than 20 sec for L-band,
+            etc., etc.
+    switch : 0 or 1, optional (default = 0)
+        Switch all noise diodes off (0) or on (1)
+    """
 
     if nd_setup is not None:
         # selected antennas for nd pattern
@@ -132,7 +152,7 @@ def _nd_log_msg_(ant,
 
 def _switch_on_off_(kat,
                     timestamp,
-                    switch=0):  # false=off (default)
+                    switch=0):
     """Switch noise-source on or off.
 
     Parameters
@@ -171,9 +191,9 @@ def on(kat,
     ----------
     kat : session kat container-like object
         Container for accessing KATCP resources allocated to schedule block.
-    timestamp : float, optional
+    timestamp : float, optional (default = None)
         Time since the epoch as a floating point number [sec]
-    lead_time : float, optional
+    lead_time : float, optional (default = system default lead time)
         Lead time before the noisediode is switched on [sec]
     """
 
@@ -212,9 +232,9 @@ def off(kat,
     ----------
     kat : session kat container-like object
         Container for accessing KATCP resources allocated to schedule block.
-    timestamp : float, optional
+    timestamp : float, optional (default = None)
         Time since the epoch as a floating point number [sec]
-    lead_time : float, optional
+    lead_time : float, optional (default = system default lead time)
         Lead time before the noisediode is switched off [sec]
     """
 
@@ -224,7 +244,7 @@ def off(kat,
     user_logger.trace('TRACE: nd off at {} ({})'
                       .format(timestamp,
                               time.ctime(timestamp)))
-    true_timestamp = _switch_on_off_(kat, timestamp)  # default off
+    true_timestamp = _switch_on_off_(kat, timestamp)
     return true_timestamp
 
 
@@ -238,9 +258,9 @@ def trigger(kat,
     ----------
     kat : session kat container-like object
         Container for accessing KATCP resources allocated to schedule block.
-    duration : float, optional
+    duration : float, optional (default = None)
         Duration that the noisediode will be active [sec]
-    lead_time : float, optional
+    lead_time : float, optional (default = system default lead time)
         Lead time before the noisediode is switched on [sec]
     """
 
@@ -331,8 +351,8 @@ def trigger(kat,
 
 
 # set noise diode pattern
-def pattern(kat,  # kat subarray object
-            nd_setup,  # noise diode pattern setup
+def pattern(kat,
+            nd_setup,
             lead_time=_DEFAULT_LEAD_TIME,
             ):
     """Start background noise diode pattern controlled by digitiser hardware.
@@ -347,7 +367,7 @@ def pattern(kat,  # kat subarray object
             'cycle_len': the cycle length [sec],
                            - must be less than 20 sec for L-band,
             etc., etc.
-    lead_time : float, optional
+    lead_time : float, optional (default = system default lead time)
         Lead time before digitisers pattern is set [sec]
     """
 
