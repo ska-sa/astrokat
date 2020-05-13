@@ -103,7 +103,7 @@ def _set_dig_nd_(kat,
     msg = ('Set all noise diodes with timestamp {} ({})'
            .format(int(timestamp),
                    time.ctime(timestamp)))
-    user_logger.info(msg)
+    user_logger.debug('DEBUG: {}'.format(msg))
 
     return timestamp
 
@@ -167,11 +167,9 @@ def _switch_on_off_(kat,
     """
 
     on_off = {0: 'off', 1: 'on'}
-    user_logger.trace('TRACE: ND {} @ {}s'
-                      .format(on_off[switch], timestamp))
-    msg = ('Request: Switch noise-diode {} at {}'
+    msg = ('Request switch noise-diode {} at {}'
            .format(on_off[switch], timestamp))
-    user_logger.info(msg)
+    user_logger.debug('DEBUG: {}'.format(msg))
 
     # Noise Diodes are triggered on all antennas in array simultaneously
     # add lead time to ensure all digitisers set at the same time
@@ -200,10 +198,6 @@ def on(kat,
 
     if timestamp is None:
         timestamp = _get_nd_timestamp_(lead_time)
-
-    user_logger.trace('TRACE: nd on at {} ({})'
-                      .format(timestamp,
-                              time.ctime(timestamp)))
 
     true_timestamp = _switch_on_off_(kat,
                                      timestamp,
@@ -242,10 +236,10 @@ def off(kat,
     if timestamp is None:
         timestamp = _get_nd_timestamp_(lead_time)
 
-    user_logger.trace('TRACE: nd off at {} ({})'
-                      .format(timestamp,
-                              time.ctime(timestamp)))
     true_timestamp = _switch_on_off_(kat, timestamp)
+    msg = ('Report: noise-diode off at {}'
+           .format(true_timestamp))
+    user_logger.info(msg)
     return true_timestamp
 
 
@@ -268,9 +262,6 @@ def trigger(kat,
     if duration is None:
         return True  # nothing to do
 
-    user_logger.trace('TRACE: Trigger duration {}, lead {}'
-                      .format(duration, lead_time))
-
     msg = ('Firing noise diode for {}s before target observation'
            .format(duration))
     user_logger.info(msg)
@@ -278,19 +269,9 @@ def trigger(kat,
                      .format(lead_time))
     user_logger.debug('DEBUG: issue command to switch ND on @ {}'
                       .format(time.time()))
-    user_logger.trace('TRACE: ts before issue nd on command {}'
-                      .format(time.time()))
     if duration > lead_time:
         user_logger.trace('TRACE: Trigger duration > lead_time')
         on_time = _get_nd_timestamp_(lead_time)
-        user_logger.trace('TRACE: now {} ({})'
-                          .format(time.time(),
-                                  time.ctime(time.time())))
-        user_logger.trace('TRACE: on time {} ({})'
-                          .format(on_time,
-                                  time.ctime(on_time)))
-        user_logger.trace('TRACE: delta {}'
-                          .format(on_time - time.time()))
         # allow lead time for all to switch on simultaneously
         # timestamp on = now + lead
         on_time = on(kat, timestamp=on_time)
@@ -323,10 +304,10 @@ def trigger(kat,
                     }
         user_logger.debug('DEBUG: fire nd for {} using pattern'
                           .format(duration))
-        pattern(kat, nd_setup, lead_time=lead_time)
+        on_time = pattern(kat, nd_setup, lead_time=lead_time)
         user_logger.debug('DEBUG: pattern set {} ({})'
-                          .format(time.time(),
-                                  time.ctime(time.time())))
+                          .format(on_time,
+                                  time.ctime(on_time)))
         off_time = _get_nd_timestamp_(lead_time)
         user_logger.trace('TRACE: desired off_time {} ({})'
                           .format(off_time,
@@ -335,7 +316,7 @@ def trigger(kat,
     user_logger.debug('DEBUG: off {} ({})'
                       .format(off_time,
                               time.ctime(off_time)))
-    off(kat, timestamp=off_time)
+    off_time = off(kat, timestamp=off_time)
     sleeptime = off_time - time.time()
     user_logger.debug('DEBUG: now {}, sleep {}'
                       .format(time.time(),
@@ -344,10 +325,6 @@ def trigger(kat,
     user_logger.debug('DEBUG: now {}, slept {}'
                       .format(time.time(),
                               sleeptime))
-    msg = ('Report: noise-diode off at {}'
-           .format(time.time()))
-    user_logger.info(msg)
-
     return True
 
 
@@ -424,19 +401,16 @@ def pattern(kat,
     user_logger.trace('TRACE: timestamp {} ({})'
                       .format(timestamp,
                               time.ctime(timestamp)))
-    user_logger.trace('TRACE: delta {}'
-                      .format(timestamp - time.time()))
     wait_time = timestamp - time.time()
-    msg = ('Report: pattern set at {}'
-           .format(time.time()))
-    user_logger.info(msg)
+    user_logger.trace('TRACE: delta {}'
+                      .format(wait_time))
     time.sleep(wait_time)
-    msg = ('Switch noise-diode on at {}'
-           .format(time.time()))
-    user_logger.info(msg)
-    user_logger.trace('TRACE: set nd pattern at {}, sleep {}'
-                      .format(timestamp,
+    user_logger.trace('TRACE: set nd pattern at {}, slept {}'
+                      .format(time.time(),
                               wait_time))
-    return True
+    msg = ('Report: Switch noise-diode pattern on at {}'
+           .format(timestamp))
+    user_logger.info(msg)
+    return timestamp
 
 # -fin-
