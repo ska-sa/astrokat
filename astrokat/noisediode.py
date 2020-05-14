@@ -30,7 +30,7 @@ def _get_nd_timestamp_(lead_time):
 
 def _set_dig_nd_(kat,
                  timestamp,
-                 nd_setup=None,  # no pattern set
+                 nd_setup=None,
                  switch=0,
                  cycle=False):
     """Setting and implementing digitiser noise diode command
@@ -40,7 +40,7 @@ def _set_dig_nd_(kat,
         Container for accessing KATCP resources allocated to schedule block.
     timestamp : float
         Linux timestamp in seconds at which to switch noise diode
-    nd_setup : dict, optional (default = None)
+    nd_setup : dict, optional (default = None, no pattern set)
         Noise diode pattern setup, with keys:
             'antennas':  options are 'all', or 'm062', or ....,
             'cycle_len': the cycle length [sec],
@@ -48,6 +48,11 @@ def _set_dig_nd_(kat,
             etc., etc.
     switch : 0 or 1, optional (default = 0)
         Switch all noise diodes off (0) or on (1)
+
+    Returns
+    -------
+    timestamp: float
+        Linux timestamp reported by digitiser
     """
 
     if nd_setup is not None:
@@ -164,6 +169,11 @@ def _switch_on_off_(kat,
         Time since the epoch as a floating point number [sec]
     switch: int, optional
         off = 0 (default), on = 1
+
+    Returns
+    -------
+    timestamp: float
+        Linux timestamp reported by digitiser
     """
 
     on_off = {0: 'off', 1: 'on'}
@@ -194,6 +204,11 @@ def on(kat,
         Time since the epoch as a floating point number [sec]
     lead_time : float, optional (default = system default lead time)
         Lead time before the noisediode is switched on [sec]
+
+    Returns
+    -------
+    timestamp: float
+        Linux timestamp reported by digitiser
     """
 
     if timestamp is None:
@@ -231,6 +246,11 @@ def off(kat,
         Time since the epoch as a floating point number [sec]
     lead_time : float, optional (default = system default lead time)
         Lead time before the noisediode is switched off [sec]
+
+    Returns
+    -------
+    timestamp: float
+        Linux timestamp reported by digitiser
     """
 
     if timestamp is None:
@@ -271,10 +291,9 @@ def trigger(kat,
                       .format(time.time()))
     if duration > lead_time:
         user_logger.trace('TRACE: Trigger duration > lead_time')
-        on_time = _get_nd_timestamp_(lead_time)
         # allow lead time for all to switch on simultaneously
         # timestamp on = now + lead
-        on_time = on(kat, timestamp=on_time)
+        on_time = on(kat, lead_time=lead_time)
         user_logger.debug('DEBUG: on {} ({})'
                           .format(on_time,
                                   time.ctime(on_time)))
@@ -325,7 +344,6 @@ def trigger(kat,
     user_logger.debug('DEBUG: now {}, slept {}'
                       .format(time.time(),
                               sleeptime))
-    return True
 
 
 # set noise diode pattern
@@ -347,21 +365,23 @@ def pattern(kat,
             etc., etc.
     lead_time : float, optional (default = system default lead time)
         Lead time before digitisers pattern is set [sec]
+
+    Returns
+    -------
+    timestamp: float
+        Linux timestamp reported by digitiser
     """
 
     # nd pattern length [sec]
-    _MAX_CYCLE_LEN = _get_max_cycle_len(kat)
-    if float(nd_setup['cycle_len']) > _MAX_CYCLE_LEN:
-        msg = 'Maximum cycle length is {} seconds'.format(_MAX_CYCLE_LEN)
+    max_cycle_len = _get_max_cycle_len(kat)
+    if float(nd_setup['cycle_len']) > max_cycle_len:
+        msg = 'Maximum cycle length is {} seconds'.format(max_cycle_len)
         raise RuntimeError(msg)
 
     user_logger.trace('TRACE: max cycle len {}'
-                      .format(_MAX_CYCLE_LEN))
+                      .format(max_cycle_len))
 
-    # Try to trigger noise diodes on all antennas in array simultaneously.
-    # - use integer second boundary as that is most likely be an exact
-    #   time that DMC can execute at, and also fit a unix epoch time
-    #   into a double precision float accurately
+    # Try to trigger noise diodes on specified antennas in array simultaneously.
     # - add a default lead time to ensure enough time for all digitisers
     #   to be set up
     start_time = _get_nd_timestamp_(lead_time)
@@ -389,8 +409,8 @@ def pattern(kat,
     user_logger.info('Antennas found in subarray, setting ND: {}'
                      .format(nd_setup['antennas']))
 
-    # Noise Diodes are triggered on all antennas in array simultaneously
-    # add a second to ensure all digitisers set at the same time
+    # Noise Diodes are triggered simultaneously
+    # on specified antennas in the array
     timestamp = _set_dig_nd_(kat,
                              start_time,
                              nd_setup=nd_setup,
