@@ -118,7 +118,7 @@ def _katcp_reply_(dig_katcp_replies):
     ant_ts_list = []
     for ant in sorted(dig_katcp_replies):
         reply, informs = dig_katcp_replies[ant]
-        if reply.succeeded():
+        if reply.reply_ok():
             ant_ts_list.append(_nd_log_msg_(ant, reply, informs))
         else:
             msg = 'Unexpected noise diode reply from ant {}'.format(ant)
@@ -140,6 +140,12 @@ def _nd_log_msg_(ant,
                               reply.arguments))
     user_logger.debug('DEBUG: informs = {}'
                       .format(informs))
+
+    if len(reply.arguments) < 4:
+        msg = 'Unexpected number of return arguments\n'
+        msg += '4 values expected: code time on-frac cycle-len'
+        msg += 'Found {}'.format(len(reply.arguments))
+        raise RuntimeError(msg)
 
     actual_time = float(reply.arguments[1])
     actual_on_frac = float(reply.arguments[2])
