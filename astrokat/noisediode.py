@@ -51,7 +51,7 @@ def _set_dig_nd_(kat,
 
     Returns
     -------
-    timestamp: float
+    timestamp : float
         Linux timestamp reported by digitiser
     """
 
@@ -178,7 +178,7 @@ def _switch_on_off_(kat,
 
     Returns
     -------
-    timestamp: float
+    timestamp : float
         Linux timestamp reported by digitiser
     """
 
@@ -213,7 +213,7 @@ def on(kat,
 
     Returns
     -------
-    timestamp: float
+    timestamp : float
         Linux timestamp reported by digitiser
     """
 
@@ -255,7 +255,7 @@ def off(kat,
 
     Returns
     -------
-    timestamp: float
+    timestamp : float
         Linux timestamp reported by digitiser
     """
 
@@ -374,7 +374,7 @@ def pattern(kat,
 
     Returns
     -------
-    timestamp: float
+    timestamp : float
         Linux timestamp reported by digitiser
     """
 
