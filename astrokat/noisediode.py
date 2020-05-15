@@ -401,7 +401,7 @@ def pattern(kat,
     user_logger.warning(msg)
 
     nd_antennas = nd_setup['antennas']
-    sb_ants = ",".join([str(ant.name) for ant in kat.ants])
+    sb_ants = ",".join(str(ant.name) for ant in kat.ants)
     nd_setup['antennas'] = sb_ants
     if nd_antennas == 'all':
         cycle = False
@@ -409,9 +409,9 @@ def pattern(kat,
         cycle = True
     else:
         cycle = False
-        nd_setup['antennas'] = ",".join([
+        nd_setup['antennas'] = ",".join(
             ant.strip() for ant in nd_antennas.split(",") if ant.strip() in sb_ants
-        ])
+        )
     user_logger.info('Antennas found in subarray, setting ND: {}'
                      .format(nd_setup['antennas']))
 
