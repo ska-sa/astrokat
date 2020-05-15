@@ -57,7 +57,7 @@ def _set_dig_nd_(kat,
 
     if nd_setup is not None:
         # selected antennas for nd pattern
-        nd_antennas = nd_setup['antennas'].split(",")
+        nd_antennas = sorted(nd_setup['antennas'].split(","))
         # nd pattern length [sec]
         cycle_length = nd_setup['cycle_len']
         # on fraction of pattern length [%]
@@ -69,13 +69,13 @@ def _set_dig_nd_(kat,
                        nd_antennas))
         user_logger.info(msg)
     else:
-        nd_antennas = [ant.name for ant in kat.ants]
+        nd_antennas = sorted(ant.name for ant in kat.ants)
         cycle_length = 1.
         on_fraction = switch
 
     # Noise diodes trigger is evaluated per antenna
     timestamps = []
-    for ant in sorted(nd_antennas):
+    for ant in nd_antennas:
         ped = getattr(kat, ant)
         try:
             reply = ped.req.dig_noise_source(timestamp,
