@@ -7,7 +7,7 @@ GREEN="\033[1;32m"
 YELLOW='\033[0;33m'
 NOCOLOR="\033[0m"
 
-CMD="./astrokat-catalogue2obsfile.py"
+CMD="astrokat-catalogue2obsfile.py"
 
 echo
 $CMD --infile test_convert/targets.csv --target-duration 10
