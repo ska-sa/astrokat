@@ -584,8 +584,15 @@ def run_observation(opts, kat):
                     if (nd_setup['cycle_len'] >= dump_period):
                         cycle_len_frac = nd_setup['cycle_len'] // dump_period
                         nd_setup['cycle_len'] = cycle_len_frac * dump_period
-                    msg = 'Set noise diode period to multiple of correlator dump period:'
-                    msg += ' cycle length = {} [sec]'.format(nd_setup['cycle_len'])
+                        msg = ('Set noise diode period '
+                               'to multiple of correlator dump period: '
+                               'cycle length = {} [sec]'
+                               .format(nd_setup['cycle_len']))
+                    else:
+                        msg = ('Requested cycle length {}s '
+                               '< correlator dump period {}s, '
+                               'ND not aligned with dump edge'
+                               .format(nd_setup['cycle_len'], dump_period))
                     user_logger.warning(msg)
                     noisediode.pattern(kat.array,
                                        nd_setup,
