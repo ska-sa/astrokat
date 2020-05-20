@@ -145,7 +145,7 @@ def observe(session, target_info, **kwargs):
     # set noise diode behaviour
     nd_setup = None
     nd_lead = _DEFAULT_LEAD_TIME
-    if "noise_diode" in kwargs:
+    if kwargs.get("noise_diode"):
         nd_setup = kwargs["noise_diode"]
         # user specified lead time
         if "lead_time" in nd_setup:
@@ -581,8 +581,9 @@ def run_observation(opts, kat):
                                   .format(dump_period))
 
                 if "cycle_len" in nd_setup:
-                    cycle_len_frac = -(nd_setup['cycle_len'] // -dump_period)
-                    nd_setup['cycle_len'] = cycle_len_frac * dump_period
+                    if (nd_setup['cycle_len'] >= dump_period):
+                        cycle_len_frac = nd_setup['cycle_len'] // dump_period
+                        nd_setup['cycle_len'] = cycle_len_frac * dump_period
                     msg = 'Set noise diode period to multiple of correlator dump period:'
                     msg += ' cycle length = {} [sec]'.format(nd_setup['cycle_len'])
                     user_logger.warning(msg)
