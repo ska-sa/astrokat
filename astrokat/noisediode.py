@@ -77,15 +77,9 @@ def _set_dig_nd_(kat,
     timestamps = []
     for ant in nd_antennas:
         ped = getattr(kat, ant)
-        try:
-            reply = ped.req.dig_noise_source(timestamp,
-                                             on_fraction,
-                                             cycle_length)
-        except ValueError as e:
-            # we will not do anything, simply note
-            user_logger.warn("{} : {}".format(ant, e))
-            continue
-
+        reply = ped.req.dig_noise_source(timestamp,
+                                         on_fraction,
+                                         cycle_length)
         if not kat.dry_run:
             timestamps.append(_katcp_reply_({ant: reply}))
         else:
