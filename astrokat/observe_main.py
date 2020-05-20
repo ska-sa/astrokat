@@ -591,7 +591,7 @@ def run_observation(opts, kat):
                     else:
                         msg = ('Requested cycle length {}s '
                                '< correlator dump period {}s, '
-                               'ND not aligned with dump edge'
+                               'ND not synchronised with dump edge'
                                .format(nd_setup['cycle_len'], dump_period))
                     user_logger.warning(msg)
                     noisediode.pattern(kat.array,
