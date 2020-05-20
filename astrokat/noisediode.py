@@ -384,6 +384,10 @@ def pattern(kat,
     # Try to trigger noise diodes on specified antennas in array simultaneously.
     # - add a default lead time to ensure enough time for all digitisers
     #   to be set up
+    if lead_time >= max_cycle_len:
+        user_logger.error('Nonstandard ND usage: lead time > max cycle len')
+        raise RuntimeError('ND pattern setting cannot be achieved')
+
     start_time = _get_nd_timestamp_(lead_time)
     user_logger.trace('TRACE: desired start_time {} ({})'
                       .format(start_time,
