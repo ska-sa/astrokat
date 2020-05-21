@@ -61,8 +61,11 @@ def cli(prog):
 
 
 def gal2icrs_skycoord(coord_x, coord_y):
-    """Create galactic SkyCoord and transformed ICRS SkyCoord"""
-    gal_coord = SkyCoord(l=coord_x,
+    """Create galactic SkyCoord and transformed ICRS SkyCoord
+       galactic longitude l = coord_x
+       galactic latitude b = coord_y
+    """
+    gal_coord = SkyCoord(l=coord_x,  # noqa
                          b=coord_y,
                          frame=Galactic)
     return gal_coord, gal_coord.transform_to(ICRS)
@@ -70,9 +73,12 @@ def gal2icrs_skycoord(coord_x, coord_y):
 
 def icrs_skycoord(coord_x, coord_y):
     """Create ICRS SkyCoord"""
+    if len(coord_x.split(':')) > 1:
+        coord_x += 'h'
+    if len(coord_y.split(':')) > 1:
+        coord_y += 'd'
     return SkyCoord(ra=coord_x,
                     dec=coord_y,
-                    unit=(u.hourangle, u.deg),
                     frame=ICRS)
 
 
@@ -92,9 +98,13 @@ def format_str(astropy_x, astropy_y):
 def coord_str(astropy_x, astropy_y):
     x_str, y_str = format_str(astropy_x, astropy_y)
     str_format = "({}, {})".format(str(x_str), str(y_str))
-    float_format = "({:.4f}, {:.4f})".format(astropy_x.degree,
-                                             astropy_y.degree)
-    return '{} = {} degrees'.format(str_format, float_format)
+    float_format = "({:.4f}h, {:.4f}d)".format(astropy_x.hour,
+                                               astropy_y.degree)
+    degree_format = "({:.4f}d, {:.4f}d)".format(astropy_x.degree,
+                                                astropy_y.degree)
+    return '{} = {} = {}'.format(str_format,
+                                 float_format,
+                                 degree_format)
 
 
 def display_radec(astropy_radec, name=None):
@@ -113,7 +123,14 @@ def display_galactic(astropy_gal, name=None):
                                   astropy_gal.b)))
 
 
-def gal2radec(infile, outfile, verbose=False):
+def csv_entry(radec_coord, name='target'):
+    x_str, y_str = format_str(radec_coord.ra, radec_coord.dec)
+    return '{}, radec target, {}, {}\n'.format(name,
+                                               x_str,
+                                               y_str)
+
+
+def gal2radec(infile, verbose=False):
     """Read all targets in catalogue and make all ICRS in returned catalogue"""
     with open(infile, 'r') as fin:
         targets = fin.readlines()
@@ -135,34 +152,38 @@ def gal2radec(infile, outfile, verbose=False):
             [gal_coord,
              radec_coord] = gal2icrs_skycoord(coord_x, coord_y)
 
-        x_str, y_str = format_str(radec_coord.ra, radec_coord.dec)
-        cat_entry += '{}, radec target, {}, {}\n'.format(name,
-                                                         x_str,
-                                                         y_str)
-    with open(outfile, 'w') as fout:
-        fout.write(cat_entry)
+        cat_entry += csv_entry(radec_coord, name=name)
 
-    if verbose:
-        print('\nCatalogue file created')
-        print(cat_entry)
+    return cat_entry
 
 
 def main(args):
     if args.radec is not None:
         radec_coord = icrs_skycoord(args.radec[1], args.radec[2])
         display_radec(radec_coord, name=args.radec[0])
-
-    if args.galactic is not None:
+        # exit here
+        raise SystemExit
+    elif args.galactic is not None:
         [gal_coord,
          radec_coord] = gal2icrs_skycoord(args.galactic[1],
                                           args.galactic[2])
         display_galactic(gal_coord, name=args.galactic[0])
         display_radec(radec_coord)
+        cat_entry = csv_entry(radec_coord, name=args.galactic[0])
+    elif args.catalogue is not None:
+        cat_entry = gal2radec(args.catalogue,
+                              verbose=args.verbose)
+    else:
+        # nothing to do
+        raise SystemExit
 
-    if args.catalogue is not None:
-        gal2radec(args.catalogue,
-                  outfile=args.outfile,
-                  verbose=args.verbose)
+    with open(args.outfile, 'w') as fout:
+        fout.write(cat_entry)
+
+    print('\nEquatorial catalogue file created: {}'.format(args.outfile))
+    if args.verbose:
+        print('Catalogue file entries')
+        print(cat_entry)
 
 
 if __name__ == '__main__':
