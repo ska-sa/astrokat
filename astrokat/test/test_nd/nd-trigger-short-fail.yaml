@@ -1,0 +1,11 @@
+# scan observation with noise diode trigger testing limit handling
+durations:
+  start_time: 2019-11-14 07:00:00
+noise_diode:
+  # set lead time for trigger command
+  lead_time: 25.  # sec
+observation_loop:
+  - LST: 0:00
+    target_list:
+      # trigger noise diode before track with 10 sec
+      - name=azel, azel=50.26731 43.70517, tags=target, duration=60.0, nd=10

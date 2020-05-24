@@ -9,12 +9,13 @@ import time
 import astrokat
 from astrokat.utility import datetime2timestamp, timestamp2datetime
 from astrokat import (
+    _DEFAULT_LEAD_TIME,
     NoTargetsUpError,
     NotAllTargetsUpError,
-    read_yaml,
     get_lst,
     katpoint_target,
     noisediode,
+    read_yaml,
     scans,
 )
 
@@ -26,7 +27,12 @@ try:
         verify_and_connect,
     )
 except ImportError:
-    from astrokat import collect_targets, user_logger, start_session, verify_and_connect
+    from astrokat import (
+        collect_targets,
+        user_logger,
+        start_session,
+        verify_and_connect,
+    )
 
 
 # Maximum difference allowed between requested and actual dump rate (Hz)
@@ -99,7 +105,7 @@ def read_targets(target_items):
                 cadence = item_[len(prefix):]
             prefix = "nd="
             if item_.startswith(prefix):
-                nd = item_[len(prefix)]
+                nd = item_[len(prefix):]
         durations.append(duration)
         obs_types.append(obs_type)
         cadences.append(cadence)
@@ -136,6 +142,31 @@ def observe(session, target_info, **kwargs):
     if "slewonly" in kwargs:
         return session.track(target, duration=0.0, announce=False)
 
+    # set noise diode behaviour
+    nd_setup = None
+    nd_lead = _DEFAULT_LEAD_TIME
+    if kwargs.get("noise_diode"):
+        nd_setup = kwargs["noise_diode"]
+        # user specified lead time
+        if "lead_time" in nd_setup:
+            nd_lead = nd_setup['lead_time']
+        # not a ND pattern
+        if "cycle_len" not in nd_setup:
+            nd_setup = None
+
+    # implement target specific noise diode behaviour
+    nd_period = None
+    nd_restore = False
+    if target_info["noise_diode"] is not None:
+        if "off" in target_info["noise_diode"]:
+            user_logger.info('Observation: No ND for target')
+            nd_restore = True
+            # disable noise diode pattern for target
+            noisediode.off(session.kat,
+                           lead_time=nd_lead)
+        else:
+            nd_period = float(target_info["noise_diode"])
+
     msg = "Initialising {} {} {}".format(
         obs_type.capitalize(), ", ".join(target.tags[1:]), target_name
     )
@@ -143,20 +174,6 @@ def observe(session, target_info, **kwargs):
         msg += " for {} sec".format(duration)
     if np.isnan(duration) or duration > 1:
         user_logger.info(msg)
-
-    # implement target specific noise diode behaviour
-    nd_setup = None
-    nd_period = None
-    if target_info["noise_diode"] is not None:
-        if "off" in target_info["noise_diode"]:
-            # if pattern specified, remember settings to reset
-            if "noise_diode" in kwargs:
-                if kwargs["noise_diode"] is not None:
-                    nd_setup = kwargs["noise_diode"]
-            # disable noise diode pattern for target
-            noisediode.off(session.kat)
-        else:
-            nd_period = float(target_info["noise_diode"])
 
     # do the different observations depending on requested type
     session.label(obs_type.strip())
@@ -189,7 +206,9 @@ def observe(session, target_info, **kwargs):
             user_logger.trace(
                 "TRACE: ts before nd trigger" "{} for {}".format(time.time(), nd_period)
             )
-            noisediode.trigger(session.kat, session, duration=nd_period)
+            noisediode.trigger(session.kat,
+                               duration=nd_period,
+                               lead_time=nd_lead)
             user_logger.trace("TRACE: ts after nd trigger {}".format(time.time()))
         user_logger.debug(
             "DEBUG: Starting {}s track on target: "
@@ -199,9 +218,13 @@ def observe(session, target_info, **kwargs):
             target_visible = True
     user_logger.trace("TRACE: ts after {} {}".format(obs_type, time.time()))
 
-    if nd_setup is not None:
+    if (nd_setup is not None and nd_restore):
         # restore pattern if programmed at setup
-        noisediode.pattern(session.kat, session, nd_setup)
+        user_logger.info('Observation: Restoring ND pattern')
+        noisediode.pattern(session.kat,
+                           nd_setup,
+                           lead_time=nd_lead,
+                           )
 
     return target_visible
 
@@ -293,12 +316,13 @@ class Telescope(object):
 
     def __enter__(self):
         """Verify subarray setup correct for observation before doing any work."""
+        user_logger.info("Observation start up")
         user_logger.info("Running astrokat version - %s", astrokat.__version__)
-        if "instrument" in self.opts.obs_plan_params.keys():
-            self.subarray_setup(self.opts.obs_plan_params["instrument"])
+        obs_plan_params = self.opts.obs_plan_params
+        if "instrument" in obs_plan_params:
+            self.subarray_setup(obs_plan_params["instrument"])
 
         # TODO: noise diode implementations should be moved to sessions
-        # Ensure default setup before starting observation
         # switch noise-source pattern off (known setup starting observation)
         noisediode.off(self.array)
 
@@ -312,6 +336,7 @@ class Telescope(object):
 
     def __exit__(self, type, value, traceback):
         """Return telescope to its startup state."""
+        user_logger.info("Observation clean up")
         user_logger.info("Returning telescope to startup state")
         # Ensure known exit state before quitting
         # TODO: Return correlator settings to entry values
@@ -537,10 +562,42 @@ def run_observation(opts, kat):
                         )
                     )
                     continue
+
             # TODO: setup of noise diode pattern should be moved to sessions
             #  so it happens in the line above
-            if "noise_diode" in obs_plan_params.keys():
-                noisediode.pattern(kat.array, session, obs_plan_params["noise_diode"])
+            if "noise_diode" in obs_plan_params:
+                nd_setup = obs_plan_params["noise_diode"]
+                nd_lead = _DEFAULT_LEAD_TIME
+                if "lead_time" in nd_setup:
+                    nd_lead = nd_setup['lead_time']
+
+                # Set noise diode period to multiple of correlator integration time.
+                if not kat.array.dry_run:
+                    cbf_corr = session.cbf.correlator
+                    dump_period = cbf_corr.sensor.int_time.get_value()
+                else:
+                    dump_period = 0.5  # sec
+                user_logger.debug('DEBUG: Correlator integration time {} [sec]'
+                                  .format(dump_period))
+
+                if "cycle_len" in nd_setup:
+                    if (nd_setup['cycle_len'] >= dump_period):
+                        cycle_len_frac = nd_setup['cycle_len'] // dump_period
+                        nd_setup['cycle_len'] = cycle_len_frac * dump_period
+                        msg = ('Set noise diode period '
+                               'to multiple of correlator dump period: '
+                               'cycle length = {} [sec]'
+                               .format(nd_setup['cycle_len']))
+                    else:
+                        msg = ('Requested cycle length {}s '
+                               '< correlator dump period {}s, '
+                               'ND not synchronised with dump edge'
+                               .format(nd_setup['cycle_len'], dump_period))
+                    user_logger.warning(msg)
+                    noisediode.pattern(kat.array,
+                                       nd_setup,
+                                       lead_time=nd_lead,
+                                       )
 
             # Adding explicit init after "Capture-init failed" exception was
             # encountered
