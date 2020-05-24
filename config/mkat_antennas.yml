@@ -1,0 +1,69 @@
+reference:
+  latitude: '-30:42:47.4'
+  longitude: '21:26:38.0'
+  altitude: 1060.0
+antennas:
+  - name=m000, diameter=13.5, north=-8.21, east=26.797, up=0.117
+  - name=m001, diameter=13.5, north=11.683, east=62.279, up=-0.028
+  - name=m002, diameter=13.5, north=-32.073, east=-12.567, up=0.149
+  - name=m003, diameter=13.5, north=-66.481, east=31.783, up=-0.21
+  - name=m004, diameter=13.5, north=-123.585, east=-22.424, up=0.015
+  - name=m005, diameter=13.5, north=-102.029, east=-49.044, up=0.381
+  - name=m006, diameter=13.5, north=-18.189, east=-61.359, up=0.933
+  - name=m007, diameter=13.5, north=-89.544, east=-168.672, up=1.265
+  - name=m008, diameter=13.5, north=-93.492, east=-300.977, up=1.943
+  - name=m009, diameter=13.5, north=32.395, east=-137.002, up=1.637
+  - name=m010, diameter=13.5, north=88.149, east=-277.806, up=2.687
+  - name=m011, diameter=13.5, north=84.052, east=-118.014, up=1.649
+  - name=m012, diameter=13.5, north=140.059, east=-134.191, up=1.98
+  - name=m013, diameter=13.5, north=236.826, east=-159.397, up=2.644
+  - name=m014, diameter=13.5, north=280.723, east=-73.648, up=2.051
+  - name=m015, diameter=13.5, north=210.683, east=14.915, up=1.248
+  - name=m016, diameter=13.5, north=288.206, east=48.184, up=1.307
+  - name=m017, diameter=13.5, north=199.657, east=121.806, up=0.464
+  - name=m018, diameter=13.5, north=105.766, east=-11.794, up=1.019
+  - name=m019, diameter=13.5, north=170.832, east=-68.072, up=1.578
+  - name=m020, diameter=13.5, north=97.047, east=-65.578, up=1.381
+  - name=m021, diameter=13.5, north=-295.92, east=-93.176, up=-0.368
+  - name=m022, diameter=13.5, north=-322.253, east=91.887, up=-1.709
+  - name=m023, diameter=13.5, north=-372.963, east=234.592, up=-2.848
+  - name=m024, diameter=13.5, north=-351.004, east=384.142, up=-3.652
+  - name=m025, diameter=13.5, north=-181.933, east=459.673, up=-3.449
+  - name=m026, diameter=13.5, north=-98.955, east=251.106, up=-1.707
+  - name=m027, diameter=13.5, north=40.519, east=210.973, up=-0.823
+  - name=m028, diameter=13.5, north=-32.361, east=146.89, up=-0.854
+  - name=m029, diameter=13.5, north=-88.713, east=109.952, up=-0.782
+  - name=m030, diameter=13.5, north=171.318, east=348.027, up=-1.221
+  - name=m031, diameter=13.5, north=246.617, east=327.814, up=-1.049
+  - name=m032, diameter=13.5, north=461.318, east=409.57, up=-1.146
+  - name=m033, diameter=13.5, north=580.743, east=1098.024, up=-4.947
+  - name=m034, diameter=13.5, north=357.851, east=205.759, up=0.467
+  - name=m035, diameter=13.5, north=386.199, east=53.183, up=1.79
+  - name=m036, diameter=13.5, north=388.3, east=-56.705, up=2.328
+  - name=m037, diameter=13.5, north=380.335, east=-225.251, up=3.696
+  - name=m038, diameter=13.5, north=217.577, east=-335.01, up=3.45
+  - name=m039, diameter=13.5, north=253.795, east=-365.147, up=3.945
+  - name=m040, diameter=13.5, north=-26.819, east=-478.158, up=3.358
+  - name=m041, diameter=13.5, north=-287.496, east=-427.615, up=1.471
+  - name=m042, diameter=13.5, north=-361.669, east=-226.253, up=0.007
+  - name=m043, diameter=13.5, north=-629.819, east=105.734, up=-3.238
+  - name=m044, diameter=13.5, north=-896.134, east=834.547, up=-9.171
+  - name=m045, diameter=13.5, north=-1832.811, east=500.794, up=-8.426
+  - name=m046, diameter=13.5, north=-1467.322, east=1985.977, up=-15.65
+  - name=m047, diameter=13.5, north=-578.246 , east=-283.241, up=-0.681
+  - name=m048, diameter=13.5, north=-2805.609, east=2920.917, up=-18.344
+  - name=m049, diameter=13.5, north=-3605.912, east=670.529, up=-5.792
+  - name=m050, diameter=13.5, north=-2052.286, east=-609.646, up=-3.099
+  - name=m051, diameter=13.5, north=-838.09, east=-535.293, up=-0.859
+  - name=m052, diameter=13.5, north=-593.145, east=-940.49, up=2.107
+  - name=m053, diameter=13.5, north=9.404, east=-1070.405, up=6.576
+  - name=m054, diameter=13.5, north=871.997, east=-273.054, up=4.885
+  - name=m055, diameter=13.5, north=1201.837, east=330.568, up=1.523
+  - name=m056, diameter=13.5, north=1612.873, east=700.73, up=-1.514
+  - name=m057, diameter=13.5, north=311.439 , east=3493.984, up=-19.294
+  - name=m058, diameter=13.5, north=2805.814, east=2920.938, up=-12.295
+  - name=m059, diameter=13.5, north=3686.461, east=992.963, up=3.232
+  - name=m060, diameter=13.5, north=3419.741, east=-1606.404, up=15.284
+  - name=m061, diameter=13.5, north=-16.376, east=-2089.727, up=12.899
+  - name=m062, diameter=13.5, north=-1440.592, east=-2293.505, up=13.294
+  - name=m063, diameter=13.5, north=-3419.53, east=-1606.409, up=7.977

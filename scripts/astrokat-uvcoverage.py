@@ -20,6 +20,7 @@ class Interferometer(object):
     def __init__(self,
                  configuration_file,
                  centre_freq=1420e6,  # Hz
+                 sub_array=None,
                  ):
         self.frequency = centre_freq / u.s
         self.wavelength = phys.c / self.frequency
@@ -35,6 +36,8 @@ class Interferometer(object):
         self._build_array_(array_config['antennas'])
 
         # function to update with only selected antennas
+        if sub_array is not None:
+            self._extract_subarray_(sub_array)
 
         # number of antennas
         self.nr_antennas = len(self.antennas)
@@ -89,6 +92,13 @@ class Interferometer(object):
                 self.antennas[cnt]['location'] = EarthLocation(x=ant_North * u.m,
                                                                y=ant_East * u.m,
                                                                z=ant_Up * u.m)
+
+    def _extract_subarray_(self, subarray):
+        row_indices = []
+        for row_cnt, antenna in enumerate(self.antennas):
+            if antenna['name'] in subarray:
+                row_indices.append(row_cnt)
+        self.antennas = self.antennas[row_indices]
 
     def baselines(self):
         """The function evaluates baselines lenghts
@@ -295,12 +305,11 @@ def cli(prog):
         type=float,
         default=-90,
         help='Pointing declination in degrees')
-    # parser.add_argument('--sub',
-    #                   action='store',
-    #                   dest='subarray',
-    #                   type=str,
-    #                   default='mkat',
-    #                   help='Name of subarray as defined in config')
+    parser.add_argument(
+        '--sub',
+        nargs='*',
+        metavar='ANT',
+        help='List of antenna names in subarray')
     parser.add_argument(
         '--natural',
         action="store_true",
@@ -308,7 +317,13 @@ def cli(prog):
         help="UV mask and synthesize beam, "
              "natural weighting without a taper")
     parser.add_argument(
-        '--save',
+        '--gaussian',
+        action="store_true",
+        default=False,
+        help="UV mask and synthesize beam, "
+             "natural weighting with Gaussian taper")
+    parser.add_argument(
+        '-s', '--save',
         action="store_true",
         default=False,
         help="Save graphs to PNG format")
@@ -322,23 +337,32 @@ def cli(prog):
 
 
 def main(args):
-    # number of time slots
-    ntimeslots = args.ntimeslots
+    subarray = args.sub
+    if args.sub is not None:
+        subarray = sorted(args.sub)
+    mkat = Interferometer(args.config,
+                          centre_freq=1420e6,
+                          sub_array=subarray)
+
     # declination convert in radian
     dec = np.radians(args.declination)
-    # hour angle range in hours given nr of timeslots
-    ha_range = np.linspace(-4., 4., ntimeslots) * np.pi / 12.
-
-    mkat = Interferometer(args.config,
-                          centre_freq=1420e6)
+    # telescope latitude
     latitude = mkat.ref_position.geodetic[1].radian
+    # number of time slots
+    ntimeslots = args.ntimeslots
+    # hour angle range in hours given nr of timeslots
+    # At solar noon the hour angle is 0.000 degree,
+    # with the time before solar noon expressed as negative degrees,
+    # and the local time after solar noon expressed as positive degrees.
+    ha_range = np.linspace(-4., 4., ntimeslots) * np.pi / 12.
 
     if args.verbose:
         print('MeerKAT telescope location')
         print(mkat.ref_position.geodetic)
-        print('latitude {:.3f} [rad]'.format(latitude))
-        print('UV coverage @ decl={:.3f} [rad]'.format(dec))
-        # print(ha_range)
+        print('latitude {:.3f} [rad] ({:.3f} [deg])'
+              .format(latitude, np.degrees(latitude)))
+        print('UV coverage @ decl={:.3f} [rad] ({:.3f} [deg])'
+              .format(dec, np.degrees(dec)))
 
     # baseline lengths and azimuth angles
     [bl_length,
@@ -352,7 +376,8 @@ def main(args):
     fig, ax = uvplot.plot_uv(ha_range,
                              bl_length,
                              bl_az_angle,
-                             ntimeslots)
+                             ntimeslots,
+                             comment='{:.0f}'.format(args.declination))
     uv = uvplot.track_uv(ha_range=ha_range,
                          bl_length=bl_length[-1],
                          bl_azimuth=bl_az_angle[-1],
@@ -363,11 +388,10 @@ def main(args):
     plt.axis('equal')
     plt.gca().invert_xaxis()
     if args.save:
-        # plt.savefig('%s_uv_coverage_%d.png'%(opts.subarray,int(opts.declination)))
         filename = ('mkat_uv_coverage_dec{:.0f}.png'
                     .format(args.declination))
-        print(filename)
-        # plt.savefig(filename)
+        plt.savefig(filename)
+        print('Saved image {}'.format(filename))
 
     # Show UV mask and synthesize beam, natural weighting without a taper
     # number of pixels
@@ -383,24 +407,29 @@ def main(args):
                                     ntimeslots,
                                     npix,
                                     uvscale)
-    psf = np.fft.ifftshift(np.fft.ifft2(mask.T)).real
     if args.natural:
-        uvplot.plot_mask(mask.T, psf, comment="natural weighting")
+        psf = np.fft.ifftshift(np.fft.ifft2(mask.T)).real
+        uvplot.plot_mask(mask.T,
+                         psf,
+                         comment="natural weighting")
         if args.save:
-            # filename = '%s_natural_weighting_%d.png' % (opts.subarray,int(opts.declination))
             filename = ('mkat_natural_weighting_dec{:.0f}.png'
                         .format(args.declination))
-            print(filename)
-            # plt.savefig(filename)
+            plt.savefig(filename)
+            print('Saved image {}'.format(filename))
 
-# # Show UV mask and synthesize beam, natural weighting with Gaussian taper
-    # gauss_kernel = Gauss (npix, npix/20.)
-    # psf = np.fft.ifftshift(np.fft.ifft2(gauss_kernel*(mask.T))).real
-# #     # plot the mask
-# #     filename = None
-# #     if opts.savegraph: filename = '%s_tapered_gaussian_weighting_%d.png'%(opts.subarray,int(opts.declination))
-    # uvplot.plot_mask(gauss_kernel*mask.T, psf, comment="tapered Gaussian weighting")
-    #     if filename is not None: plt.savefig(filename)
+    # Show UV mask and synthesize beam, natural weighting with Gaussian taper
+    if args.gaussian:
+        gauss_kernel = Gauss(npix, npix / 20.)
+        psf = np.fft.ifftshift(np.fft.ifft2(gauss_kernel * (mask.T))).real
+        uvplot.plot_mask(gauss_kernel * mask.T,
+                         psf,
+                         comment="tapered Gaussian weighting")
+        if args.save:
+            filename = ('mkat_gaussian_weighting_dec{:.0f}.png'
+                        .format(args.declination))
+            plt.savefig(filename)
+            print('Saved image {}'.format(filename))
 
 
 if __name__ == '__main__':
