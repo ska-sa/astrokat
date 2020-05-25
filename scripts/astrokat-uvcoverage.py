@@ -20,6 +20,7 @@ try:
 except ImportError:  # not a processing node
     text_only = True
 
+
 class Interferometer(object):
     def __init__(self,
                  configuration_file,

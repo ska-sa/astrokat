@@ -8,7 +8,6 @@ import argparse
 import sys
 
 
-# TODO: need to move to utility
 from contextlib import contextmanager
 
 
@@ -198,7 +197,7 @@ class UnpackCatalogue(object):
                     name,
                     prefix,
                     " ".join([ra, dec]),
-                    tags[len(prefix) :].strip(),
+                    tags[len(prefix):].strip(),
                 ]
 
                 target_spec = "name={}, {}={}, tags={}, duration={}"
