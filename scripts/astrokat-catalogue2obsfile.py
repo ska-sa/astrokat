@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-"""Take a catalogue file and construct a basic observation configuration file."""
+"""Take a catalogue file and construct a observation configuration file."""
 
 from __future__ import print_function
 
-from astrokat import Observatory
+from astrokat import Observatory, __version__
 import argparse
 import sys
 
@@ -29,7 +29,6 @@ def cli(prog):
     option arguments
 
     """
-    version = "{} 0.1".format(prog)
     usage = "{} [options] --infile <full_path/cat_file.csv>".format(prog)
     description = (
         "sources are specified as a catalogue of targets,"
@@ -40,30 +39,36 @@ def cli(prog):
         description=description,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--version", action="version", version=version)
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=__version__)
     parser.add_argument(
         "--infile",
         type=str,
         required=True,
-        help="filename of the CSV catalogue to convert (**required**)",
-    )
+        help="filename of the CSV catalogue to convert (**required**)")
     parser.add_argument(
         "--outfile",
         type=str,
-        help="filename for output observation file (default outputs to screen)",
-    )
+        help="filename for output observation file (default outputs to screen)")
 
     description = "instrument setup requirements"
     group = parser.add_argument_group(
         title="observation instrument setup", description=description
     )
     group.add_argument(
-        "--product", type=str, help="observation instrument product configuration"
-    )
-    group.add_argument("--band", type=str, help="observation band: L, UHF, X, S")
+        "--product",
+        type=str,
+        help="observation instrument product configuration")
     group.add_argument(
-        "--integration-period", type=float, help="averaging time per dump [sec]"
-    )
+        "--band",
+        type=str,
+        help="observation band: L, UHF, X, S")
+    group.add_argument(
+        "--integration-period",
+        type=float,
+        help="averaging time per dump [sec]")
 
     description = (
         "track a target for imaging or spectral line observations,"
@@ -72,16 +77,19 @@ def cli(prog):
     group = parser.add_argument_group(
         title="target observation strategy", description=description
     )
-    group.add_argument("--lst", type=str, help="observation start LST or LST range")
+    group.add_argument(
+        "--lst",
+        type=str,
+        help="observation start LST or LST range")
     group.add_argument(
         "--target-duration",
         type=float,
         default=300,  # sec
-        help="default target track duration [sec]",
-    )
+        help="default target track duration [sec]")
     group.add_argument(
-        "--max-duration", type=float, help="maximum duration of observation [sec]"
-    )
+        "--max-duration",
+        type=float,
+        help="maximum duration of observation [sec]")
 
     description = (
         "calibrators are identified by tags in their description strings"
@@ -95,19 +103,16 @@ def cli(prog):
         type=float,
         default=300,  # sec
         help="minimum duration to track primary calibrators tagged as "
-        "'bpcal', 'fluxcal' or 'polcal' [sec]",
-    )
+        "'bpcal', 'fluxcal' or 'polcal' [sec]")
     group.add_argument(
         "--primary-cal-cadence",
         type=float,
-        help="minimum observation interval between primary calibrators [sec]",
-    )
+        help="minimum observation interval between primary calibrators [sec]")
     group.add_argument(
         "--secondary-cal-duration",
         type=float,
         default=60,  # sec
-        help="minimum duration to track gain calibrator, 'gaincal' [sec]",
-    )
+        help="minimum duration to track gain calibrator, 'gaincal' [sec]")
     return parser
 
 
