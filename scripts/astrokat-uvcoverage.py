@@ -8,13 +8,17 @@ from numpy import recarray
 
 import argparse
 import astropy.constants as phys
-import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import yaml
 
 from astrokat import __version__
 
+text_only = False
+try:
+    import matplotlib.pyplot as plt
+except ImportError:  # not a processing node
+    text_only = True
 
 class Interferometer(object):
     def __init__(self,
@@ -435,8 +439,10 @@ def main(args):
 if __name__ == '__main__':
 
     args = cli(sys.argv[0])
+    if text_only:
+        raise SystemExit('No text output available for this script')
+
     main(args)
-    if args.verbose:
-        plt.show()
+    plt.show()
 
 # -fin-
