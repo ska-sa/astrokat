@@ -32,6 +32,8 @@ noise_diode:
   cycle_len: 0.1  # sec
   # fraction of cycle length that the noise diode should be switched on
   on_frac: 0.5  # %
+  # noise diode execute lead time
+  lead_time: 5  # sec
 ## Desired observation durations
 durations:  # if left out only single observation run through target list
   # for offline / local host usage a start time can be provided

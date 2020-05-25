@@ -13,8 +13,3 @@ observation_loop:
       - name=azel, azel=50.26731 43.70517, tags=target, duration=120.0, nd=10
       # trigger noise diode before track for 7 sec as with pattern
       - name=azel, azel=50.26731 43.70517, tags=target, duration=120.0, nd=7
-      # trigger noise diode before track with 2 sec
-      - name=azel, azel=50.26731 43.70517, tags=target, duration=30.0, nd=2
-      # dummy track firing noise diode for 5 sec
-      - name=azel, azel=50.26731 43.70517, tags=target, duration=60.0, nd=5
-      - name=azel, azel=50.26731 43.70517, tags=target, duration=0.0, nd=5
