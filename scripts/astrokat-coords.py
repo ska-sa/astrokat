@@ -54,10 +54,7 @@ def cli(prog):
         action='store_true',
         help='Verbose output for debug and verification')
 
-    args = parser.parse_args()
-    if args.outfile is None:
-        args.outfile = 'galactic_as_equitorial.csv'
-    return args
+    return parser.parse_args()
 
 
 def gal2icrs_skycoord(coord_x, coord_y):
@@ -177,10 +174,11 @@ def main(args):
         # nothing to do
         raise SystemExit
 
-    with open(args.outfile, 'w') as fout:
-        fout.write(cat_entry)
+    if args.outfile is not None:
+        with open(args.outfile, 'w') as fout:
+            fout.write(cat_entry)
+        print('\nEquatorial catalogue file created: {}'.format(args.outfile))
 
-    print('\nEquatorial catalogue file created: {}'.format(args.outfile))
     if args.verbose:
         print('Catalogue file entries')
         print(cat_entry)
