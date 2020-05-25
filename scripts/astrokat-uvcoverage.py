@@ -119,8 +119,9 @@ class Interferometer(object):
         cnt = 0
         for idx0 in range(self.nr_antennas):
             for idx1 in range(idx0 + 1, self.nr_antennas):
-                bl_length[cnt] = np.sqrt((P[idx0, 0] - P[idx1, 0])**2
-                                         + (P[idx0, 1] - P[idx1, 1])**2)
+                bl_len_p0 = (P[idx0, 0] - P[idx1, 0])**2
+                bl_len_p1 = (P[idx0, 1] - P[idx1, 1])**2
+                bl_length[cnt] = np.sqrt(bl_len_p0 + bl_len_p1)
                 bl_az_angle[cnt] = np.arctan2((P[idx0, 1] - P[idx1, 1]),
                                               (P[idx0, 0] - P[idx1, 0]))
                 cnt += 1
@@ -145,11 +146,13 @@ class UVplot(object):
             The result is a vector of (x,y,z) with unit the same as baseline length
             Interferometry and Synthesis in Radio Astronomy, Chapter 4, Equation 4.4
         """
-        x = (np.cos(self.lat) * np.sin(baseline_azimuth)
-             - np.sin(self.lat) * np.cos(baseline_azimuth) * np.cos(self.elev))
+        x0 = np.cos(self.lat) * np.sin(baseline_azimuth)
+        x1 = np.sin(self.lat) * np.cos(baseline_azimuth) * np.cos(self.elev)
+        x = x0 - x1
         y = np.cos(baseline_azimuth) * np.sin(self.elev)
-        z = (np.sin(self.lat) * np.sin(baseline_azimuth)
-             + np.cos(self.lat) * np.cos(baseline_azimuth) * np.cos(self.elev))
+        z0 = np.sin(self.lat) * np.sin(baseline_azimuth)
+        z1 = np.cos(self.lat) * np.cos(baseline_azimuth) * np.cos(self.elev)
+        z = z0 + z1
         xyz = np.array([(x, y, z)])
         return baseline_lengths * xyz.T
 
