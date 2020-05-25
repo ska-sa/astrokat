@@ -101,7 +101,7 @@ class SimKat(object):
         self._lst, _ = get_lst(self.obs_params["observation_loop"][0]["LST"])
         self._sensors = self.fake_sensors(kwargs)
         self._session_cnt = 0
-        self._ants = ["m011", "m022", "m033", "m044"]
+        self.ants = ["m011", "m022", "m033", "m044"]
 
     def __enter__(self):
         return self

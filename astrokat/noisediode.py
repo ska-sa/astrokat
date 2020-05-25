@@ -69,7 +69,7 @@ def _set_dig_nd_(kat,
                        nd_antennas))
         user_logger.info(msg)
     else:
-        nd_antennas = sorted(ant.name for ant in kat.ants)
+        nd_antennas = sorted(ant for ant in kat.ants)
         cycle_length = 1.
         on_fraction = switch
 
@@ -399,7 +399,7 @@ def pattern(kat,
     user_logger.warning(msg)
 
     nd_antennas = nd_setup['antennas']
-    sb_ants = ",".join(str(ant.name) for ant in kat.ants)
+    sb_ants = ",".join(ant for ant in kat.ants)
     nd_setup['antennas'] = sb_ants
     if nd_antennas == 'all':
         cycle = False
