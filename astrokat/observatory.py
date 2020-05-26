@@ -9,7 +9,7 @@ import numpy
 import katpoint
 
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from .simulate import user_logger, setobserver
 from .utility import katpoint_target, lst2utc
@@ -65,12 +65,17 @@ class Observatory(object):
             self.observer.date = datetime
 
     def _ephem_risetime_(self, ephem_target, lst=True):
+        midnight = datetime.now().replace(hour=0,
+                                          minute=0,
+                                          second=0,
+                                          microsecond=0)
+        midnight_plus_one = ephem.date(midnight + timedelta(seconds=1))
         try:
             rise_time = self.observer.next_rising(ephem_target)
         except ephem.AlwaysUpError:
-            return ephem.hours("0:0:01.0")
+            return midnight_plus_one
         except AttributeError:
-            return ephem.hours("0:0:01.0")
+            return midnight_plus_one
 
         if not lst:
             return rise_time
@@ -78,13 +83,19 @@ class Observatory(object):
         return self.observer.sidereal_time()
 
     def _ephem_settime_(self, ephem_target, lst=True):
+        midnight = datetime.now().replace(hour=0,
+                                          minute=0,
+                                          second=0,
+                                          microsecond=0)
+        midnight += timedelta(days=1)
+        midnight_minus_one = ephem.date(midnight - timedelta(seconds=1))
         try:
             rise_time = self.observer.next_rising(ephem_target)
             set_time = self.observer.next_setting(ephem_target, start=rise_time)
         except ephem.AlwaysUpError:
-            return ephem.hours("23:59:59.0")
+            return midnight_minus_one
         except AttributeError:
-            return ephem.hours("23:59:59.0")
+            return midnight_minus_one
 
         if not lst:
             return set_time
@@ -252,7 +263,6 @@ def collect_targets(kat, args):
     from_names = from_strings = from_catalogues = num_catalogues = 0
     catalogue = katpoint.Catalogue()
     catalogue.antenna = katpoint.Antenna(_ref_location)
-    catalogue.antenna.observer.date = lst2utc(kat._lst, _ref_location)
 
     setobserver(catalogue.antenna.observer)
 

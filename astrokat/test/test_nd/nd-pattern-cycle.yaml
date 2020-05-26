@@ -1,9 +1,0 @@
-#Setting up noise diode pattern before observation
-noise_diode:
-  antennas: cycle
-  cycle_len: 0.9
-  on_frac: 0.5
-observation_loop:
-  - LST: 18.0-20.0
-    target_list:
-      - name=1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, duration=20.0
