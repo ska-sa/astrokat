@@ -116,7 +116,7 @@ class SimKat(object):
         Ant = namedtuple("Ant", ["name"])
         for ant in self._ants:
             yield Ant(ant)
-        raise StopIteration
+        return
 
     def __exit__(self, type, value, traceback):
         pass
