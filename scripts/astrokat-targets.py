@@ -1017,6 +1017,8 @@ def main(args):
 if __name__ == "__main__":
     # This code will take care of negative values for declination
     for i, arg in enumerate(sys.argv):
+        if len(arg) < 2:
+            continue
         if (arg[0] == "-") and arg[1].isdigit():
             sys.argv[i] = " " + arg
     main(cli(sys.argv[0]))
