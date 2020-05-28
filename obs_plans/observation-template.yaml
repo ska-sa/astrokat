@@ -7,22 +7,14 @@
 instrument:
   # resources that are fundamentally required for the observation to continue
   pool_resources: m011,m022,ptuse
-  # subarray receptor: l (only option currently), u, s, x
+  # subarray receptor: l, u, s, x
   band: l
   # user product
   product: c856M4k
   # Data capture averaging or integration period in seconds
   integration_time: 8
-## Subarray antenna layout related to PSF calculation
-configuration:
-  # size of the array required before observation can continue (minimum number of antennas)
-  min_ants: 16
-  # for baseline requirements
-  # since the MeerKAT antennas a numbered from the core outward,
-  # the way to specify selected baselines (such as long baselines)
-  # is to specify the number of antennas above a specific number
-  # format would be <antenna>,<nr antennas above specified antenna>
-  baselines: m011,3  # to ensure 3 antennas with numbers above the specified m011 is included
+## Adjust horizon angle from default 20 degrees to 17 degrees
+horizon: 17.
 ## Set noise diode pattern on all or selected antennas
 noise_diode:
   # 'all' for the entire subarray,
@@ -38,10 +30,8 @@ noise_diode:
 durations:  # if left out only single observation run through target list
   # for offline / local host usage a start time can be provided
   start_time: 2018-11-11 02:35:00
-  # minimum observation period for science quality data in seconds
-  minimum_duration: 900  # sec
-  # requested observation duration in seconds
-  # this is a required key for duration (needed for planning)
+  # requested observation duration in seconds to repeat observation sequence
+  # if not provided, the target list will be observed once in sequence
   obs_duration: 1800  # sec
 ## Optional arguments for scan type observation
 scan:
@@ -61,7 +51,7 @@ raster_scan:
 ## Target observation loop (observation template may contain multiple observation loops)
 observation_loop:
   # time range over which targets listed can be observed (see wiki for target options)
-  - LST: 0.0-23.9
+  - LST: 0:00-23:50
     target_list:
       - name=drift-1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, duration=120.0, type=drift_scan, nd=10
       # ability to disable the noise diode pattern for this target
