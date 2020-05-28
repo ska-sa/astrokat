@@ -1,13 +1,16 @@
-#!/usr/bin/env python
-"""Theoretical UV coverage from antenna position"""
+#! usr/bin/env python
+"""Theoretical UV coverage from antenna positions"""
 
 from __future__ import print_function
 from astropy import units as u
 from astropy.coordinates import Longitude, Latitude, EarthLocation
+from astropy.coordinates import ICRS, SkyCoord
+from datetime import datetime, timedelta
 from numpy import recarray
 
 import argparse
 import astropy.constants as phys
+import ephem
 import numpy as np
 import sys
 import yaml
@@ -31,13 +34,15 @@ class Interferometer(object):
         self.wavelength = phys.c / self.frequency
 
         self.ref_position = None
-        arr_desc = {'names': ('name', 'north', 'east', 'up', 'location'),
+        self.observer = None
+        arr_desc = {'names': ('name', 'east', 'north', 'up', 'location'),
                     'formats': ('S5', float, float, float, EarthLocation)}
         self.antennas = recarray((0,), dtype=arr_desc)
 
         array_config = self.read_config(configuration_file)
         if 'reference' in array_config.keys():
             self._set_reference_(array_config['reference'])
+            self.__ephem_observer__()
         self._build_array_(array_config['antennas'])
 
         # function to update with only selected antennas
@@ -48,6 +53,15 @@ class Interferometer(object):
         self.nr_antennas = len(self.antennas)
         # number pair or baseline
         self.nr_baselines = (self.nr_antennas * (self.nr_antennas - 1)) // 2
+
+    def __ephem_observer__(self):
+        lon = self.ref_position.geodetic[0].degree
+        lat = self.ref_position.geodetic[1].degree
+        alt = self.ref_position.geodetic[2].value
+        self.observer = ephem.Observer()
+        self.observer.lon = str(lon)
+        self.observer.lat = str(lat)
+        self.observer.elevation = alt
 
     def read_config(self, filename):
         """Read array default .yaml file."""
@@ -86,7 +100,7 @@ class Interferometer(object):
         for cnt, antenna in enumerate(antennas):
             ant_ = [item.strip() for item in antenna.split(",")]
             for item_ in ant_:
-                for prefix_ in ('name', 'north', 'east', 'up'):
+                for prefix_ in ('name', 'east', 'north', 'up'):
                     val_ = self.__return_value__(prefix_, item_)
                     if val_ is not None:
                         self.antennas[cnt][prefix_] = val_
@@ -112,7 +126,7 @@ class Interferometer(object):
         P = np.array([self.antennas['north'],
                       self.antennas['east']]).T
         # antenna position in wavelength units
-        P /= self.wavelength  # baseline
+        P = P / self.wavelength.value  # baseline
 
         bl_length = np.zeros((self.nr_baselines, ))
         bl_az_angle = np.zeros((self.nr_baselines, ))
@@ -302,22 +316,33 @@ def cli(prog):
         required=True,
         help='MeerKAT antenna positions YAML')
     parser.add_argument(
-        '--time',
-        dest='ntimeslots',
+        '--radec',
+        nargs=2,
+        metavar=('RA', 'DEC'),
+        required=True,
+        help='target equatorial coordinates in string format '
+             'HH:MM:SS.f DD:MM:SS.f')
+    parser.add_argument(
+        '--start',
+        type=str,
+        required=True,
+        help='observation start time, UTC')
+    parser.add_argument(
+        '--duration',
         type=int,
         default=300,
-        help='Number of time slots equally distributed over 8 hours')
+        help='observation duration in seconds')
     parser.add_argument(
-        '--dec',
-        dest='declination',
-        type=float,
-        default=-90,
-        help='Pointing declination in degrees')
+        '--steps',
+        dest='ntimeslots',
+        type=int,
+        default=100,
+        help='number of time slots equally distributed over duration')
     parser.add_argument(
         '--sub',
         nargs='*',
         metavar='ANT',
-        help='List of antenna names in subarray')
+        help='list of antenna names in subarray')
     parser.add_argument(
         '--natural',
         action="store_true",
@@ -334,47 +359,111 @@ def cli(prog):
         '-s', '--save',
         action="store_true",
         default=False,
-        help="Save graphs to PNG format")
+        help="save graphs to PNG format")
     parser.add_argument(
         '-v', "--verbose",
         action="store_true",
         default=False,
-        help="Display intermittend results and all graphs")
+        help="display intermittend results and all graphs")
     args = parser.parse_args()
     return args
 
 
-def main(args):
-    subarray = args.sub
-    if args.sub is not None:
-        subarray = sorted(args.sub)
-    mkat = Interferometer(args.config,
-                          centre_freq=1420e6,
-                          sub_array=subarray)
+# hour angle range in hours given nr of timeslots
+# At meridian the hour angle is 0.000 degree,
+# with the time before meridian crossing expressed as negative degrees,
+# and the local time after expressed as positive degrees.
+def get_ha_range(telescope,
+                 target,
+                 start_time,
+                 duration,
+                 ntimeslots=50,
+                 verbose=False):
+
+    start_time = datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
+    stop_time = start_time + timedelta(seconds=duration)
+
+    telescope.observer.date = ephem.Date(start_time)
+    star = ephem.FixedBody()
+    star._ra = target.ra.degree
+    star._dec = target.dec.degree
+    rise_time = telescope.observer.previous_rising(star)
+    set_time = telescope.observer.next_setting(star,
+                                               start=rise_time).datetime()
+    if start_time > set_time:
+        rise_time = telescope.observer.next_rising(star)
+        set_time = telescope.observer.next_setting(star,
+                                                   start=rise_time).datetime()
+    if start_time < rise_time.datetime():
+        start_time = rise_time.datetime()
+
+    transit_time = telescope.observer.next_transit(star,
+                                                   start=rise_time).datetime()
+
+    if stop_time > set_time:
+        stop_time = set_time
+        duration = (stop_time - start_time).total_seconds()
+
+    if verbose:
+        print('Target rise: {}'.format(rise_time.datetime()))
+        print('Target transits meridian: {}'.format(transit_time))
+        print('Target set: {}'.format(set_time))
+        print('observe target {} to {}'.format(start_time, stop_time))
+
+    time_step = float(duration) / float(ntimeslots)
+    dtime = np.arange(0, duration + time_step, time_step)
+    ha_range = np.zeros((dtime.size), dtype=float)
+    for cnt, dt in enumerate(dtime):
+        time_ = start_time + timedelta(seconds=dt)
+        if time_ < transit_time:
+            dt_transit = -(transit_time - time_).total_seconds()
+        else:
+            dt_transit = (time_ - transit_time).total_seconds()
+        ha_range[cnt] = dt_transit / 3600.
+
+    # 1hr = 15 deg = pi/12 rad
+    return ha_range * np.pi / 12.
+
+
+def main(telescope,
+         target,
+         start_time=None,
+         duration=300,  # sec
+         ntimeslots=10,
+         verbose=False,
+         savefig=False,
+         natural_mask=False,
+         gaussian_mask=False,
+         ):
 
     # declination convert in radian
-    dec = np.radians(args.declination)
+    dec = np.radians(target.dec.degree)
     # telescope latitude
-    latitude = mkat.ref_position.geodetic[1].radian
+    latitude = telescope.ref_position.geodetic[1].radian
     # number of time slots
-    ntimeslots = args.ntimeslots
-    # hour angle range in hours given nr of timeslots
-    # At solar noon the hour angle is 0.000 degree,
-    # with the time before solar noon expressed as negative degrees,
-    # and the local time after solar noon expressed as positive degrees.
-    ha_range = np.linspace(-4., 4., ntimeslots) * np.pi / 12.
+    ntimeslots = ntimeslots
+    # hour angle range from target sky track
+    ha_range = get_ha_range(telescope,
+                            target,
+                            start_time,
+                            duration,
+                            ntimeslots=ntimeslots,
+                            verbose=verbose)
 
-    if args.verbose:
+    if verbose:
         print('MeerKAT telescope location')
-        print(mkat.ref_position.geodetic)
+        print(telescope.ref_position.geodetic)
         print('latitude {:.3f} [rad] ({:.3f} [deg])'
               .format(latitude, np.degrees(latitude)))
-        print('UV coverage @ decl={:.3f} [rad] ({:.3f} [deg])'
-              .format(dec, np.degrees(dec)))
+        print('target (ra, dec) = ({:.3f}, {:.3f})'
+              .format(target.ra.hour, target.dec.degree))
+        print('UV coverage over HA range {:.3f} to {:.3f} [hr angle]'
+              .format(np.degrees(ha_range[0]) / 15.,
+                      np.degrees(ha_range[-1]) / 15.))
 
     # baseline lengths and azimuth angles
     [bl_length,
-     bl_az_angle] = mkat.baselines()
+     bl_az_angle] = telescope.baselines()
 
     # Plot the uv-Coverage
     uvplot = UVplot(latitude=latitude,
@@ -385,7 +474,7 @@ def main(args):
                              bl_length,
                              bl_az_angle,
                              ntimeslots,
-                             comment='{:.0f}'.format(args.declination))
+                             comment='{:.0f}'.format(dec))
     uv = uvplot.track_uv(ha_range=ha_range,
                          bl_length=bl_length[-1],
                          bl_azimuth=bl_az_angle[-1],
@@ -395,9 +484,9 @@ def main(args):
     ax.set_ylim(-mb, mb)
     plt.axis('equal')
     plt.gca().invert_xaxis()
-    if args.save:
-        filename = ('mkat_uv_coverage_dec{:.0f}.png'
-                    .format(args.declination))
+    if savefig:
+        filename = ('telescope_uv_coverage_dec{:.0f}.png'
+                    .format(dec))
         plt.savefig(filename)
         print('Saved image {}'.format(filename))
 
@@ -408,45 +497,74 @@ def main(args):
     mask = np.zeros((npix, npix))
     # uv-grid scale factor to fit tracks into matrix
     uvscale = npix / 2 / mb * 0.95 * 0.5
-    for i in range(mkat.nr_baselines):
+    for i in range(telescope.nr_baselines):
         mask = mask + uvplot.uvMask(ha_range,
                                     bl_length[i],
                                     bl_az_angle[i],
                                     ntimeslots,
                                     npix,
                                     uvscale)
-    if args.natural:
+    if natural_mask:
         psf = np.fft.ifftshift(np.fft.ifft2(mask.T)).real
         uvplot.plot_mask(mask.T,
                          psf,
                          comment="natural weighting")
-        if args.save:
-            filename = ('mkat_natural_weighting_dec{:.0f}.png'
-                        .format(args.declination))
+        if savefig:
+            filename = ('telescope_natural_weighting_dec{:.0f}.png'
+                        .format(dec))
             plt.savefig(filename)
             print('Saved image {}'.format(filename))
 
     # Show UV mask and synthesize beam, natural weighting with Gaussian taper
-    if args.gaussian:
+    if gaussian_mask:
         gauss_kernel = Gauss(npix, npix / 20.)
         psf = np.fft.ifftshift(np.fft.ifft2(gauss_kernel * (mask.T))).real
         uvplot.plot_mask(gauss_kernel * mask.T,
                          psf,
                          comment="tapered Gaussian weighting")
-        if args.save:
-            filename = ('mkat_gaussian_weighting_dec{:.0f}.png'
-                        .format(args.declination))
+        if savefig:
+            filename = ('telescope_gaussian_weighting_dec{:.0f}.png'
+                        .format(dec))
             plt.savefig(filename)
             print('Saved image {}'.format(filename))
 
 
 if __name__ == '__main__':
 
+    # This code will take care of negative values for declination
+    for i, arg in enumerate(sys.argv):
+        if len(arg) < 2:
+            continue
+        if (arg[0] == '-') and arg[1].isdigit():
+            sys.argv[i] = ' ' + arg
+
     args = cli(sys.argv[0])
     if text_only:
         raise SystemExit('No text output available for this script')
 
-    main(args)
+    subarray = args.sub
+    if args.sub is not None:
+        subarray = sorted(args.sub)
+    mkat = Interferometer(args.config,
+                          centre_freq=1420e6,
+                          sub_array=subarray)  # ['m000', 'm001', 'm002', ...]
+
+    [ra, dec] = args.radec
+    target = SkyCoord(ra=ra, dec=dec,
+                      unit=(u.hour, u.degree),
+                      frame=ICRS)
+
+    main(telescope=mkat,
+         target=target,
+         start_time=args.start,
+         duration=args.duration,
+         ntimeslots=args.ntimeslots,
+         verbose=args.verbose,
+         savefig=args.save,
+         natural_mask=args.natural,
+         gaussian_mask=args.gaussian,
+         )
+
     plt.show()
 
 # -fin-
