@@ -1,3 +1,7 @@
+reference:
+  latitude: '-30:42:39.8'
+  longitude: '21:26:38.0'
+  altitude: 1086.6
 antennas:
 - name=m000, diameter=13.5, east=-8.264, north=-207.29, up=8.5965
 - name=m001, diameter=13.5, east=1.1205, north=-171.762, up=8.4705
@@ -63,7 +67,3 @@ antennas:
 - name=m061, diameter=13.5, east=-16.4085, north=-2323.779, up=21.304
 - name=m062, diameter=13.5, east=-1440.6315, north=-2503.773, up=21.6825
 - name=m063, diameter=13.5, east=-3419.5845, north=-1840.48, up=16.3825
-reference:
-  altitude: 1086.6
-  latitude: '-30:42:39.8'
-  longitude: '21:26:38.0'
