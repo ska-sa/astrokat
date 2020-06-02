@@ -12,7 +12,7 @@ import katpoint
 from datetime import datetime, timedelta
 
 from .simulate import user_logger, setobserver
-from .utility import katpoint_target, lst2utc
+from .utility import katpoint_target
 
 try:
     import katconf
@@ -64,12 +64,16 @@ class Observatory(object):
         if datetime is not None:
             self.observer.date = datetime
 
+    def _midnight_(self):
+        return datetime.now().replace(hour=0,
+                                      minute=0,
+                                      second=0,
+                                      microsecond=0)
+
     def _ephem_risetime_(self, ephem_target, lst=True):
-        midnight = datetime.now().replace(hour=0,
-                                          minute=0,
-                                          second=0,
-                                          microsecond=0)
-        midnight_plus_one = ephem.date(midnight + timedelta(seconds=1))
+        midnight_plus_one = ((self._midnight_() + timedelta(seconds=1))
+                             .strftime("%H:%M:%S"))
+        midnight_plus_one = ephem.hours(midnight_plus_one)
         try:
             rise_time = self.observer.next_rising(ephem_target)
         except ephem.AlwaysUpError:
@@ -83,12 +87,10 @@ class Observatory(object):
         return self.observer.sidereal_time()
 
     def _ephem_settime_(self, ephem_target, lst=True):
-        midnight = datetime.now().replace(hour=0,
-                                          minute=0,
-                                          second=0,
-                                          microsecond=0)
-        midnight += timedelta(days=1)
-        midnight_minus_one = ephem.date(midnight - timedelta(seconds=1))
+        midnight = self._midnight_() + timedelta(days=1)
+        midnight_minus_one = ((midnight - timedelta(seconds=1))
+                              .strftime("%H:%M:%S"))
+        midnight_minus_one = ephem.hours(midnight_minus_one)
         try:
             rise_time = self.observer.next_rising(ephem_target)
             set_time = self.observer.next_setting(ephem_target, start=rise_time)
