@@ -606,6 +606,15 @@ def run_observation(opts, kat):
                 "DEBUG: Initialise capture start with timestamp "
                 "{} ({})".format(int(time.time()), timestamp2datetime(time.time()))
             )
+            # Adding the FBF proxy BLOCK command here
+            # Thus will allow an up to 5 minute wait to all observations
+            # that is run on an array with the FBFUSE proxy included in the
+            # array
+            if session.fbf():
+                user_logger.warn('Initiating FBF beam complete block')
+                if not session.fbf.check_provisioning_beams_complete():
+                    raise session.FBFUSEError("Provision beams not ready")
+                user_logger.info('Continue observation')
 
             # Go to first target before starting capture
             user_logger.info("Slewing to first target")
