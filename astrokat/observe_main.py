@@ -610,7 +610,7 @@ def run_observation(opts, kat):
             # Thus will allow an up to 5 minute wait to all observations
             # that is run on an array with the FBFUSE proxy included in the
             # array
-            if session.fbf():
+            if session.fbf:
                 user_logger.warn('Initiating FBF beam complete block')
                 if not session.fbf.check_provisioning_beams_complete():
                     raise session.FBFUSEError("Provision beams not ready")
