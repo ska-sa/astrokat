@@ -610,6 +610,12 @@ def run_observation(opts, kat):
             # Thus will allow an up to 5 minute wait to all observations
             # that is run on an array with the FBFUSE proxy included in the
             # array
+
+            # RVR test
+            # only for integration tests, remove after test
+            print('FBF proxy in array = {}'.format(session.fbf))
+            # RVR test
+
             if session.fbf:
                 user_logger.warn('Initiating FBF beam complete block')
                 if not session.fbf.check_provisioning_beams_complete():
