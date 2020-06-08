@@ -160,6 +160,13 @@ class SimSession(object):
         self.time = self.start_time
         self.katpt_current = None
         self.capture_initialised = False
+        # add USE proxy indicators
+        if "instrument" in self.obs_params:
+            instrument_dict = self.obs_params['instrument']
+            if "pool_resources" in instrument_dict:
+                pool_resources = instrument_dict['pool_resources']
+                if 'fbfuse' not in pool_resources:
+                    self.fbf = False
 
         # Taken from mkat_session.py to ensure similar behaviour than site
         # systems
