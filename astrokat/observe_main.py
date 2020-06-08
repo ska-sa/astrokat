@@ -424,6 +424,21 @@ def run_observation(opts, kat):
     # remove observation specific instructions housed in YAML file
     del opts.obs_plan_params
 
+    # if FBFUSE proxy is available, this observer allows it to block
+    # at startup of observation to allow setup of beams
+    fbf_block_allowed = False
+    if "instrument" in obs_plan_params:
+        instrument_dict = obs_plan_params['instrument']
+        if "partner_resources" in instrument_dict:
+            partners = instrument_dict['partner_resources']
+            if 'fbfuse' in partners:
+                fbf_block_allowed = True
+
+    # RVR test
+    # only for integration tests, remove after test
+    print('FBF block is allowed = {}'.format(fbf_block_allowed))
+    # RVR test
+
     # set up duration periods for observation control
     obs_duration = -1
     if "durations" in obs_plan_params:
@@ -616,6 +631,7 @@ def run_observation(opts, kat):
             print('FBF proxy in array = {}'.format(session.fbf))
             # RVR test
 
+            # if session.fbf and fbf_block_allowed:
             if session.fbf:
                 user_logger.warn('Initiating FBF beam complete block')
                 if not session.fbf.check_provisioning_beams_complete():
