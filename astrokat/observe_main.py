@@ -122,6 +122,21 @@ def read_targets(target_items):
     return target_list
 
 
+def slew(session, target):
+    session.activity('slew')
+    user_logger.info('slewing to target')
+    # Start moving each antenna to the target
+    if session.kat.dry_run:
+        session._slew_to(target)
+    else:
+        ants = session.ants
+        # ants = session.kat.ants
+        ants.req.mode('POINT')
+        # Wait until a quorum is in position (with timeout)
+        session.wait(ants, 'lock', True, timeout=300, quorum=session.quorum)
+    user_logger.info('target reached')
+
+
 def observe(session, target_info, **kwargs):
     """Target observation functionality.
 
@@ -140,7 +155,13 @@ def observe(session, target_info, **kwargs):
 
     # simple way to get telescope to slew to target
     if "slewonly" in kwargs:
-        return session.track(target, duration=0.0, announce=False)
+        # RVR test
+        # only for integration tests, remove after test
+        print('Using slew only function')
+        return slew(session, target)
+        # RVR test
+#         print('0 sec track')
+#         return session.track(target, duration=0.0, announce=False)
 
     # set noise diode behaviour
     nd_setup = None
