@@ -221,6 +221,14 @@ class SimSession(object):
             user_logger.info('INIT')
             self.capture_initialised = True
 
+    def wait(self, *args, **kwargs):
+        """Simulate sessions wait function"""
+        time.sleep(_DEFAULT_SLEW_TIME_SEC)
+
+    def _slew_to(self, target):
+        """TimeSession replacement for wait"""
+        self.track(target, duration=0.0, announce=False)
+
     def track(self, target, duration=0, announce=False):
         """Simulate the track source functionality during observations.
 
@@ -237,7 +245,8 @@ class SimSession(object):
         time.sleep(slew_time)
         user_logger.info("Slewed to %s at azel (%.1f, %.1f) deg", target.name, az, el)
         time.sleep(duration)
-        user_logger.info("Tracked %s for %d seconds", target.name, duration)
+        if duration > 0:
+            user_logger.info("Tracked %s for %d seconds", target.name, duration)
         return True
 
     def raster_scan(
