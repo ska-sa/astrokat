@@ -122,18 +122,38 @@ def read_targets(target_items):
     return target_list
 
 
-def slew(session, target):
+def slew(session, target_info):
+    """Simple way to get telescope to slew to target
+
+    Parameters
+    ----------
+    session: `CaptureSession` object
+    target_info: dictionary with target observation info
+
+    """
+    katpt_tgt = target_info["target"]
+
+    user_logger.info("Slewing to first target")
+    session.set_target(katpt_tgt)
     session.activity('slew')
-    user_logger.info('slewing to target')
     # Start moving each antenna to the target
     if session.kat.dry_run:
-        session._slew_to(target)
+        # Apply average slew time
+        session._slew_to(katpt_tgt)
     else:
-        ants = session.ants
-        # ants = session.kat.ants
-        ants.req.mode('POINT')
-        # Wait until a quorum is in position (with timeout)
-        session.wait(ants, 'lock', True, timeout=300, quorum=session.quorum)
+        # Start moving each antenna to the target
+        session.ants.req.mode('POINT')
+
+    # Initiate FBFUSE proxy settings from mkat-sessions capture_start
+    if session.fbf:
+        user_logger.info('Initiating FBF beam complete')
+        if not session.fbf.check_provisioning_beams_complete():
+            raise session.FBFUSEError("Provision beams not ready")
+
+    # Wait until a quorum is in position (with timeout)
+    if not session.kat.dry_run:
+        session.wait(session.ants, 'lock', True, timeout=300, quorum=session.quorum)
+
     user_logger.info('target reached')
 
 
@@ -142,8 +162,8 @@ def observe(session, target_info, **kwargs):
 
     Parameters
     ----------
-    session: `CaptureSession`
-    target_info:
+    session: `CaptureSession` object
+    target_info: dictionary with target observation info
 
     """
     target_visible = False
@@ -152,16 +172,6 @@ def observe(session, target_info, **kwargs):
     target = target_info["target"]
     duration = target_info["duration"]
     obs_type = target_info["obs_type"]
-
-    # simple way to get telescope to slew to target
-    if "slewonly" in kwargs:
-        # RVR test
-        # only for integration tests, remove after test
-        print('Using slew only function')
-        return slew(session, target)
-        # RVR test
-#         print('0 sec track')
-#         return session.track(target, duration=0.0, announce=False)
 
     # set noise diode behaviour
     nd_setup = None
@@ -445,21 +455,6 @@ def run_observation(opts, kat):
     # remove observation specific instructions housed in YAML file
     del opts.obs_plan_params
 
-    # if FBFUSE proxy is available, this observer allows it to block
-    # at startup of observation to allow setup of beams
-    fbf_block_allowed = False
-    if "instrument" in obs_plan_params:
-        instrument_dict = obs_plan_params['instrument']
-        if "partner_resources" in instrument_dict:
-            partners = instrument_dict['partner_resources']
-            if 'fbfuse' in partners:
-                fbf_block_allowed = True
-
-    # RVR test
-    # only for integration tests, remove after test
-    print('FBF block is allowed = {}'.format(fbf_block_allowed))
-    # RVR test
-
     # set up duration periods for observation control
     obs_duration = -1
     if "durations" in obs_plan_params:
@@ -642,26 +637,10 @@ def run_observation(opts, kat):
                 "DEBUG: Initialise capture start with timestamp "
                 "{} ({})".format(int(time.time()), timestamp2datetime(time.time()))
             )
-            # Adding the FBF proxy BLOCK command here
-            # Thus will allow an up to 5 minute wait to all observations
-            # that is run on an array with the FBFUSE proxy included in the
-            # array
-
-            # RVR test
-            # only for integration tests, remove after test
-            print('FBF proxy in array = {}'.format(session.fbf))
-            # RVR test
-
-            # if session.fbf and fbf_block_allowed:
-            if session.fbf:
-                user_logger.warn('Initiating FBF beam complete block')
-                if not session.fbf.check_provisioning_beams_complete():
-                    raise session.FBFUSEError("Provision beams not ready")
-                user_logger.info('Continue observation')
 
             # Go to first target before starting capture
-            user_logger.info("Slewing to first target")
-            observe(session, obs_targets[0], slewonly=True)
+            slew(session, obs_targets[0])
+
             # Only start capturing once we are on target
             session.capture_start()
             user_logger.trace(
