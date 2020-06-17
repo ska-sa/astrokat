@@ -146,7 +146,7 @@ def initial_slew(session, target_info):
 
     # Initiate FBFUSE proxy settings from mkat-sessions capture_start
     if session.fbf:
-        user_logger.info('Initiating FBF beam complete')
+        user_logger.info('Waiting for FBF beam complete')
         if not session.fbf.check_provisioning_beams_complete():
             raise session.FBFUSEError("Provision beams not ready")
 
