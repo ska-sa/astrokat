@@ -151,10 +151,15 @@ def initial_slew(session, target_info):
             raise session.FBFUSEError("Provision beams not ready")
 
     # Wait until a quorum is in position (with timeout)
-    if not session.kat.dry_run:
-        session.wait(session.ants, 'lock', True, timeout=300, quorum=session.quorum)
+    success = session.wait(session.ants,
+                           'lock',
+                           True,
+                           timeout=300,
+                           quorum=session.quorum)
+    if success:
+        user_logger.info('target reached')
+    # session.wait will issue a waring if quorum not reached
 
-    user_logger.info('target reached')
 
 
 def observe(session, target_info, **kwargs):
