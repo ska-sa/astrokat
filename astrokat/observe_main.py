@@ -122,7 +122,7 @@ def read_targets(target_items):
     return target_list
 
 
-def slew(session, target_info):
+def initial_slew(session, target_info):
     """Simple way to get telescope to slew to target
 
     Parameters
@@ -131,9 +131,10 @@ def slew(session, target_info):
     target_info: dictionary with target observation info
 
     """
+    target_name = target_info["name"]
     katpt_tgt = target_info["target"]
 
-    user_logger.info("Slewing to first target")
+    user_logger.info("Slewing to target {}".format(target_name))
     session.set_target(katpt_tgt)
     session.activity('slew')
     # Start moving each antenna to the target
@@ -639,7 +640,7 @@ def run_observation(opts, kat):
             )
 
             # Go to first target before starting capture
-            slew(session, obs_targets[0])
+            initial_slew(session, obs_targets[0])
 
             # Only start capturing once we are on target
             session.capture_start()
