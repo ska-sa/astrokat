@@ -137,7 +137,6 @@ def initial_slew(session, target_info):
     user_logger.info("Slewing to target {}".format(target_name))
     session.set_target(katpt_tgt)
     session.activity('slew')
-    # Start moving each antenna to the target
     if session.kat.dry_run:
         # Apply average slew time
         session._slew_to(katpt_tgt)
