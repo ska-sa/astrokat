@@ -224,6 +224,7 @@ class SimSession(object):
     def wait(self, *args, **kwargs):
         """Simulate sessions wait function"""
         time.sleep(_DEFAULT_SLEW_TIME_SEC)
+        return True
 
     def _slew_to(self, target):
         """TimeSession replacement for wait"""
