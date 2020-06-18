@@ -161,7 +161,6 @@ def initial_slew(session, target_info):
     # session.wait will issue a waring if quorum not reached
 
 
-
 def observe(session, target_info, **kwargs):
     """Target observation functionality.
 
