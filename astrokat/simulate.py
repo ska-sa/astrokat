@@ -160,6 +160,13 @@ class SimSession(object):
         self.time = self.start_time
         self.katpt_current = None
         self.capture_initialised = False
+        # add USE proxy indicators
+        if "instrument" in self.obs_params:
+            instrument_dict = self.obs_params['instrument']
+            if "pool_resources" in instrument_dict:
+                pool_resources = instrument_dict['pool_resources']
+                if 'fbfuse' not in pool_resources:
+                    self.fbf = False
 
         # Taken from mkat_session.py to ensure similar behaviour than site
         # systems
@@ -195,7 +202,7 @@ class SimSession(object):
 
     def __iter__(self):
         yield self
-        raise StopIteration
+        return
 
     def __exit__(self, type, value, traceback):
         # TODO: self.track_ cleanup for multiple obs loops
@@ -214,6 +221,15 @@ class SimSession(object):
             user_logger.info('INIT')
             self.capture_initialised = True
 
+    def wait(self, *args, **kwargs):
+        """Simulate sessions wait function"""
+        time.sleep(_DEFAULT_SLEW_TIME_SEC)
+        return True
+
+    def _slew_to(self, target):
+        """TimeSession replacement for wait"""
+        self.track(target, duration=0.0, announce=False)
+
     def track(self, target, duration=0, announce=False):
         """Simulate the track source functionality during observations.
 
@@ -228,9 +244,11 @@ class SimSession(object):
         self.track_ = True
         slew_time, az, el = self._fake_slew_(target)
         time.sleep(slew_time)
-        user_logger.info("Slewed to %s at azel (%.1f, %.1f) deg", target.name, az, el)
+        if announce:
+            user_logger.info("Slewed to %s at azel (%.1f, %.1f) deg", target.name, az, el)
         time.sleep(duration)
-        user_logger.info("Tracked %s for %d seconds", target.name, duration)
+        if duration > 0:
+            user_logger.info("Tracked %s for %d seconds", target.name, duration)
         return True
 
     def raster_scan(
