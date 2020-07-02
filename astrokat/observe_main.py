@@ -122,52 +122,13 @@ def read_targets(target_items):
     return target_list
 
 
-def initial_slew(session, target_info):
-    """Simple way to get telescope to slew to target
-
-    Parameters
-    ----------
-    session: `CaptureSession` object
-    target_info: dictionary with target observation info
-
-    """
-    target_name = target_info["name"]
-    katpt_tgt = target_info["target"]
-
-    user_logger.info("Slewing to target {}".format(target_name))
-    session.set_target(katpt_tgt)
-    session.activity('slew')
-    if session.kat.dry_run:
-        # Apply average slew time
-        session._slew_to(katpt_tgt)
-    else:
-        # Start moving each antenna to the target
-        session.ants.req.mode('POINT')
-
-    # Initiate FBFUSE proxy settings from mkat-sessions capture_start
-    if session.fbf:
-        user_logger.info('Waiting for FBF beam complete')
-        if not session.fbf.check_provisioning_beams_complete():
-            raise session.FBFUSEError("Provision beams not ready")
-
-    # Wait until a quorum is in position (with timeout)
-    success = session.wait(session.ants,
-                           'lock',
-                           True,
-                           timeout=300,
-                           quorum=session.quorum)
-    if success:
-        user_logger.info('target reached')
-    # session.wait will issue a waring if quorum not reached
-
-
 def observe(session, target_info, **kwargs):
     """Target observation functionality.
 
     Parameters
     ----------
-    session: `CaptureSession` object
-    target_info: dictionary with target observation info
+    session: `CaptureSession`
+    target_info:
 
     """
     target_visible = False
@@ -176,6 +137,10 @@ def observe(session, target_info, **kwargs):
     target = target_info["target"]
     duration = target_info["duration"]
     obs_type = target_info["obs_type"]
+
+    # simple way to get telescope to slew to target
+    if "slewonly" in kwargs:
+        return session.track(target, duration=0.0, announce=False)
 
     # set noise diode behaviour
     nd_setup = None
@@ -643,8 +608,8 @@ def run_observation(opts, kat):
             )
 
             # Go to first target before starting capture
-            initial_slew(session, obs_targets[0])
-
+            user_logger.info("Slewing to first target")
+            observe(session, obs_targets[0], slewonly=True)
             # Only start capturing once we are on target
             session.capture_start()
             user_logger.trace(
