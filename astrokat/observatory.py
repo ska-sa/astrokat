@@ -245,10 +245,15 @@ class Observatory(object):
 
         """
         end_lst = []
+        end_lst_float = []
         for target in target_list:
             target_ = self.get_target(target).body
+            start_lst = self._ephem_risetime_(target_)
             end_lst.append(self._ephem_settime_(target_))
-        end_lst = end_lst[numpy.asarray(end_lst, dtype=float).argmax()]
+            end_lst_float.append(float(end_lst[-1]))
+            if start_lst > end_lst[-1]:
+                end_lst_float[-1] += 24.
+        end_lst = end_lst[numpy.asarray(end_lst_float, dtype=float).argmax()]
         if str_flag:
             return str(end_lst)
         return self.lst2hours(end_lst)
