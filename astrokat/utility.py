@@ -106,30 +106,44 @@ def timestamp2datetime(timestamp):
 
 def katpoint_target(target_item):
     """Construct an expected katpoint target from a target_item string."""
-    coords = ["radec", "azel", "gal"]
+    coords = ["radec", "azel", "gal", "special"]
     # input string format: name=, radec=, tags=, duration=, ...
     target_ = [item.strip() for item in target_item.split(",")]
+
+    # get list of prefix parameters
+    target_dict = {}
+    param_desc = {
+                 'names': ('prefix', 'var'),
+                 'formats': ('S15', 'S15')
+                 }
+    target_params = numpy.array([
+                                ('name', 'name') ,
+                                ('tags', 'tags'),
+                                ('model', 'fluxmodel'),
+                                ], dtype=param_desc)
     for item_ in target_:
-        prefix = "name="
-        if item_.startswith(prefix):
-            name = item_[len(prefix) :]
-        prefix = "tags="
-        if item_.startswith(prefix):
-            tags = item_[len(prefix) :]
-        prefix = "model="
-        if item_.startswith(prefix):
-            fluxmodel = item_[len(prefix) :]
-        else:
-            fluxmodel = ()
-        for coord in coords:
-            prefix = coord + "="
+        for prefix, param in zip(target_params['prefix'],
+                                 target_params['var']):
             if item_.startswith(prefix):
-                ctag = coord
-                x = item_[len(prefix) :].split()[0].strip()
-                y = item_[len(prefix) :].split()[1].strip()
+                pref, success, result = item_.partition("=")
+                target_dict[param] = result.strip()
                 break
-    target = "{}, {} {}, {}, {}, {}".format(name, ctag, tags, x, y, fluxmodel)
-    return name, target
+        for prefix in coords:
+            if item_.startswith(prefix):
+                target_dict['ctag'] = prefix
+                pref, success, result = item_.partition("=")
+                if prefix != 'special':
+                    target_dict['x'] = result.split()[0].strip()
+                    target_dict['y'] = result.split()[1].strip()
+    target = "{}, {}".format(target_dict['name'],
+                             target_dict['ctag'])
+    if 'x' in target_dict.keys():
+        target += " {}, {}, {}".format(target_dict['tags'],
+                                       target_dict['x'],
+                                       target_dict['y'])
+    if 'fluxmodel' in target_dict.keys():
+        target += ", {}".format(target_dict['fluxmodel'])
+    return target_dict['name'], target
 
 
 def get_lst(yaml_lst):
