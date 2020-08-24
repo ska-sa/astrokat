@@ -174,14 +174,18 @@ class UnpackCatalogue(object):
                 # skip blank lines
                 if len(line) < 2:
                     continue
+                # unpack data columns
                 try:
-                    # unpack data columns
                     data_columns = [each.strip() for each in line.strip().split(",")]
                 except ValueError:
                     print("Could not unpack line:{}".format(line))
                     continue
                 else:
-                    [name, tags, ra, dec] = data_columns[:4]
+                    if len(data_columns) < 4:
+                        [name, tags] = data_columns[:]
+                        ra, dec = None, None
+                    else:
+                        [name, tags, ra, dec] = data_columns[:4]
                     flux = None
                     if len(data_columns) > 4:
                         flux = " ".join(data_columns[4:])
@@ -190,18 +194,22 @@ class UnpackCatalogue(object):
                             flux = None
 
                 tags = self.tidy_tags(tags.strip())
-                if tags.startswith("azel"):
-                    prefix = "azel"
-                elif tags.startswith("gal"):
-                    prefix = "gal"
-                else:
-                    prefix = "radec"
+                prefix = "special"
+                c_types = ["azel", "gal", "radec"]
+                for coord_type in c_types:
+                    if tags.startswith(coord_type):
+                        prefix = coord_type
+                        break
                 if len(name) < 1:
                     name = "target{}_{}".format(idx, prefix)
+                cel_coord = "special"
+                # prefix = "solarbody"
+                if ra is not None and dec is not None:
+                    cel_coord = " ".join([ra, dec])
                 target_items = [
                     name,
                     prefix,
-                    " ".join([ra, dec]),
+                    cel_coord,
                     tags[len(prefix):].strip(),
                 ]
 
@@ -238,12 +246,16 @@ class BuildObservation(object):
     target_list: list
         A list of targets with the format
         'name=<name>, radec=<HH:MM:SS.f>,<DD:MM:SS.f>, tags=<tags>, duration=<sec>'
+        'name=<name>, special=<ephem>, tags=<tags>, duration=<sec>'
 
     """
 
     def __init__(self, target_list):
         self.target_list = target_list
         self.configuration = None
+        # list of targets with ra, dec for LST calculation
+        self.lst_list = [tgt
+                         for tgt in target_list if "radec" in tgt]
 
     def configure(self, instrument={}, obs_duration=None, lst=None):
         """Set up of the MeerKAT telescope for running observation.
@@ -266,9 +278,9 @@ class BuildObservation(object):
         if obs_duration is not None:
             obs_plan["durations"] = {"obs_duration": obs_duration}
         # LST times only HH:MM in OPT
-        start_lst = Observatory().start_obs(self.target_list, str_flag=True)
+        start_lst = Observatory().start_obs(self.lst_list, str_flag=True)
         start_lst = ":".join(start_lst.split(":")[:-1])
-        end_lst = Observatory().end_obs(self.target_list, str_flag=True)
+        end_lst = Observatory().end_obs(self.lst_list, str_flag=True)
         end_lst = ":".join(end_lst.split(":")[:-1])
         if lst is None:
             lst = "{}-{}".format(start_lst, end_lst)
@@ -342,7 +354,6 @@ if __name__ == "__main__":
         bpcal_interval=args.primary_cal_cadence,
     )
     obs_plan = BuildObservation(catalogue)
-
     # create observation configuration file
     obs_plan.configure(
         instrument=instrument, obs_duration=args.max_duration, lst=args.lst
