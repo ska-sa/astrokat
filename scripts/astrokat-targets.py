@@ -126,6 +126,13 @@ def cli(prog):
              "with coordinates 'HH:MM:SS DD:MM:SS'",
     )
     ex_group.add_argument(
+        "--body",
+        type=str,
+        metavar=("Name"),
+        help="returns MeerKAT LST range for a solar body, "
+             "assumed to be an Ephem special target",
+    )
+    ex_group.add_argument(
         "--view",
         type=str,
         metavar="CATALOGUE",
@@ -374,9 +381,10 @@ def source_elevation(catalogue, ref_antenna):
             elev.append(numpy.degrees(target.body.alt))
 
         label = "{} ".format(target.name)
-        target.tags.remove("radec")
-        if "target" in target.tags:
-            target.tags.remove("target")
+        rm_tags = ["radec", "special", "target"]
+        for rm_tag in rm_tags:
+            if rm_tag in target.tags:
+                target.tags.remove(rm_tag)
         label += ", ".join(target.tags)
 
         myplot, = plt.plot_date(timestamps,
@@ -510,11 +518,19 @@ def table_line(datetime,
             clo_clr = bcolors.FAIL
             sep_note += " ***"
 
+    # ephem has difference between defining astrometric coordinates
+    # for FixedBody vs Body objects
+    try:
+        RA = target.body._ra
+        DECL = target.body._dec
+    except AttributeError:
+        RA = target.body.a_ra
+        DECL = target.body.a_dec
     table_info = "{: <16}{: <32}{: <16}{: <16}{: <16}{: <16}{: <16}{: <16}\n".format(
         target.name,
         " ".join(target.tags),
-        str(target.body._ra),
-        str(target.body._dec),
+        str(RA),
+        str(DECL),
         rise_time,
         set_time,
         sep_note,
@@ -765,17 +781,17 @@ def best_cal_cover(catalogue, katpt_target, ref_antenna):
         closest calibrator
     separation_angle: float
         separation angle in degrees
-    pred_calibrator: katpoint.Target object
+    buffer_calibrator: katpoint.Target object
         additional calibrator for LST coverage
-    pred_separation: float
+    buffer_separation: float
         additional separation_angle in degrees
 
     """
     calibrator, separation = _closest_calibrator_(
         catalogue, katpt_target.body, ref_antenna.observer
     )
-    pred_calibrator = None
-    pred_separation = 180.0
+    buffer_calibrator = None
+    buffer_separation = 180.0
     horizon = numpy.degrees(ref_antenna.observer.horizon)
     if separation > 20.0:  # calibrator rises some time after target
         # add another calibrator preceding the target
@@ -783,22 +799,34 @@ def best_cal_cover(catalogue, katpt_target, ref_antenna):
                                   datetime=ref_antenna.observer.date)
         tgt_rise_time = observatory._ephem_risetime_(katpt_target.body,
                                                      lst=False)
-        preceding_cals = []
+        tgt_set_time = observatory._ephem_settime_(katpt_target.body,
+                                                   lst=False)
+        closest_cals = []
         for each_cal in catalogue:
             try:
+                cal_rise_time = observatory._ephem_risetime_(each_cal.body,
+                                                             lst=False)
                 cal_set_time = observatory._ephem_settime_(each_cal.body,
                                                            lst=False)
             except ephem.NeverUpError:
                 continue
+            except ephem.AlwaysUpError:
+                continue
             delta_time_to_cal_rise = cal_set_time - tgt_rise_time
-            if (delta_time_to_cal_rise) > 0:
-                preceding_cals.append([each_cal.name, delta_time_to_cal_rise])
-        pred_cal_idx = numpy.array(preceding_cals)[:, 1].astype(float).argmin()
-        pred_calibrator = catalogue[preceding_cals[pred_cal_idx][0]]
-        pred_separation = ephem.separation(katpt_target.body,
-                                           pred_calibrator.body)
-        pred_separation = numpy.degrees(pred_separation)
-    return calibrator, separation, pred_calibrator, pred_separation
+            delta_time_to_cal_set = tgt_set_time - cal_rise_time
+            if delta_time_to_cal_rise > 0:
+                # calc that rise before the target
+                closest_cals.append([each_cal.name, delta_time_to_cal_rise])
+            if delta_time_to_cal_set > 0:
+                # calc that sets after the target
+                closest_cals.append([each_cal.name, delta_time_to_cal_set])
+        if len(closest_cals) > 0:
+            buffer_cal_idx = numpy.array(closest_cals)[:, 1].astype(float).argmin()
+            buffer_calibrator = catalogue[closest_cals[buffer_cal_idx][0]]
+            buffer_separation = ephem.separation(katpt_target.body,
+                                                 buffer_calibrator.body)
+            buffer_separation = numpy.degrees(buffer_separation)
+    return calibrator, separation, buffer_calibrator, buffer_separation
 
 
 def add_target(target, catalogue, tag=""):
@@ -893,6 +921,11 @@ def main(args):
             map(str, [args.target[0], "radec target", args.target[1], args.target[2]])
         )
         cal_targets = [katpoint.Target(target)]
+    elif args.body is not None:
+        # input solar body from command line
+        solar_body = args.body.capitalize()
+        katpt_target = katpoint.Target("{}, special".format(solar_body))
+        cal_targets = [katpt_target]
     else:  # assume the targets are in a file
         with open(args.infile, "r") as fin:
             # extract targets tagged to be used for calibrator selection
@@ -957,16 +990,16 @@ def main(args):
                     # find the best coverage over the target visibility period
                     [calibrator,
                      separation_angle,
-                     preceding_calibrator,
-                     preceding_calibrator_separation_angle] = best_cal_cover(
+                     buffer_calibrator,
+                     buffer_calibrator_separation_angle] = best_cal_cover(
                         calibrators, target, ref_antenna
                     )
                     if (
-                        preceding_calibrator is not None
-                        and preceding_calibrator_separation_angle < 90.0
+                        buffer_calibrator is not None
+                        and buffer_calibrator_separation_angle < 90.0
                     ):
                         observation_catalogue = add_target(
-                            preceding_calibrator,
+                            buffer_calibrator,
                             observation_catalogue,
                             tag=cal_tag + "cal",
                         )
