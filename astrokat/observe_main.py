@@ -255,14 +255,16 @@ def above_horizon(target,
     """Check target visibility."""
     # use local copies so you do not overwrite target time attribute
     horizon = ephem.degrees(str(horizon))
-
     if type(target) is not ephem.FixedBody:
         # anticipate katpoint special target for AzEl targets
-        if 'alt' not in vars(target):
+        if 'alt' not in dir(target):
             raise RuntimeError('Unknown target type, exiting...')
         # 'StationaryBody' objects do not have RaDec coordinates
         # check pointing altitude is above minimum elevation limit
-        return bool(target.alt >= horizon)
+        try:
+            return bool(target.alt >= horizon)
+        except RuntimeError:  # allow specials for solar objects
+            pass
 
     # must be celestial target (ra, dec)
     # check that target is visible at start of track
