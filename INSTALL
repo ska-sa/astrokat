@@ -1,7 +1,0 @@
-The following python packages are assumed
-  numpy
-  matplotlib
-The following python packages are required by the framework
-pip install pyyaml, pyephem, future, katpoint, astropy
-
-pip install git+https://github.com/ska-sa/astrokat.git
