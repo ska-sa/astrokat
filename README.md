@@ -1,4 +1,4 @@
-# astrokat
+# AstroKAT
 General observation and planning tools for the MeerKAT telescope.    
 Most requirements and implementations are derived from usage cases provided by the MeerKAT Commissioning team.
 
@@ -27,10 +27,10 @@ Dependencies:
 
 
 ## Development
-* Clone repository
+* Clone repository    
 `git clone https://github.com/rubyvanrooyen/astrokat.git`    
 `cd astrkat`
-* Python virtual environment setup
+* Python virtual environment setup    
 `python3 -m venv env`    
 `source /env/bin/activate`    
 `pip install -e .`
