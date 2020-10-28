@@ -9,6 +9,9 @@ relation to observational requirements.
 
 ## Usage
 
+Run AstroKAT helper scripts directly from GitHub using Google COLAB.   
+Find available interfaces in notebooks directory.
+
 AstroKAT scripts can be run either as command line utilities (see `pip` installation instructions below), or from GitHub via the Google COLAB notebook interface.
 See wiki page `Table of Contents` under the `Input and planning utilities` heading for examples.
 
