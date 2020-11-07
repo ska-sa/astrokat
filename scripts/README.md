@@ -22,7 +22,17 @@ An online notebook is also available:
 
 
 ### Convenience calculator converting galactic coordinates to ICRS frame
+Utility script that takes in galactic coordinates and converts it to equatorial coordinates
+```
+astrokat-coords.py --galactic T11R00C02 21h51m30.37s +00d59m15.56s
+```
+
+Usage details can be found on the
 [Galactic coordinates to ICRS](https://github.com/ska-sa/astrokat/wiki/Galactic-coordinates-to-ICRS)    
+wiki page
+
+An online notebook is also available: 
 `astrokat-coords.ipynb`
+
 
 -fin-
