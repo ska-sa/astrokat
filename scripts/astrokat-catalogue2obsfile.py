@@ -288,7 +288,6 @@ class BuildObservation(object):
                    header=None,
                    configuration=None,
                    outfile=None):
-                   # outfile="obs_config.yaml"):
         """Write the yaml observation file.
 
         Returns
