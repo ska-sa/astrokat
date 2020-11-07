@@ -7,6 +7,7 @@ from astrokat import Observatory, __version__
 import argparse
 import sys
 
+from astrokat import obs_dict, obs_yaml
 
 from contextlib import contextmanager
 
@@ -30,10 +31,9 @@ def cli(prog):
 
     """
     usage = "{} [options] --infile <full_path/cat_file.csv>".format(prog)
-    description = (
-        "sources are specified as a catalogue of targets,"
-        "with optional timing information"
-    )
+    description = ("sources are specified as a catalogue of targets,"
+                   "with optional timing information"
+                   )
     parser = argparse.ArgumentParser(
         usage=usage,
         description=description,
@@ -52,6 +52,10 @@ def cli(prog):
         "--outfile",
         type=str,
         help="filename for output observation file (default outputs to screen)")
+    parser.add_argument(
+        '--debug',
+        action='store_true',
+        help='Verbose output for debug and verification')
 
     description = "instrument setup requirements"
     group = parser.add_argument_group(
@@ -142,13 +146,12 @@ class UnpackCatalogue(object):
                 tags.append("target")
         return " ".join(tags)
 
-    def read_catalogue(
-        self,
-        target_duration="",
-        gaincal_duration="",
-        bpcal_duration="",
-        bpcal_interval=None,
-    ):
+    def read_catalogue(self,
+                       target_duration="",
+                       gaincal_duration="",
+                       bpcal_duration="",
+                       bpcal_interval=None,
+                       ):
         """Unpack all targets from catalogue files into list.
 
         Parameters
@@ -159,83 +162,73 @@ class UnpackCatalogue(object):
             Duration on gain calibrator
         bpcal_duration: float
             Duration on bandpass calibrator
-        bpcal_interval: flat
+        bpcal_interval: float
             How frequent to visit the bandpass calibrator
 
         """
-        target_list = []
+        target_dict_list = []
         header = ""
         with open(self.infile, "r") as fin:
-            for idx, line in enumerate(fin.readlines()):
-                # keep header information
-                if line[0] == "#":
-                    header += line
-                    continue
-                # skip blank lines
-                if len(line) < 2:
-                    continue
+            info = fin.readlines()
+        for idx, line in enumerate(info):
+            target_dict = obs_dict.get_target_dict()
+            # keep header information
+            if line[0] == "#":
+                header += line
+                continue
+            # skip blank lines
+            if len(line) < 2:
+                continue
+            try:
                 # unpack data columns
-                try:
-                    data_columns = [each.strip() for each in line.strip().split(",")]
-                except ValueError:
-                    print("Could not unpack line:{}".format(line))
-                    continue
+                data_columns = [each.strip() for each in line.strip().split(",")]
+            except ValueError:
+                print("Could not unpack line:{}".format(line))
+                continue
+            else:
+                if len(data_columns) < 4:
+                    [name, tags] = data_columns
+                    if 'special' not in tags:
+                        raise RuntimeError('Unknown target type')
+                    x_coord = ''
+                    y_coord = ''
                 else:
-                    if len(data_columns) < 4:
-                        [name, tags] = data_columns[:]
-                        ra, dec = None, None
-                    else:
-                        [name, tags, ra, dec] = data_columns[:4]
-                    flux = None
-                    if len(data_columns) > 4:
-                        flux = " ".join(data_columns[4:])
-                        # skip empty brackets it means nothing
-                        if len(flux[1:-1]) < 1:
-                            flux = None
+                    [name, tags, x_coord, y_coord] = data_columns[:4]
+                flux = None
+                if len(data_columns) > 4:
+                    flux = " ".join(data_columns[4:])
+                    # skip empty brackets it means nothing
+                    if len(flux[1:-1]) < 1:
+                        flux = None
 
-                tags = self.tidy_tags(tags.strip())
+            tags = self.tidy_tags(tags.strip())
+            if tags.startswith("azel"):
+                prefix = "azel"
+            elif tags.startswith("gal"):
+                prefix = "gal"
+            elif tags.startswith("special"):
                 prefix = "special"
-                c_types = ["azel", "gal", "radec"]
-                for coord_type in c_types:
-                    if tags.startswith(coord_type):
-                        prefix = coord_type
-                        break
-                if len(name) < 1:
-                    name = "target{}_{}".format(idx, prefix)
-                cel_coord = "special"
-                # prefix = "solarbody"
-                if ra is not None and dec is not None:
-                    cel_coord = " ".join([ra, dec])
-                target_items = [
-                    name,
-                    prefix,
-                    cel_coord,
-                    tags[len(prefix):].strip(),
-                ]
+            else:
+                prefix = "radec"
+            if len(name) < 1:
+                name = "target{}_{}".format(idx, prefix)
 
-                target_spec = "name={}, {}={}, tags={}, duration={}"
-                cadence = ", cadence={}"
-                flux_model = ", model={}"
-                if "target" in tags:
-                    target_items.append(target_duration)
-                elif "gaincal" in tags:
-                    target_items.append(gaincal_duration)
+            target_dict['name'] = name
+            target_dict['coord'] = [prefix, " ".join([x_coord, y_coord])]
+            target_dict['tags'] = tags[len(prefix):].strip()
+            target_dict['duration'] = target_duration
+            if 'cal' in target_dict['tags']:
+                if 'gaincal' in target_dict['tags']:
+                    target_dict['duration'] = gaincal_duration
                 else:
-                    target_items.append(bpcal_duration)
+                    target_dict['duration'] = bpcal_duration
                     if bpcal_interval is not None:
-                        target_spec += cadence
-                        target_items.append(bpcal_interval)
-                if flux is not None:
-                    target_spec += flux_model
-                    target_items.append(flux)
-                try:
-                    target = target_spec.format(*target_items)
-                except IndexError:
-                    msg = "Incorrect target definition\n"
-                    msg += "Verify line: {}".format(line.strip())
-                    raise RuntimeError(msg)
-                target_list.append(target)
-        return header, target_list
+                        target_dict['cadence'] = bpcal_interval
+            if flux is not None:
+                target_dict['flux_model'] = flux
+            target_dict_list.append(target_dict)
+
+        return header, target_dict_list
 
 
 class BuildObservation(object):
@@ -250,33 +243,33 @@ class BuildObservation(object):
 
     """
 
-    def __init__(self, target_list):
-        self.target_list = target_list
+    def __init__(self, target_dict_list):
+        self.target_dict_list = target_dict_list
+        self.target_list = []
+        for target_dict in target_dict_list:
+            target = obs_yaml.target_str(target_dict)
+            self.target_list.append(target)
         self.configuration = None
         # list of targets with ra, dec for LST calculation
         self.lst_list = [tgt
-                         for tgt in target_list if "radec" in tgt]
+                         for tgt in self.target_list if "radec" in tgt]
 
-    def configure(self, instrument={}, obs_duration=None, lst=None):
+    def configure(self,
+                  instrument={},
+                  obs_duration=None,
+                  lst=None):
         """Set up of the MeerKAT telescope for running observation.
 
         Parameters
         ----------
         instrument: dict
             Correlator configuration
-        obs_duration: float
+        obs_duration: dict
             Duration of observation
         lst: datetime
             Local Sidereal Time at telescope location
 
         """
-        obs_plan = {}
-        # subarray specific setup options
-        if len(instrument) > 0:
-            obs_plan["instrument"] = instrument
-        # set observation duration if specified
-        if obs_duration is not None:
-            obs_plan["durations"] = {"obs_duration": obs_duration}
         # LST times only HH:MM in OPT
         start_lst = Observatory().start_obs(self.lst_list, str_flag=True)
         start_lst = ":".join(start_lst.split(":")[:-1])
@@ -284,12 +277,18 @@ class BuildObservation(object):
         end_lst = ":".join(end_lst.split(":")[:-1])
         if lst is None:
             lst = "{}-{}".format(start_lst, end_lst)
-        # observational setup
-        obs_plan["observation_loop"] = [{"lst": lst, "target_list": self.target_list}]
-        self.configuration = obs_plan
-        return obs_plan
 
-    def write_yaml(self, header=None, configuration=None, outfile="obs_config.yaml"):
+        # observational setup
+        self.configuration = obs_yaml.obs_str(instrument,
+                                              obs_duration,
+                                              lst,
+                                              self.target_dict_list)
+
+    def write_yaml(self,
+                   header=None,
+                   configuration=None,
+                   outfile=None):
+                   # outfile="obs_config.yaml"):
         """Write the yaml observation file.
 
         Returns
@@ -301,49 +300,49 @@ class BuildObservation(object):
             self.configuration = configuration
         if self.configuration is None:
             raise RuntimeError("No observation configuration to output")
+
         init_str = ""
         if header is not None:
             init_str = header
-
-        for each in self.configuration.keys():
-            if each == "observation_loop":
-                continue
-            init_str += "{}:\n".format(each)
-            values = self.configuration[each]
-            for key in values.keys():
-                if values[key] is not None:
-                    init_str += "  {}: {}\n".format(key, values[key])
-
-        obs_loop = self.configuration["observation_loop"][0]
-        init_str += "{}:\n".format("observation_loop")
-        init_str += "  - LST: {}\n".format(obs_loop["lst"])
-
-        target_list = ""
-        for target in obs_loop["target_list"]:
-            target_list += "      - {}\n".format(target)
+        init_str += self.configuration
 
         with smart_open(outfile) as fout:
             fout.write(init_str)
-            if len(target_list) > 0:
-                fout.write("    target_list:\n{}".format(target_list))
 
+
+def ext_instrument(args):
+    """Correlator setup instructions"""
+    instrument = obs_dict.get_instrument_dict()
+    if args.product is not None:
+        instrument['product'] = args.product 
+    if args.band is not None:
+        instrument['band'] = args.band
+    if args.integration_period is not None:
+        instrument['integration_period'] = args.integration_period
+    return obs_dict.remove_none_inputs_(instrument)
+
+
+def ext_duration(args):
+    """Total duration of observation"""
+    durations = obs_dict.get_durations_dict()
+    if args.max_duration is not None:
+        durations["obs_duration"] = args.max_duration
+    return obs_dict.remove_none_inputs_(durations)
+    
 
 if __name__ == "__main__":
     parser = cli(sys.argv[0])
     args = parser.parse_args()
 
     # read instrument requirements if provided
-    instrument = {}
-    for group in parser._action_groups:
-        if "instrument setup" in group.title:
-            group_dict = {
-                a.dest: getattr(args, a.dest, None) for a in group._group_actions
-            }
-            instrument = vars(argparse.Namespace(**group_dict))
-            break
-    for key in instrument.keys():
-        if instrument[key] is None:
-            del instrument[key]
+    instrument = ext_instrument(args)
+    if args.debug:
+        print('instrument\n', instrument)
+
+    # set observation duration if specified
+    duration = ext_duration(args)
+    if args.debug:
+        print('duration\n', duration)
 
     # read targets from catalogue file
     cat_obj = UnpackCatalogue(args.infile)
@@ -353,11 +352,20 @@ if __name__ == "__main__":
         bpcal_duration=args.primary_cal_duration,
         bpcal_interval=args.primary_cal_cadence,
     )
+    if args.debug:
+        print('header\n', header)
+        print('catalogue\n', catalogue)
+
     obs_plan = BuildObservation(catalogue)
+    if args.debug:
+        print('target_str\n', obs_plan.target_list)
     # create observation configuration file
-    obs_plan.configure(
-        instrument=instrument, obs_duration=args.max_duration, lst=args.lst
-    )
+    obs_plan.configure(instrument=instrument,
+                       obs_duration=duration,
+                       lst=args.lst
+                       )
+    if args.debug:
+        print('output\n', obs_plan.configuration)
     obs_plan.write_yaml(header=header, outfile=args.outfile)
 
 # -fin-

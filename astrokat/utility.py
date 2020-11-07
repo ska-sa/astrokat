@@ -5,6 +5,7 @@ import numpy
 import time
 import yaml
 
+from . import obs_dict
 
 class NotAllTargetsUpError(Exception):
     """Raise error when not all targets are at the desired horizon.
@@ -106,44 +107,23 @@ def timestamp2datetime(timestamp):
 
 def katpoint_target(target_item):
     """Construct an expected katpoint target from a target_item string."""
-    coords = ["radec", "azel", "gal", "special"]
-    # input string format: name=, radec=, tags=, duration=, ...
-    target_ = [item.strip() for item in target_item.split(",")]
-
-    # get list of prefix parameters
-    target_dict = {}
-    param_desc = {
-                 'names': ('prefix', 'var'),
-                 'formats': ('S15', 'S15')
-                 }
-    target_params = numpy.array([
-                                ('name', 'name') ,
-                                ('tags', 'tags'),
-                                ('model', 'fluxmodel'),
-                                ], dtype=param_desc)
-    for item_ in target_:
-        for prefix, param in zip(target_params['prefix'],
-                                 target_params['var']):
-            if item_.startswith(prefix):
-                pref, success, result = item_.partition("=")
-                target_dict[param] = result.strip()
-                break
-        for prefix in coords:
-            if item_.startswith(prefix):
-                target_dict['ctag'] = prefix
-                pref, success, result = item_.partition("=")
-                if prefix != 'special':
-                    target_dict['x'] = result.split()[0].strip()
-                    target_dict['y'] = result.split()[1].strip()
-    target = "{}, {}".format(target_dict['name'],
-                             target_dict['ctag'])
-    if 'x' in target_dict.keys():
-        target += " {}, {}, {}".format(target_dict['tags'],
-                                       target_dict['x'],
-                                       target_dict['y'])
-    if 'fluxmodel' in target_dict.keys():
-        target += ", {}".format(target_dict['fluxmodel'])
-    return target_dict['name'], target
+    target_ = obs_dict.unpack_target(target_item)
+    name = target_['name']
+    fluxmodel = target_['flux_model']
+    if fluxmodel is None:
+        fluxmodel = ()
+    ctag = target_['coord'][0]
+    if 'special' in ctag:
+        x, y = '', ''
+    else:
+        x, y = target_['coord'][1].split()
+    target = "{}, {} {}, {}, {}, {}".format(name,
+                                            ctag,
+                                            target_['tags'],
+                                            x.strip(),
+                                            y.strip(),
+                                            fluxmodel)
+    return name, target
 
 
 def get_lst(yaml_lst):
