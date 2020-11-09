@@ -35,4 +35,21 @@ An online notebook is also available:
 `astrokat-coords.ipynb`
 
 
+### Typical LST calculations
+Most often given a target you need the rise and set times for an anticipated date
+
+* Calculate per target LST rise and set times
+`astrokat-lst.py --target 17:22:27.46877 -38:12:09.4023`
+* Return the time (UTC) of a given LST (such as rise time) for a given date
+`astrokat-lst.py --lst 10.6 --date 2018-08-06`
+
+Usage details can be found on the
+[MeerKAT LST tools](https://github.com/ska-sa/astrokat/wiki/MeerKAT-LST-tools)
+wiki page
+
+An online notebook is also available: 
+`astrokat-lst.ipynb`
+
+
+
 -fin-
