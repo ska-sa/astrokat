@@ -70,6 +70,14 @@ def longformat_date(date_str):
     return date_str
 
 
+def date2lst(utc_datetime, observer=None):
+    if observer is None:
+        observer = Observatory().observer
+    observer.date = ephem.Date(utc_datetime)
+    return ("At {}Z MeerKAT LST will be {}"
+            .format(observer.date, observer.sidereal_time()))
+
+
 def main(args):
     """Calculates target rise and set LST."""
     observer = Observatory().observer
@@ -91,9 +99,7 @@ def main(args):
                               set_lst))
 
     elif args.date and not args.lst:
-        observer.date = ephem.Date(utc_datetime)
-        return_str = ("At {}Z MeerKAT LST will be {}"
-                      .format(observer.date, observer.sidereal_time()))
+        return_str = date2lst(utc_datetime, observer=observer)
 
     elif args.lst:
         date_lst = lst2utc(args.lst, Observatory().location, date=utc_datetime)
