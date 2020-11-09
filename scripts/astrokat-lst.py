@@ -78,6 +78,17 @@ def date2lst(utc_datetime, observer=None):
             .format(observer.date, observer.sidereal_time()))
 
 
+def targetlst(target_str):
+        target = ",".join(["radec target"] + target_str)
+        target = katpoint.Target(target).body
+        rise_lst = Observatory()._ephem_risetime_(target)
+        set_lst = Observatory()._ephem_settime_(target)
+        return ("Target ({}) rises at LST {} and sets at LST {}"
+                .format(" ".join(target_str),
+                              rise_lst,
+                              set_lst))
+
+
 def main(args):
     """Calculates target rise and set LST."""
     observer = Observatory().observer
@@ -88,15 +99,8 @@ def main(args):
     utc_datetime = datetime.strptime(date_str, "%Y-%m-%d %H:%M")
 
     if args.target:
-        args.target = [target.strip() for target in args.target]
-        target = ",".join(["radec target"] + args.target)
-        target = katpoint.Target(target).body
-        rise_lst = Observatory()._ephem_risetime_(target)
-        set_lst = Observatory()._ephem_settime_(target)
-        return_str = ("Target ({}) rises at LST {} and sets at LST {}"
-                      .format(" ".join(args.target),
-                              rise_lst,
-                              set_lst))
+        target = [target.strip() for target in args.target]
+        return_str = targetlst(target)
 
     elif args.date and not args.lst:
         return_str = date2lst(utc_datetime, observer=observer)
