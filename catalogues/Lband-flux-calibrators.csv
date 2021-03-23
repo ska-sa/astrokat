@@ -1,8 +1,8 @@
 # Perley and Butler 2016 (https://arxiv.org/pdf/1609.05940.pdf),,,,
 # Names|alias, tag, RA, Dec, Flux model (Min freq [MHz] Max freq [MHz] [model coefficients])
-J0408-6545 | 0408-658, radec bpcal fluxcal, 04:08:20.38, -65:45:09.6, (145. 18000. -0.9790 3.3662 -1.1216 0.0861)
-J1331+3030 | 3C286, radec bpcal fluxcal, 13:31:08.288, +30:30:32.959, (50. 50000. 0.0181 1.592 -0.5011 0.0357)
-J1939-6342 | 1934-638, radec bpcal fluxcal, 19:39:25.05, -63:42:43.63, (408. 8640. -30.7667 26.4908 -7.0977 0.605334)
+J0408-6545 | 0408-658, radec bpcal fluxcal, 04:08:20.3782, -65:45:09.080, (145. 18000. -0.9790 3.3662 -1.1216 0.0861)
+J1331+3030 | 3C286, radec bpcal fluxcal, 13:31:08.2881, +30:30:32.959, (50. 50000. 0.0181 1.5920 -0.5011 0.0357)
+J1939-6342 | 1934-638, radec bpcal fluxcal, 19:39:25.0264, -63:42:45.624, (408. 8640. -30.7667 26.4908 -7.0977 0.605334)
 
 # known stable flux calibrators,,,,
 # but we do not have models for these yet,,,,
