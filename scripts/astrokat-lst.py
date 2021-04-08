@@ -74,7 +74,8 @@ def lst2datetime(lst, date):
     date_str = longformat_date(date)
     utc_datetime = datetime.strptime(date_str, "%Y-%m-%d %H:%M")
     date_lst = lst2utc(lst, Observatory().location, date=utc_datetime)
-    return (f"{date} {lst} LST corresponds to {date_lst}Z UTC")
+    return ("{} {} LST corresponds to {}Z UTC"
+            .format(date, lst, date_lst))
 
 
 def date2lst(utc_datetime, observer=None):
@@ -92,8 +93,8 @@ def targetlst(target_str):
     set_lst = Observatory()._ephem_settime_(target)
     return ("Target ({}) rises at LST {} and sets at LST {}"
             .format(" ".join(target_str),
-                          rise_lst,
-                          set_lst))
+                    rise_lst,
+                    set_lst))
 
 
 def main(args):
