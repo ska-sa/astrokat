@@ -30,7 +30,7 @@ Usage details can be found on the
 wiki page
 
 Or use the colab python notebook directly from GitHub:
-[`astrokat_lst.ipynb`](https://github.com/rubyvanrooyen/astrokat/blob/master/notebooks/astrokat_lst.ipynb)
+[`astrokat_lst.ipynb`](https://github.com/ska-sa/astrokat/blob/master/notebooks/astrokat_lst.ipynb)
 
 
 ## Convenience calculator converting galactic coordinates to ICRS frame
@@ -45,7 +45,7 @@ Usage details can be found on the
 [Galactic coordinates to ICRS](https://github.com/ska-sa/astrokat/wiki/Galactic-coordinates-to-ICRS) wiki page
 
 Or use the colab python notebook directly from GitHub:
-[`astrokat_coords.ipynb`](https://github.com/rubyvanrooyen/astrokat/blob/master/notebooks/astrokat_coords.ipynb)
+[`astrokat_coords.ipynb`](https://github.com/ska-sa/astrokat/blob/master/notebooks/astrokat_coords.ipynb)
 
 
 ## MeerKAT calibrators
@@ -70,7 +70,7 @@ Usage details can be found on the
 [MeerKAT calibrator selection](https://github.com/ska-sa/astrokat/wiki/MeerKAT-calibrator-selection) wiki page
 
 Or use the colab python notebook directly from GitHub:
-[`astrokat_targets.ipynb`](https://github.com/rubyvanrooyen/astrokat/blob/master/notebooks/astrokat_targets.ipynb)
+[`astrokat_targets.ipynb`](https://github.com/ska-sa/astrokat/blob/master/notebooks/astrokat_targets.ipynb)
 
 
 ### Convert target CSV catalogue to observation YAML file
@@ -88,7 +88,7 @@ Usage details can be found on the
 wiki page
 
 An online notebook is also available: 
-[`astrokat_catalogue2obsfile.ipynb`](https://github.com/rubyvanrooyen/astrokat/blob/master/notebooks/astrokat_catalogue2obsfile.ipynb)
+[`astrokat_catalogue2obsfile.ipynb`](https://github.com/ska-sa/astrokat/blob/master/notebooks/astrokat_catalogue2obsfile.ipynb)
 
 
 -fin-
