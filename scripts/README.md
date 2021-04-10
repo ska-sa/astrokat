@@ -30,7 +30,7 @@ Usage details can be found on the
 wiki page
 
 Or use the colab python notebook directly from GitHub:
-[`astrokat_lst.ipynb`](https://github.com/rubyvanrooyen/astrokat/blob/colab_helper_interface/notebooks/astrokat_lst.ipynb)
+[`astrokat_lst.ipynb`](https://github.com/rubyvanrooyen/astrokat/blob/master/notebooks/astrokat_lst.ipynb)
 
 
 ## Convenience calculator converting galactic coordinates to ICRS frame
@@ -42,11 +42,10 @@ astrokat-coords.py --galactic T11R00C02 21h51m30.37s +00d59m15.56s
 ```
 
 Usage details can be found on the
-[Galactic coordinates to ICRS](https://github.com/ska-sa/astrokat/wiki/Galactic-coordinates-to-ICRS)    
-wiki page
+[Galactic coordinates to ICRS](https://github.com/ska-sa/astrokat/wiki/Galactic-coordinates-to-ICRS) wiki page
 
 Or use the colab python notebook directly from GitHub:
-[`astrokat_coords.ipynb`](https://github.com/rubyvanrooyen/astrokat/blob/colab_helper_interface/notebooks/astrokat_coords.ipynb)
+[`astrokat_coords.ipynb`](https://github.com/rubyvanrooyen/astrokat/blob/master/notebooks/astrokat_coords.ipynb)
 
 
 ## MeerKAT calibrators
@@ -68,11 +67,10 @@ astrokat-targets.py --view test_NGC641_03D03.csv --datetime '2018-04-06 12:34'
 ```
 
 Usage details can be found on the
-[MeerKAT calibrator selection](https://github.com/ska-sa/astrokat/wiki/MeerKAT-calibrator-selection)    
-wiki page
+[MeerKAT calibrator selection](https://github.com/ska-sa/astrokat/wiki/MeerKAT-calibrator-selection) wiki page
 
 Or use the colab python notebook directly from GitHub:
-[`astrokat_targets.ipynb`](https://github.com/rubyvanrooyen/astrokat/blob/colab_helper_interface/notebooks/astrokat_targets.ipynb)
+[`astrokat_targets.ipynb`](https://github.com/rubyvanrooyen/astrokat/blob/master/notebooks/astrokat_targets.ipynb)
 
 
 ### Convert target CSV catalogue to observation YAML file
@@ -90,7 +88,7 @@ Usage details can be found on the
 wiki page
 
 An online notebook is also available: 
-`astrokat_catalogue2obsfile.ipynb`
+[`astrokat_catalogue2obsfile.ipynb`](https://github.com/rubyvanrooyen/astrokat/blob/master/notebooks/astrokat_catalogue2obsfile.ipynb)
 
 
 -fin-
