@@ -16,11 +16,9 @@ setup(
     scripts=[
         "scripts/astrokat-catalogue2obsfile.py",
         "scripts/astrokat-coords.py",
-        # "scripts/astrokat-fitflux.py",
         "scripts/astrokat-lst.py",
         "scripts/astrokat-observe.py",
         "scripts/astrokat-targets.py",
-        # "scripts/astrokat-uvcoverage.py",
     ],
     url="https://github.com/ska-sa/astrokat",
     license="BSD 2-Clause",
