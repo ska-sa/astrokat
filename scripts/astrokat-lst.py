@@ -70,6 +70,33 @@ def longformat_date(date_str):
     return date_str
 
 
+def lst2datetime(lst, date):
+    date_str = longformat_date(date)
+    utc_datetime = datetime.strptime(date_str, "%Y-%m-%d %H:%M")
+    date_lst = lst2utc(lst, Observatory().location, date=utc_datetime)
+    return ("{} {} LST corresponds to {}Z UTC"
+            .format(date, lst, date_lst))
+
+
+def date2lst(utc_datetime, observer=None):
+    if observer is None:
+        observer = Observatory().observer
+    observer.date = ephem.Date(utc_datetime)
+    return ("At {}Z MeerKAT LST will be {}"
+            .format(observer.date, observer.sidereal_time()))
+
+
+def targetlst(target_str):
+    target = ",".join(["radec target"] + target_str)
+    target = katpoint.Target(target).body
+    rise_lst = Observatory()._ephem_risetime_(target)
+    set_lst = Observatory()._ephem_settime_(target)
+    return ("Target ({}) rises at LST {} and sets at LST {}"
+            .format(" ".join(target_str),
+                    rise_lst,
+                    set_lst))
+
+
 def main(args):
     """Calculates target rise and set LST."""
     observer = Observatory().observer
@@ -80,28 +107,14 @@ def main(args):
     utc_datetime = datetime.strptime(date_str, "%Y-%m-%d %H:%M")
 
     if args.target:
-        args.target = [target.strip() for target in args.target]
-        target = ",".join(["radec target"] + args.target)
-        target = katpoint.Target(target).body
-        rise_lst = Observatory()._ephem_risetime_(target)
-        set_lst = Observatory()._ephem_settime_(target)
-        return_str = ("Target ({}) rises at LST {} and sets at LST {}"
-                      .format(" ".join(args.target),
-                              rise_lst,
-                              set_lst))
+        target = [target.strip() for target in args.target]
+        return_str = targetlst(target)
 
     elif args.date and not args.lst:
-        observer.date = ephem.Date(utc_datetime)
-        return_str = ("At {}Z MeerKAT LST will be {}"
-                      .format(observer.date, observer.sidereal_time()))
+        return_str = date2lst(utc_datetime, observer=observer)
 
     elif args.lst:
-        date_lst = lst2utc(args.lst, Observatory().location, date=utc_datetime)
-        return_str = ("{} {} LST corresponds to {}Z UTC"
-                      .format(args.date,
-                              args.lst,
-                              date_lst))
-
+        return_str = lst2datetime(args.lst, args.date)
     else:
         # default results is to return the current LST at MeerKAT
         return_str = "Current clock times at MeerKAT:\n"
