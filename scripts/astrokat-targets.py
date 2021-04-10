@@ -887,7 +887,7 @@ def main(creation_time=datetime.utcnow(),
                     plot_func = source_rise_set
                 plot_func(cp_cat, ref_antenna)
             plt.show()
-        quit()
+        return
 
     if mkat_catalogues and os.path.isdir(mkat_catalogues):
         catalogue_path = mkat_catalogues
