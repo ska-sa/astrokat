@@ -19,14 +19,14 @@ from astrokat.utility import datetime2timestamp, timestamp2datetime
 from copy import deepcopy
 from datetime import datetime, timedelta
 
-text_only = False
+global_text_only = False
 try:
     import matplotlib
     import matplotlib.pyplot as plt
     import matplotlib.dates as mdates
     from matplotlib.font_manager import FontProperties
 except ImportError:  # not a processing node
-    text_only = True
+    global_text_only = True
 
 # hard coded globals
 caltag_dict = {
@@ -631,12 +631,13 @@ def write_header(header_info, userheader=""):
 
     """
     catalogue_header = userheader
-    catalogue_header += "# Observation catalogue for proposal ID {}\n".format(
-        header_info['proposal_id'])
-    catalogue_header += "# PI: {}\n".format(
-        header_info['pi_name'])
-    catalogue_header += "# Contact details: {}\n".format(
-        header_info['pi_contact'])
+    if header_info is not None:
+        catalogue_header += "# Observation catalogue for proposal ID {}\n".format(
+            header_info['proposal_id'])
+        catalogue_header += "# PI: {}\n".format(
+            header_info['pi_name'])
+        catalogue_header += "# Contact details: {}\n".format(
+            header_info['pi_contact'])
     return catalogue_header
 
 
@@ -831,6 +832,16 @@ def main(creation_time=datetime.utcnow(),
          cal_tags=['gain'],
          mkat_catalogues=False,
          target=None,
+         lst=False,
+         solar_angle=20.,
+         header_info=None,
+         all_cals=False,
+         user_text_only=False,
+         view_tags=['elevation'],
+         save_fig=False,
+         infile='',
+         viewfile=None,
+         outfile=None,
          **kwargs):
     """Run calibration observation."""
     observatory = Observatory()
@@ -840,9 +851,11 @@ def main(creation_time=datetime.utcnow(),
     ref_antenna.observer.date = ephem.Date(creation_time)
     ref_antenna.observer.horizon = ephem.degrees(str(horizon))
 
-    if kwargs['viewfile']:
+    text_only = (user_text_only or global_text_only)
+
+    if viewfile is not None:
         # check if view file in CSV or YAML
-        data_dict = read_yaml(kwargs['viewfile'])
+        data_dict = read_yaml(viewfile)
         if data_dict:
             catalogue = katpoint.Catalogue()
             catalogue.antenna = ref_antenna
@@ -852,18 +865,19 @@ def main(creation_time=datetime.utcnow(),
                     catalogue.add(katpoint.Target(target))
         else:  # assume CSV
             # output observation stats for catalogue
-            with open(kwargs['viewfile'], 'r') as fin:
+            with open(viewfile, 'r') as fin:
                 catalogue = katpoint.Catalogue(fin)
         obs_summary = obs_table(
             ref_antenna,
             catalogue=catalogue,
-            solar_sep=kwargs['solar_angle'],
-            lst=kwargs['lst'],
+            solar_sep=solar_angle,
+            lst=lst,
         )
         print(obs_summary)
 
-        if not (kwargs['text_only'] or text_only):
-            for view_option in kwargs['view_tags']:
+        # if not (user_text_only or global_text_only):
+        if not text_only:
+            for view_option in view_tags:
                 cp_cat = deepcopy(catalogue)
                 if "elevation" in view_option:
                     plot_func = source_elevation
@@ -903,7 +917,7 @@ def main(creation_time=datetime.utcnow(),
         )
         cal_targets = [katpoint.Target(target)]
     else:  # assume the targets are in a file
-        with open(kwargs['infile'], "r") as fin:
+        with open(infile, "r") as fin:
             # extract targets tagged to be used for calibrator selection
             for line in fin.readlines():
                 if line[0] == "#":  # catch and keep header lines
@@ -956,7 +970,7 @@ def main(creation_time=datetime.utcnow(),
                 )
             else:
                 # for primary calibrators:
-                if kwargs['all_cals']:
+                if all_cals:
                     # show all calibrators
                     for calibrator in calibrators:
                         observation_catalogue = add_target(
@@ -985,37 +999,38 @@ def main(creation_time=datetime.utcnow(),
         observation_catalogue = add_target(target, observation_catalogue)
 
     # write observation catalogue
-    catalogue_header = write_header(kwargs['header_info'], userheader=header)
+    catalogue_header = write_header(header_info, userheader=header)
     catalogue_data = observation_catalogue.sort()
-    if kwargs['outfile'] is not None:
-        filename = os.path.splitext(os.path.basename(kwargs['outfile']))[0] + ".csv"
-        kwargs['outfile'] = os.path.join(os.path.dirname(kwargs['outfile']), filename)
-        write_catalogue(kwargs['outfile'], catalogue_header, catalogue_data)
-        print("Observation catalogue {}".format(kwargs['outfile']))
+    if outfile is not None:
+        filename = os.path.splitext(os.path.basename(outfile))[0] + ".csv"
+        outfile = os.path.join(os.path.dirname(outfile), filename)
+        write_catalogue(outfile, catalogue_header, catalogue_data)
+        print("Observation catalogue {}".format(outfile))
 
     # output observation stats for catalogue
     obs_summary = obs_table(
         ref_antenna,
         catalogue=catalogue_data,
         ref_tgt_list=cal_targets,
-        solar_sep=kwargs['solar_angle'],
-        lst=kwargs['lst'],
+        solar_sep=solar_angle,
+        lst=lst,
     )
     print(obs_summary)
 
-    if text_only and not kwargs['text_only']:
+    if global_text_only and not user_text_only:
         msg = "Required matplotlib functionalities not available\n"
         msg += "Cannot create elevation plot\n"
         msg += "Only producing catalogue file and output to screen"
         print(msg)
-    if not (text_only or kwargs['text_only']):
+    # if not (global_text_only or user_text_only):
+    if not text_only:
         # create elevation plot for sources
         obs_catalogue = catalogue_header
         for target in catalogue_data:
             obs_catalogue += "{}\n".format(target)
         source_elevation(observation_catalogue,
                          ref_antenna)
-        if kwargs['save_fig']:
+        if save_fig:
             imfile = "elevation_utc_lst.png"
             print("Elevation plot {}".format(imfile))
             plt.savefig(imfile, dpi=300)
@@ -1044,7 +1059,7 @@ if __name__ == "__main__":
          solar_angle=args.solar_angle,
          header_info=header_info,
          all_cals=args.all_cals,
-         text_only=args.text_only,
+         user_text_only=args.text_only,
          view_tags=args.view_tags,
          save_fig=args.save_fig,
          infile=args.infile,
