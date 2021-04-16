@@ -13,22 +13,23 @@ except ImportError:
 
 # Constants and defaults
 _DEFAULT_LEAD_TIME = 5.0  # lead time [sec]
-def max_cycle_len(band):
+
+
+def max_cycle_len_per_band(band):
     if band.lower() == 'u':
         return 31.  # buffer len [sec]
     else:
         # default is L-band
         return 20.  # buffer len [sec]
-# Constants and defaults
 
 
 def _get_max_cycle_len(kat):
     """Get maximum cycle length for noise diode switching
     """
     if not kat.dry_run:
-        return max_cycle_len(kat.sensor.sub_band.get_value())
+        return max_cycle_len_per_band(kat.sensor.sub_band.get_value())
     else:
-        return max_cycle_len('l')
+        return max_cycle_len_per_band('l')
 
 
 def _get_nd_timestamp_(lead_time):
