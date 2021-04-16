@@ -2,16 +2,6 @@
 from __future__ import division
 from __future__ import absolute_import
 
-# Constants and defaults
-_DEFAULT_LEAD_TIME = 5.0  # lead time [sec]
-def max_cycle_len(band):
-    if band.lower() == 'u':
-        return 31.  # buffer len [sec]
-    else:
-        # default is L-band
-        return 20.  # buffer len [sec]
-# Constants and defaults
-
 from .__main__ import cli
 
 from . import noisediode

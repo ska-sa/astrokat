@@ -9,8 +9,17 @@ try:
     from katcorelib import user_logger
 except ImportError:
     from .simulate import user_logger
-from . import _DEFAULT_LEAD_TIME
-from . import max_cycle_len
+
+
+# Constants and defaults
+_DEFAULT_LEAD_TIME = 5.0  # lead time [sec]
+def max_cycle_len(band):
+    if band.lower() == 'u':
+        return 31.  # buffer len [sec]
+    else:
+        # default is L-band
+        return 20.  # buffer len [sec]
+# Constants and defaults
 
 
 def _get_max_cycle_len(kat):
@@ -25,6 +34,8 @@ def _get_max_cycle_len(kat):
 def _get_nd_timestamp_(lead_time):
     """Timestamp for ND switch command with lead time
     """
+    if lead_time is None:
+        lead_time = _DEFAULT_LEAD_TIME
     return time.time() + lead_time
 
 
@@ -193,7 +204,7 @@ def _switch_on_off_(kat,
 # switch noise-source on
 def on(kat,
        timestamp=None,
-       lead_time=_DEFAULT_LEAD_TIME):
+       lead_time=None):
     """Switch noise-source pattern on.
 
     Parameters
@@ -235,7 +246,7 @@ def on(kat,
 # switch noise-source pattern off
 def off(kat,
         timestamp=None,
-        lead_time=_DEFAULT_LEAD_TIME):
+        lead_time=None):
     """Switch noise-source pattern off.
 
     Parameters
@@ -266,7 +277,7 @@ def off(kat,
 # fire noise diode before track
 def trigger(kat,
             duration=None,
-            lead_time=_DEFAULT_LEAD_TIME):
+            lead_time=None):
     """Fire the noise diode before track.
 
     Parameters
@@ -281,6 +292,8 @@ def trigger(kat,
 
     if duration is None:
         return True  # nothing to do
+    if lead_time is None:
+        lead_time = _DEFAULT_LEAD_TIME
 
     msg = ('Firing noise diode for {}s before target observation'
            .format(duration))
@@ -349,7 +362,7 @@ def trigger(kat,
 # set noise diode pattern
 def pattern(kat,
             nd_setup,
-            lead_time=_DEFAULT_LEAD_TIME,
+            lead_time=None,
             ):
     """Start background noise diode pattern controlled by digitiser hardware.
 
@@ -371,6 +384,8 @@ def pattern(kat,
     timestamp : float
         Linux timestamp reported by digitiser
     """
+    if lead_time is None:
+        lead_time = _DEFAULT_LEAD_TIME
 
     # nd pattern length [sec]
     max_cycle_len = _get_max_cycle_len(kat)
