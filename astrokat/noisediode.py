@@ -118,8 +118,8 @@ def _set_dig_nd_(kat,
             user_logger.error('Noise diode activation not in sync')
     if np.isfinite(timestamp):
         msg = ('Set successful noise diodes with average timestamp {:.0f} ({})'
-            .format(timestamp,
-                    time.ctime(timestamp)))
+               .format(timestamp,
+                       time.ctime(timestamp)))
         user_logger.debug('DEBUG: {}'.format(msg))
 
     return timestamp
