@@ -86,19 +86,25 @@ def _set_dig_nd_(kat,
         on_fraction = switch
 
     # Noise diodes trigger is evaluated per antenna
-    timestamps = []
+    replies = {}
     for ant in nd_antennas:
         ped = getattr(kat, ant)
-        reply = ped.req.dig_noise_source(timestamp,
-                                         on_fraction,
-                                         cycle_length)
-        if not kat.dry_run:
-            timestamps.append(_katcp_reply_({ant: reply}))
-        else:
+        # The digitiser master controller takes about 15-50 ms per request,
+        # so start panicking just before the deadline.
+        if time.time() > timestamp - 0.02:
+            user_logger.error('Requested noise diode timestamp %s will probably '
+                              'be in the past - please increase lead time',
+                              time.ctime(timestamp))
+            skipped = ', '.join(nd_antennas[len(replies):])
+            user_logger.error('Skipped setting noise diodes on: %s', skipped)
+            break
+        replies[ant] = ped.req.dig_noise_source(timestamp,
+                                                on_fraction,
+                                                cycle_length)
+        if kat.dry_run:
             msg = ('Dry-run: Set noise diode for antenna {} at '
                    'timestamp {}'.format(ant, timestamp))
             user_logger.debug(msg)
-
         if cycle:
             # add time [sec] to ensure all digitisers set at the same time
             timestamp += cycle_length * on_fraction
@@ -106,15 +112,15 @@ def _set_dig_nd_(kat,
     # assuming ND for all antennas must be the same
     # only display single timestamp
     if not kat.dry_run:
+        timestamp = _katcp_reply_(replies)
         # test incorrect reply check
-        if len(timestamps) < len(nd_antennas):
-            err_msg = 'Noise diode activation not in sync'
-            user_logger.error(err_msg)
-        timestamp = np.mean(timestamps)
-    msg = ('Set all noise diodes with timestamp {} ({})'
-           .format(int(timestamp),
-                   time.ctime(timestamp)))
-    user_logger.debug('DEBUG: {}'.format(msg))
+        if len(replies) < len(nd_antennas):
+            user_logger.error('Noise diode activation not in sync')
+    if np.isfinite(timestamp):
+        msg = ('Set successful noise diodes with average timestamp {:.0f} ({})'
+            .format(timestamp,
+                    time.ctime(timestamp)))
+        user_logger.debug('DEBUG: {}'.format(msg))
 
     return timestamp
 
@@ -132,7 +138,7 @@ def _katcp_reply_(dig_katcp_replies):
             user_logger.debug('DEBUG: {}'.format(reply.arguments))
             continue
     # assume all ND timestamps similar and return average
-    return np.mean(ant_ts_list)
+    return np.mean(ant_ts_list) if ant_ts_list else np.nan
 
 
 def _nd_log_msg_(ant,
