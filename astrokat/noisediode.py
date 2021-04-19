@@ -2,8 +2,10 @@
 from __future__ import division
 from __future__ import absolute_import
 
-import numpy as np
 import time
+
+import katpoint
+import numpy as np
 
 try:
     from katcorelib import user_logger
@@ -92,11 +94,11 @@ def _set_dig_nd_(kat,
         # The digitiser master controller takes about 15-50 ms per request,
         # so start panicking just before the deadline.
         if time.time() > timestamp - 0.02:
-            user_logger.error('Requested noise diode timestamp %s will probably '
+            user_logger.error('Requested noise diode timestamp %sZ will probably '
                               'be in the past - please increase lead time',
-                              time.ctime(timestamp))
-            skipped = ', '.join(nd_antennas[len(replies):])
-            user_logger.error('Skipped setting noise diodes on: %s', skipped)
+                              katpoint.Timestamp(timestamp))
+            skipped = ','.join(nd_antennas[len(replies):])
+            user_logger.error('Skipped setting these noise diodes: %s', skipped)
             break
         replies[ant] = ped.req.dig_noise_source(timestamp,
                                                 on_fraction,
@@ -117,9 +119,9 @@ def _set_dig_nd_(kat,
         if len(replies) < len(nd_antennas):
             user_logger.error('Noise diode activation not in sync')
     if np.isfinite(timestamp):
-        msg = ('Set successful noise diodes with average timestamp {:.0f} ({})'
+        msg = ('Set successful noise diodes with average timestamp {:.0f} ({}Z)'
                .format(timestamp,
-                       time.ctime(timestamp)))
+                       katpoint.Timestamp(timestamp)))
         user_logger.debug('DEBUG: {}'.format(msg))
 
     return timestamp
