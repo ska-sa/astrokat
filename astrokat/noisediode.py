@@ -132,13 +132,12 @@ def _katcp_reply_(dig_katcp_replies):
     ant_ts_list = []
     for ant in sorted(dig_katcp_replies):
         reply, informs = dig_katcp_replies[ant]
-        if reply.reply_ok():
+        if reply.succeeded:
             ant_ts_list.append(_nd_log_msg_(ant, reply, informs))
         else:
-            msg = 'Unexpected noise diode reply from ant {}'.format(ant)
+            msg = ('Noise diode request failed on ant {}: {} ({})'
+                   .format(ant, reply.arguments, informs))
             user_logger.warn(msg)
-            user_logger.debug('DEBUG: {}'.format(reply.arguments))
-            continue
     # assume all ND timestamps similar and return average
     return np.mean(ant_ts_list) if ant_ts_list else np.nan
 
