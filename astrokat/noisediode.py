@@ -205,7 +205,6 @@ def _switch_on_off_(kat,
     timestamp = _set_dig_nd_(kat,
                              timestamp,
                              switch=switch)
-
     return timestamp
 
 
@@ -236,7 +235,12 @@ def on(kat,
     true_timestamp = _switch_on_off_(kat,
                                      timestamp,
                                      switch=1)  # on
-
+    # NaN timestamp return during ND on command means something went wrong
+    # abort observation
+    if not np.isfinite(true_timestamp):
+        msg = ('Failed to switch ND on, timestamp = {}, observation aborted'
+               .format(true_timestamp))
+        raise RuntimeError(msg)
     sleeptime = true_timestamp - time.time()
     user_logger.debug('DEBUG: now {}, sleep {}'
                       .format(time.time(),
@@ -254,7 +258,8 @@ def on(kat,
 # switch noise-source pattern off
 def off(kat,
         timestamp=None,
-        lead_time=None):
+        lead_time=None,
+        allow_ts_err=False):
     """Switch noise-source pattern off.
 
     Parameters
@@ -265,6 +270,8 @@ def off(kat,
         Time since the epoch as a floating point number [sec]
     lead_time : float, optional (default = system default lead time)
         Lead time before the noisediode is switched off [sec]
+    allow_ts_err: boolean, optional (default = False)
+        Allow ND set failures to pass by ignoring NaN timestamps
 
     Returns
     -------
@@ -276,6 +283,12 @@ def off(kat,
         timestamp = _get_nd_timestamp_(lead_time)
 
     true_timestamp = _switch_on_off_(kat, timestamp)
+    continue_ = (np.isfinite(true_timestamp) or allow_ts_err)
+    if not continue_:
+        msg = ('Failed to switch ND off, timestamp = {}, observation aborted'
+               .format(true_timestamp))
+        raise RuntimeError(msg)
+
     msg = ('Report: noise-diode off at {}'
            .format(true_timestamp))
     user_logger.info(msg)
@@ -442,6 +455,12 @@ def pattern(kat,
                              start_time,
                              nd_setup=nd_setup,
                              cycle=cycle)
+    # NaN timestamp return during ND pattern request invalidates observation
+    # requirements, abort observation
+    if not np.isfinite(timestamp):
+        msg = ('Failed to set ND pattern, timestamp = {}, observation aborted'
+               .format(timestamp))
+        raise RuntimeError(msg)
     user_logger.trace('TRACE: now {} ({})'
                       .format(time.time(),
                               time.ctime(time.time())))
