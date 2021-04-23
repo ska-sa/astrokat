@@ -340,7 +340,8 @@ class Telescope(object):
         # Ensure known exit state before quitting
         # TODO: Return correlator settings to entry values
         # switch noise-source pattern off (ensure this after each observation)
-        noisediode.off(self.array)
+        # if NaN returned at off command, allow to continue
+        noisediode.off(self.array, allow_ts_err=True)
         self.array.disconnect()
 
     def subarray_setup(self, instrument):
