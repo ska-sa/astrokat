@@ -3,6 +3,7 @@ noise_diode:
   antennas: all
   cycle_len: 0.1  # 100ms
   on_frac: 0.5  # 50%
+  lead_time: 3.  # sec
 durations:
   start_time: 2019-11-14 07:00:00
   obs_duration: 300
