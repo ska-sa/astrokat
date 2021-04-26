@@ -8,7 +8,7 @@ Update astrokat catalogues manually
 ```
 git clone https://github.com/ska-sa/astrokat.git
 cd astrokat/catalogues
-for file in Lband-*calibrators.csv ; do echo $file ; cp $file bak/ ; cp ../../katconfig/user/catalogues/$file . ; done
+for file in ../../katconfig/user/catalogues/*calibrators.csv ; do echo $file ; cp $file bak/ ; cp $file . ; done
 ```
 
 OR
