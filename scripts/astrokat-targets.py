@@ -488,8 +488,9 @@ def table_line(datetime,
 
     """
     observatory = Observatory(horizon=horizon, datetime=datetime)
-    rise_time = observatory._ephem_risetime_(target.body, lst=lst)
-    set_time = observatory._ephem_settime_(target.body, lst=lst)
+    [rise_time,
+     set_time] = observatory.target_rise_and_set_times(target.body,
+                                                       lst=lst)
     if not lst:
         rise_time = rise_time.datetime().strftime("%H:%M:%S")
         set_time = set_time.datetime().strftime("%H:%M:%S")
@@ -784,13 +785,14 @@ def best_cal_cover(catalogue, katpt_target, ref_antenna):
         # add another calibrator preceding the target
         observatory = Observatory(horizon=horizon,
                                   datetime=ref_antenna.observer.date)
-        tgt_rise_time = observatory._ephem_risetime_(katpt_target.body,
-                                                     lst=False)
+        [tgt_rise_time, _] = observatory.target_rise_and_set_times(katpt_target.body,
+                                                                   lst=False)
         preceding_cals = []
         for each_cal in catalogue:
             try:
-                cal_set_time = observatory._ephem_settime_(each_cal.body,
-                                                           lst=False)
+                [_,
+                 cal_set_time] = observatory.target_rise_and_set_times(each_cal.body,
+                                                                       lst=False)
             except ephem.NeverUpError:
                 continue
             delta_time_to_cal_rise = cal_set_time - tgt_rise_time
