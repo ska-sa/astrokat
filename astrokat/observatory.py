@@ -104,6 +104,12 @@ class Observatory(object):
         self.observer.date = set_time
         return self.observer.sidereal_time()
 
+    def target_rise_and_set_times(self, target):
+        """Target rise and set LST times"""
+        rise_lst = self._ephem_risetime_(target)
+        set_lst = self._ephem_settime_(target)
+        return rise_lst, set_lst
+
     def read_file_from_node_config(self, catalogue_file):
         """Read catalogue file from node config.
 
