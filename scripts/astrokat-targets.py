@@ -882,7 +882,6 @@ def main(creation_time,
         )
         print(obs_summary)
 
-        # if not (user_text_only or global_text_only):
         if not text_only:
             for view_option in view_tags:
                 cp_cat = deepcopy(catalogue)
@@ -1031,7 +1030,7 @@ def main(creation_time,
         msg += "Cannot create elevation plot\n"
         msg += "Only producing catalogue file and output to screen"
         print(msg)
-    # if not (global_text_only or user_text_only):
+
     if not text_only:
         # create elevation plot for sources
         obs_catalogue = catalogue_header
