@@ -18,5 +18,8 @@ Edit and run bash script for all in one solution:
 e.g.    
 `./update_catalogues.sh ../../katconfig/user/catalogues/`
 
+Note: the script assumes the MeerKAT catalogue naming convention as described in the 
+[MeerKAT-calibrators and CSV catalogues](https://github.com/ska-sa/astrokat/wiki/MeerKAT-calibrators-and-CSV-catalogues)
+wiki page
 
-
+-fin-
