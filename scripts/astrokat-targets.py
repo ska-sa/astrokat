@@ -827,23 +827,30 @@ def add_target(target, catalogue, tag=""):
     return catalogue
 
 
-def main(creation_time=datetime.utcnow(),
+def main(creation_time,
          horizon=20.,
-         cal_tags=['gain'],
-         mkat_catalogues=False,
-         target=None,
-         lst=False,
          solar_angle=20.,
+         cal_tags=None,
+         target=None,
          header_info=None,
+         view_tags=None,
+         mkat_catalogues=False,
+         lst=False,
          all_cals=False,
          user_text_only=False,
-         view_tags=['elevation'],
          save_fig=False,
-         infile='',
+         infile=None,
          viewfile=None,
          outfile=None,
          **kwargs):
     """Run calibration observation."""
+
+    # set defaults
+    if cal_tags is None:
+        cal_tags = ['gain']
+    if view_tags is None:
+        view_tags = ['elevation']
+
     observatory = Observatory()
     location = observatory.location
     node_config_available = observatory.node_config_available
@@ -917,6 +924,8 @@ def main(creation_time=datetime.utcnow(),
         )
         cal_targets = [katpoint.Target(target)]
     else:  # assume the targets are in a file
+        if infile is None:
+            raise RuntimeError('Specify --target or CSV catalogue --infile')
         with open(infile, "r") as fin:
             # extract targets tagged to be used for calibrator selection
             for line in fin.readlines():
@@ -1052,15 +1061,15 @@ if __name__ == "__main__":
                    'pi_contact': args.contact}
     main(creation_time=args.datetime,
          horizon=args.horizon,
-         cal_tags=args.cal_tags,
-         mkat_catalogues=args.cat_path,
-         target=args.target,
-         lst=args.lst,
          solar_angle=args.solar_angle,
+         cal_tags=args.cal_tags,
+         target=args.target,
          header_info=header_info,
+         view_tags=args.view_tags,
+         mkat_catalogues=args.cat_path,
+         lst=args.lst,
          all_cals=args.all_cals,
          user_text_only=args.text_only,
-         view_tags=args.view_tags,
          save_fig=args.save_fig,
          infile=args.infile,
          viewfile=args.view,
