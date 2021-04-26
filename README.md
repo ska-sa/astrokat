@@ -35,7 +35,7 @@ Dependencies:
 `cd astrokat`
 * Python virtual environment setup    
 `python3 -m venv env`    
-`source /env/bin/activate`    
+`source env/bin/activate`    
 `pip install -e .`
 
 -fin-
