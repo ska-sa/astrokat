@@ -9,7 +9,6 @@ import time
 import astrokat
 from astrokat.utility import datetime2timestamp, timestamp2datetime
 from astrokat import (
-    _DEFAULT_LEAD_TIME,
     NoTargetsUpError,
     NotAllTargetsUpError,
     get_lst,
@@ -144,7 +143,7 @@ def observe(session, target_info, **kwargs):
 
     # set noise diode behaviour
     nd_setup = None
-    nd_lead = _DEFAULT_LEAD_TIME
+    nd_lead = None
     if kwargs.get("noise_diode"):
         nd_setup = kwargs["noise_diode"]
         # user specified lead time
@@ -341,7 +340,8 @@ class Telescope(object):
         # Ensure known exit state before quitting
         # TODO: Return correlator settings to entry values
         # switch noise-source pattern off (ensure this after each observation)
-        noisediode.off(self.array)
+        # if NaN returned at off command, allow to continue
+        noisediode.off(self.array, allow_ts_err=True)
         self.array.disconnect()
 
     def subarray_setup(self, instrument):
@@ -567,9 +567,7 @@ def run_observation(opts, kat):
             #  so it happens in the line above
             if "noise_diode" in obs_plan_params:
                 nd_setup = obs_plan_params["noise_diode"]
-                nd_lead = _DEFAULT_LEAD_TIME
-                if "lead_time" in nd_setup:
-                    nd_lead = nd_setup['lead_time']
+                nd_lead = nd_setup.get('lead_time')
 
                 # Set noise diode period to multiple of correlator integration time.
                 if not kat.array.dry_run:

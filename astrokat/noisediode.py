@@ -2,29 +2,43 @@
 from __future__ import division
 from __future__ import absolute_import
 
-import numpy as np
 import time
+
+import katpoint
+import numpy as np
 
 try:
     from katcorelib import user_logger
 except ImportError:
     from .simulate import user_logger
-from . import _DEFAULT_LEAD_TIME
-from . import max_cycle_len
+
+
+# Constants and defaults
+_DEFAULT_LEAD_TIME = 5.0  # lead time [sec]
+
+
+def max_cycle_len_per_band(band):
+    if band.lower() == 'u':
+        return 31.  # buffer len [sec]
+    else:
+        # default is L-band
+        return 20.  # buffer len [sec]
 
 
 def _get_max_cycle_len(kat):
     """Get maximum cycle length for noise diode switching
     """
     if not kat.dry_run:
-        return max_cycle_len(kat.sensor.sub_band.get_value())
+        return max_cycle_len_per_band(kat.sensor.sub_band.get_value())
     else:
-        return max_cycle_len('l')
+        return max_cycle_len_per_band('l')
 
 
 def _get_nd_timestamp_(lead_time):
     """Timestamp for ND switch command with lead time
     """
+    if lead_time is None:
+        lead_time = _DEFAULT_LEAD_TIME
     return time.time() + lead_time
 
 
@@ -74,19 +88,25 @@ def _set_dig_nd_(kat,
         on_fraction = switch
 
     # Noise diodes trigger is evaluated per antenna
-    timestamps = []
+    replies = {}
     for ant in nd_antennas:
         ped = getattr(kat, ant)
-        reply = ped.req.dig_noise_source(timestamp,
-                                         on_fraction,
-                                         cycle_length)
-        if not kat.dry_run:
-            timestamps.append(_katcp_reply_({ant: reply}))
-        else:
+        # The digitiser master controller takes about 15-50 ms per request,
+        # so start panicking just before the deadline.
+        if time.time() > timestamp - 0.02:
+            user_logger.error('Requested noise diode timestamp %sZ will probably '
+                              'be in the past - please increase lead time',
+                              katpoint.Timestamp(timestamp))
+            skipped = ','.join(nd_antennas[len(replies):])
+            user_logger.error('Skipped setting these noise diodes: %s', skipped)
+            break
+        replies[ant] = ped.req.dig_noise_source(timestamp,
+                                                on_fraction,
+                                                cycle_length)
+        if kat.dry_run:
             msg = ('Dry-run: Set noise diode for antenna {} at '
                    'timestamp {}'.format(ant, timestamp))
             user_logger.debug(msg)
-
         if cycle:
             # add time [sec] to ensure all digitisers set at the same time
             timestamp += cycle_length * on_fraction
@@ -94,15 +114,15 @@ def _set_dig_nd_(kat,
     # assuming ND for all antennas must be the same
     # only display single timestamp
     if not kat.dry_run:
+        timestamp = _katcp_reply_(replies)
         # test incorrect reply check
-        if len(timestamps) < len(nd_antennas):
-            err_msg = 'Noise diode activation not in sync'
-            user_logger.error(err_msg)
-        timestamp = np.mean(timestamps)
-    msg = ('Set all noise diodes with timestamp {} ({})'
-           .format(int(timestamp),
-                   time.ctime(timestamp)))
-    user_logger.debug('DEBUG: {}'.format(msg))
+        if len(replies) < len(nd_antennas):
+            user_logger.error('Noise diode activation not in sync')
+    if np.isfinite(timestamp):
+        msg = ('Set successful noise diodes with average timestamp {:.0f} ({}Z)'
+               .format(timestamp,
+                       katpoint.Timestamp(timestamp)))
+        user_logger.debug('DEBUG: {}'.format(msg))
 
     return timestamp
 
@@ -112,15 +132,14 @@ def _katcp_reply_(dig_katcp_replies):
     ant_ts_list = []
     for ant in sorted(dig_katcp_replies):
         reply, informs = dig_katcp_replies[ant]
-        if reply.reply_ok():
+        if reply.succeeded:
             ant_ts_list.append(_nd_log_msg_(ant, reply, informs))
         else:
-            msg = 'Unexpected noise diode reply from ant {}'.format(ant)
+            msg = ('Noise diode request failed on ant {}: {} ({})'
+                   .format(ant, reply.arguments, informs))
             user_logger.warn(msg)
-            user_logger.debug('DEBUG: {}'.format(reply.arguments))
-            continue
     # assume all ND timestamps similar and return average
-    return np.mean(ant_ts_list)
+    return np.mean(ant_ts_list) if ant_ts_list else np.nan
 
 
 def _nd_log_msg_(ant,
@@ -186,14 +205,13 @@ def _switch_on_off_(kat,
     timestamp = _set_dig_nd_(kat,
                              timestamp,
                              switch=switch)
-
     return timestamp
 
 
 # switch noise-source on
 def on(kat,
        timestamp=None,
-       lead_time=_DEFAULT_LEAD_TIME):
+       lead_time=None):
     """Switch noise-source pattern on.
 
     Parameters
@@ -217,7 +235,12 @@ def on(kat,
     true_timestamp = _switch_on_off_(kat,
                                      timestamp,
                                      switch=1)  # on
-
+    # NaN timestamp return during ND on command means something went wrong
+    # abort observation
+    if not np.isfinite(true_timestamp):
+        msg = ('Failed to switch ND on, timestamp = {}, observation aborted'
+               .format(true_timestamp))
+        raise RuntimeError(msg)
     sleeptime = true_timestamp - time.time()
     user_logger.debug('DEBUG: now {}, sleep {}'
                       .format(time.time(),
@@ -235,7 +258,8 @@ def on(kat,
 # switch noise-source pattern off
 def off(kat,
         timestamp=None,
-        lead_time=_DEFAULT_LEAD_TIME):
+        lead_time=None,
+        allow_ts_err=False):
     """Switch noise-source pattern off.
 
     Parameters
@@ -246,6 +270,8 @@ def off(kat,
         Time since the epoch as a floating point number [sec]
     lead_time : float, optional (default = system default lead time)
         Lead time before the noisediode is switched off [sec]
+    allow_ts_err: boolean, optional (default = False)
+        Allow ND set failures to pass by ignoring NaN timestamps
 
     Returns
     -------
@@ -257,6 +283,12 @@ def off(kat,
         timestamp = _get_nd_timestamp_(lead_time)
 
     true_timestamp = _switch_on_off_(kat, timestamp)
+    continue_ = (np.isfinite(true_timestamp) or allow_ts_err)
+    if not continue_:
+        msg = ('Failed to switch ND off, timestamp = {}, observation aborted'
+               .format(true_timestamp))
+        raise RuntimeError(msg)
+
     msg = ('Report: noise-diode off at {}'
            .format(true_timestamp))
     user_logger.info(msg)
@@ -266,7 +298,7 @@ def off(kat,
 # fire noise diode before track
 def trigger(kat,
             duration=None,
-            lead_time=_DEFAULT_LEAD_TIME):
+            lead_time=None):
     """Fire the noise diode before track.
 
     Parameters
@@ -281,6 +313,8 @@ def trigger(kat,
 
     if duration is None:
         return True  # nothing to do
+    if lead_time is None:
+        lead_time = _DEFAULT_LEAD_TIME
 
     msg = ('Firing noise diode for {}s before target observation'
            .format(duration))
@@ -349,7 +383,7 @@ def trigger(kat,
 # set noise diode pattern
 def pattern(kat,
             nd_setup,
-            lead_time=_DEFAULT_LEAD_TIME,
+            lead_time=None,
             ):
     """Start background noise diode pattern controlled by digitiser hardware.
 
@@ -371,6 +405,8 @@ def pattern(kat,
     timestamp : float
         Linux timestamp reported by digitiser
     """
+    if lead_time is None:
+        lead_time = _DEFAULT_LEAD_TIME
 
     # nd pattern length [sec]
     max_cycle_len = _get_max_cycle_len(kat)
@@ -419,6 +455,12 @@ def pattern(kat,
                              start_time,
                              nd_setup=nd_setup,
                              cycle=cycle)
+    # NaN timestamp return during ND pattern request invalidates observation
+    # requirements, abort observation
+    if not np.isfinite(timestamp):
+        msg = ('Failed to set ND pattern, timestamp = {}, observation aborted'
+               .format(timestamp))
+        raise RuntimeError(msg)
     user_logger.trace('TRACE: now {} ({})'
                       .format(time.time(),
                               time.ctime(time.time())))
