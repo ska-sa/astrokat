@@ -31,11 +31,11 @@ Dependencies:
 
 ## Development
 * Clone repository    
-`git clone https://github.com/rubyvanrooyen/astrokat.git`    
-`cd astrkat`
+`git clone https://github.com/ska-sa/astrokat.git`    
+`cd astrokat`
 * Python virtual environment setup    
 `python3 -m venv env`    
-`source /env/bin/activate`    
+`source env/bin/activate`    
 `pip install -e .`
 
 -fin-

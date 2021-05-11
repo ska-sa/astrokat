@@ -89,8 +89,7 @@ def date2lst(utc_datetime, observer=None):
 def targetlst(target_str):
     target = ",".join(["radec target"] + target_str)
     target = katpoint.Target(target).body
-    rise_lst = Observatory()._ephem_risetime_(target)
-    set_lst = Observatory()._ephem_settime_(target)
+    rise_lst, set_lst = Observatory().target_rise_and_set_times(target)
     return ("Target ({}) rises at LST {} and sets at LST {}"
             .format(" ".join(target_str),
                     rise_lst,

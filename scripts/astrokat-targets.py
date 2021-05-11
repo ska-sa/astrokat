@@ -488,8 +488,9 @@ def table_line(datetime,
 
     """
     observatory = Observatory(horizon=horizon, datetime=datetime)
-    rise_time = observatory._ephem_risetime_(target.body, lst=lst)
-    set_time = observatory._ephem_settime_(target.body, lst=lst)
+    [rise_time,
+     set_time] = observatory.target_rise_and_set_times(target.body,
+                                                       lst=lst)
     if not lst:
         rise_time = rise_time.datetime().strftime("%H:%M:%S")
         set_time = set_time.datetime().strftime("%H:%M:%S")
@@ -784,13 +785,14 @@ def best_cal_cover(catalogue, katpt_target, ref_antenna):
         # add another calibrator preceding the target
         observatory = Observatory(horizon=horizon,
                                   datetime=ref_antenna.observer.date)
-        tgt_rise_time = observatory._ephem_risetime_(katpt_target.body,
-                                                     lst=False)
+        [tgt_rise_time, _] = observatory.target_rise_and_set_times(katpt_target.body,
+                                                                   lst=False)
         preceding_cals = []
         for each_cal in catalogue:
             try:
-                cal_set_time = observatory._ephem_settime_(each_cal.body,
-                                                           lst=False)
+                [_,
+                 cal_set_time] = observatory.target_rise_and_set_times(each_cal.body,
+                                                                       lst=False)
             except ephem.NeverUpError:
                 continue
             delta_time_to_cal_rise = cal_set_time - tgt_rise_time
@@ -827,23 +829,30 @@ def add_target(target, catalogue, tag=""):
     return catalogue
 
 
-def main(creation_time=datetime.utcnow(),
+def main(creation_time,
          horizon=20.,
-         cal_tags=['gain'],
-         mkat_catalogues=False,
-         target=None,
-         lst=False,
          solar_angle=20.,
+         cal_tags=None,
+         target=None,
          header_info=None,
+         view_tags=None,
+         mkat_catalogues=False,
+         lst=False,
          all_cals=False,
          user_text_only=False,
-         view_tags=['elevation'],
          save_fig=False,
-         infile='',
+         infile=None,
          viewfile=None,
          outfile=None,
          **kwargs):
     """Run calibration observation."""
+
+    # set defaults
+    if cal_tags is None:
+        cal_tags = ['gain']
+    if view_tags is None:
+        view_tags = ['elevation']
+
     observatory = Observatory()
     location = observatory.location
     node_config_available = observatory.node_config_available
@@ -875,7 +884,6 @@ def main(creation_time=datetime.utcnow(),
         )
         print(obs_summary)
 
-        # if not (user_text_only or global_text_only):
         if not text_only:
             for view_option in view_tags:
                 cp_cat = deepcopy(catalogue)
@@ -917,6 +925,8 @@ def main(creation_time=datetime.utcnow(),
         )
         cal_targets = [katpoint.Target(target)]
     else:  # assume the targets are in a file
+        if infile is None:
+            raise RuntimeError('Specify --target or CSV catalogue --infile')
         with open(infile, "r") as fin:
             # extract targets tagged to be used for calibrator selection
             for line in fin.readlines():
@@ -1022,7 +1032,7 @@ def main(creation_time=datetime.utcnow(),
         msg += "Cannot create elevation plot\n"
         msg += "Only producing catalogue file and output to screen"
         print(msg)
-    # if not (global_text_only or user_text_only):
+
     if not text_only:
         # create elevation plot for sources
         obs_catalogue = catalogue_header
@@ -1052,15 +1062,15 @@ if __name__ == "__main__":
                    'pi_contact': args.contact}
     main(creation_time=args.datetime,
          horizon=args.horizon,
-         cal_tags=args.cal_tags,
-         mkat_catalogues=args.cat_path,
-         target=args.target,
-         lst=args.lst,
          solar_angle=args.solar_angle,
+         cal_tags=args.cal_tags,
+         target=args.target,
          header_info=header_info,
+         view_tags=args.view_tags,
+         mkat_catalogues=args.cat_path,
+         lst=args.lst,
          all_cals=args.all_cals,
          user_text_only=args.text_only,
-         view_tags=args.view_tags,
          save_fig=args.save_fig,
          infile=args.infile,
          viewfile=args.view,

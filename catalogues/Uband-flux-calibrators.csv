@@ -1,0 +1,4 @@
+# Perley and Butler 2016 (https://arxiv.org/pdf/1609.05940.pdf),,,,
+# Names|alias, tag, RA, Dec, Flux model (Min freq [MHz] Max freq [MHz] [model coefficients])
+J0408-6545 | 0408-658, radec bpcal fluxcal, 04:08:20.3782, -65:45:09.080, (145. 18000. -0.9790 3.3662 -1.1216 0.0861)
+J1939-6342 | 1934-638, radec bpcal fluxcal, 19:39:25.0264, -63:42:45.624, (408. 8640. -30.7667 26.4908 -7.0977 0.605334)

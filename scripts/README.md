@@ -13,7 +13,7 @@ request.
 
 
 # Available functionality
-Using AstroKAT scripts to planning, building and simulating observations.
+Using AstroKAT scripts to aid in planning, building and simulating observations.
 
 
 ## Useful LST calculations
