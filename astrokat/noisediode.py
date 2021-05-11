@@ -132,7 +132,7 @@ def _katcp_reply_(dig_katcp_replies):
     ant_ts_list = []
     for ant in sorted(dig_katcp_replies):
         reply, informs = dig_katcp_replies[ant]
-        if reply.succeeded:
+        if reply.reply_ok():
             ant_ts_list.append(_nd_log_msg_(ant, reply, informs))
         else:
             msg = ('Noise diode request failed on ant {}: {} ({})'
