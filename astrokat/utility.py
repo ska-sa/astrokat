@@ -104,34 +104,6 @@ def timestamp2datetime(timestamp):
     return datetime.datetime.utcfromtimestamp(timestamp)
 
 
-def katpoint_target(target_item):
-    """Construct an expected katpoint target from a target_item string."""
-    coords = ["radec", "azel", "gal"]
-    # input string format: name=, radec=, tags=, duration=, ...
-    target_ = [item.strip() for item in target_item.split(",")]
-    for item_ in target_:
-        prefix = "name="
-        if item_.startswith(prefix):
-            name = item_[len(prefix) :]
-        prefix = "tags="
-        if item_.startswith(prefix):
-            tags = item_[len(prefix) :]
-        prefix = "model="
-        if item_.startswith(prefix):
-            fluxmodel = item_[len(prefix) :]
-        else:
-            fluxmodel = ()
-        for coord in coords:
-            prefix = coord + "="
-            if item_.startswith(prefix):
-                ctag = coord
-                x = item_[len(prefix) :].split()[0].strip()
-                y = item_[len(prefix) :].split()[1].strip()
-                break
-    target = "{}, {} {}, {}, {}, {}".format(name, ctag, tags, x, y, fluxmodel)
-    return name, target
-
-
 def get_lst(yaml_lst):
     """Extract lst range from YAML key.
 
