@@ -12,10 +12,10 @@ from astrokat import (
     NoTargetsUpError,
     NotAllTargetsUpError,
     get_lst,
-    katpoint_target,
     noisediode,
     read_yaml,
     scans,
+    targets,
 )
 
 try:
@@ -36,89 +36,6 @@ except ImportError:
 
 # Maximum difference allowed between requested and actual dump rate (Hz)
 DUMP_RATE_TOLERANCE = 0.002
-
-
-def __horizontal_coordinates__(target, observer, datetime_):
-    """Utility function to calculate ephem horizontal coordinates"""
-    observer.date = ephem.date(datetime_)
-    target.compute(observer)
-    return target.az, target.alt
-
-
-# TODO: target description defined in function needs to be in configuration
-def read_targets(target_items):
-    """Read targets info.
-
-    Unpack targets target items to a katpoint compatible format
-
-    """
-    desc = {
-        "names": (
-            "name",
-            "target",
-            "duration",
-            "cadence",
-            "obs_type",
-            "noise_diode",
-            "last_observed",
-            "obs_cntr",
-        ),
-        "formats": (object, object, float, float, object, object, object, int),
-    }
-    ntargets = len(target_items)
-    target_list = np.recarray(ntargets, dtype=desc)
-    names = []
-    targets = []
-    durations = []
-    cadences = []
-    obs_types = []
-    nds = []
-    for target_item in target_items:
-        [name_list, target] = katpoint_target(target_item)
-        # When unpacking, katpoint's naming convention will be to use the first
-        # name, or the name with the '*' if given. This unpacking mimics that
-        # expected behaviour to ensure the target can be easily called by name
-        name_list = [name.strip() for name in name_list.split("|")]
-        prefered_name = list(filter(lambda x: x.startswith("*"), name_list))
-        if prefered_name:
-            target_name = prefered_name[0][1:]
-        else:
-            target_name = name_list[0]
-        names.append(target_name)
-        targets.append(target)
-        target_ = [item.strip() for item in target_item.split(",")]
-        duration = np.nan
-        cadence = -1  # default is to observe without cadence
-        obs_type = "track"  # assume tracking a target
-        nd = None
-        for item_ in target_:
-            # TODO: need to add "duration =" as well for user stupidity
-            prefix = "duration="
-            if item_.startswith(prefix):
-                duration = item_[len(prefix):]
-            prefix = "type="
-            if item_.startswith(prefix):
-                obs_type = item_[len(prefix):]
-            prefix = "cadence="
-            if item_.startswith(prefix):
-                cadence = item_[len(prefix):]
-            prefix = "nd="
-            if item_.startswith(prefix):
-                nd = item_[len(prefix):]
-        durations.append(duration)
-        obs_types.append(obs_type)
-        cadences.append(cadence)
-        nds.append(nd)
-    target_list["name"] = names
-    target_list["target"] = targets
-    target_list["duration"] = durations
-    target_list["cadence"] = cadences
-    target_list["obs_type"] = obs_types
-    target_list["noise_diode"] = nds
-    target_list["last_observed"] = [None] * ntargets
-    target_list["obs_cntr"] = [0] * ntargets
-
-    return target_list
 
 
 def observe(session, target_info, **kwargs):
@@ -195,11 +112,19 @@ def observe(session, target_info, **kwargs):
         else:
             scan_func = scans.scan
         if obs_type in kwargs:  # user settings other than defaults
-            target_visible = scan_func(
-                session, target, nd_period=nd_period, **kwargs[obs_type]
-            )
+            target_visible = scan_func(session,
+                                       target,
+                                       nd_period=nd_period,
+                                       lead_time=nd_lead,
+                                       **kwargs[obs_type])
         else:
-            target_visible = scan_func(session, target, nd_period=nd_period)
+            if 'drift_scan' in obs_type:
+                target_visible = scan_func(session,
+                                           target,
+                                           duration=duration,
+                                           nd_period=nd_period,
+                                           lead_time=nd_lead)
+
     else:  # track is default
         if nd_period is not None:
             user_logger.trace(
@@ -251,17 +176,17 @@ def above_horizon(target,
                   observer,
                   horizon=20.0,
                   duration=0.0):
-    """Check target visibility."""
+    """Check target visibility.
+       Utility function to calculate ephem horizontal coordinates
+    """
+    def __horizontal_coordinates__(target, observer, datetime_):
+        """Utility function to calculate ephem horizontal coordinates"""
+        observer.date = ephem.date(datetime_)
+        target.compute(observer)
+        return target.az, target.alt
+
     # use local copies so you do not overwrite target time attribute
     horizon = ephem.degrees(str(horizon))
-
-    if type(target) is not ephem.FixedBody:
-        # anticipate katpoint special target for AzEl targets
-        if 'alt' not in vars(target):
-            raise RuntimeError('Unknown target type, exiting...')
-        # 'StationaryBody' objects do not have RaDec coordinates
-        # check pointing altitude is above minimum elevation limit
-        return bool(target.alt >= horizon)
 
     # must be celestial target (ra, dec)
     # check that target is visible at start of track
@@ -443,7 +368,7 @@ def run_observation(opts, kat):
                 "No targets provided - stopping script instead of hanging around"
             )
             continue
-        obs_targets = read_targets(observation_cycle["target_list"])
+        obs_targets = observation_cycle["target_list"]
         target_list = obs_targets["target"].tolist()
         # build katpoint catalogues for tidy handling of targets
         catalogue = collect_targets(kat.array, target_list)
@@ -633,7 +558,6 @@ def run_observation(opts, kat):
                 targets_visible = False
                 time_remaining = obs_duration
                 observation_timer = time.time()
-
                 for cnt, target in enumerate(obs_targets):
                     katpt_target = target["target"]
                     user_logger.debug("DEBUG: {} {}".format(cnt, target))
@@ -643,10 +567,13 @@ def run_observation(opts, kat):
                     # check target visible before doing anything
                     # make sure the target would be visible for the entire duration
                     target_duration = target['duration']
-                    visible = above_horizon(target=katpt_target.body,
-                                            observer=katpt_target.antenna.observer.copy(),
-                                            horizon=opts.horizon,
-                                            duration=target_duration)
+                    visible = True
+                    if type(katpt_target.body) is ephem.FixedBody:
+                        visible = above_horizon(target=katpt_target.body.copy(),
+                                                observer=katpt_target.antenna.observer,
+                                                # observer=observer.copy(),
+                                                horizon=opts.horizon,
+                                                duration=target_duration)
                     if not visible:
                         show_horizon_status = True
                         # warning for cadence targets only when they are due
@@ -897,6 +824,19 @@ def main(args):
     # unpack observation from observation plan
     if opts.yaml:
         opts.obs_plan_params = read_yaml(opts.yaml)
+
+    # process the flat list of targets into a structure with sources
+    # convert celestial targets coordinates to all be equatorial
+    # horizontal coordinates for scans, will also be converted to enable delay tracking
+    for cntr, obs_loop in enumerate(opts.obs_plan_params['observation_loop']):
+        start_ts = time.time()
+        if "durations" in opts.obs_plan_params:
+            obs_time_info = opts.obs_plan_params["durations"]
+            if "start_time" in obs_time_info:
+                start_ts = datetime2timestamp(obs_time_info["start_time"])
+        obs_targets = targets.read(obs_loop["target_list"],
+                                   timestamp=start_ts)
+        opts.obs_plan_params['observation_loop'][cntr]['target_list'] = obs_targets
 
     # ensure sessions has the YAML horizon value if given
     if "horizon" in opts.obs_plan_params:
