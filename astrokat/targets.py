@@ -18,7 +18,6 @@ tgt_desc = {
         # target description
         "name",
         "tags",
-        "target_str",  # input YAML str
         "target",  # katpoint target str
         # per target observation instructions
         "duration",
@@ -30,7 +29,6 @@ tgt_desc = {
         "obs_cntr",
     ),
     "formats": (
-        object,
         object,
         object,
         object,
@@ -47,7 +45,7 @@ tgt_desc = {
 # celestial targets, horizontal targets, galactic targets, solar system bodies
 # where the solar system bodies are planets and moons in our solar system that
 # do not follow standard celestial orbits.
-coords = ["radec", "azel", "gal", "solar"]
+coords = ["radec", "azel", "gal"]
 
 
 # -- library function --
@@ -215,14 +213,14 @@ def solar2eq(body, location, timestamp,
                       as_string=as_string)
 
 
-def get_radec_coords(tgt_str, timestamp=None, convert_azel=False):
+def get_radec_coords(target_str, timestamp=None, convert_azel=False):
     """If celestial target is not (Ra, Dec) convert and return (Ra, Dec)"""
     mkat = Observatory().get_location()  # return a katpoint.Antenna object
     location = mkat_locale(mkat.observer)
     if timestamp is None:
         timestamp = datetime2timestamp(mkat.observer.date.datetime())
 
-    type_, coord_ = tgt_str.split('=')
+    type_, coord_ = target_str.split('=')
     tgt_type = type_.strip()
     tgt_coord = coord_.strip()
 
@@ -240,13 +238,6 @@ def get_radec_coords(tgt_str, timestamp=None, convert_azel=False):
         ra_hms, dec_dms = gal2eq(l_deg,
                                  b_deg,
                                  as_string=True)
-        tgt_type = "radec"
-        tgt_coord = '{} {}'.format(str(ra_hms), str(dec_dms))
-    elif tgt_type == 'solar':
-        ra_hms, dec_dms = solar2eq(tgt_coord,
-                                   location,
-                                   timestamp=timestamp,
-                                   as_string=True)
         tgt_type = "radec"
         tgt_coord = '{} {}'.format(str(ra_hms), str(dec_dms))
     elif tgt_type == 'azel' and convert_azel:
@@ -286,7 +277,6 @@ def unpack_target(target_str, timestamp=None):
         key, value = item_.split('=')
         for coord in coords:
             if key.strip().startswith(coord):
-                target["target_str"] = item_  # keep original target def
                 # get target celestial (ra, dec) coordinates
                 target["coord"] = get_radec_coords(item_,
                                                    timestamp=timestamp,
@@ -300,6 +290,9 @@ def unpack_target(target_str, timestamp=None):
             target['flux_model'] = ()
         if 'type' in key.strip():
             target['obs_type'] = value.strip()
+    if "coord" not in target.keys():
+        raise RuntimeError("Target \'{}\' not currently supported by default".
+                           format(target_str))
     return target
 
 
@@ -382,7 +375,6 @@ def build_target(target_dict, timestamp=None):
 
     return (target_name,
             target_dict["tags"],
-            target_dict["target_str"],
             katpoint_tgt,
             duration,
             cadence,
