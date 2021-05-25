@@ -118,6 +118,8 @@ def forwardscan(session, target, nd_period=None, lead_time=None, **kwargs):
     target: katpoint.Target
     nd_period: float
         noisediode period
+    lead_time: float
+        noisediode trigger lead time
 
     """
     target_visible = scan(session,
@@ -139,6 +141,8 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
     target: katpoint.Target
     nd_period: float
         noisediode period
+    lead_time: float
+        noisediode trigger lead time
 
     """
     returnscan = dict(kwargs)
@@ -163,6 +167,8 @@ def return_scan(session, target, nd_period=None, lead_time=None, **kwargs):
     target: katpoint.Target
     nd_period: float
         noisediode period
+    lead_time: float
+        noisediode trigger lead time
 
     """
     # set up 2way scan
