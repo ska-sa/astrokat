@@ -6,13 +6,13 @@ import os
 import json
 import ephem
 import numpy
+import astrokat.targets
 import katpoint
 
 
 from datetime import datetime, timedelta
 
 from .simulate import user_logger, setobserver
-from . import katpoint_target
 
 try:
     import katconf
@@ -180,7 +180,7 @@ class Observatory(object):
             Names and descriptions of target(s) which can be pointed at by an antenna
 
         """
-        name, target_item = katpoint_target(target_item)
+        name, target_item = astrokat.targets.katpoint_target(target_item)
         return self.set_target(target_item)
 
     def unpack_target(self, target_item):
