@@ -499,12 +499,16 @@ def table_line(datetime,
     [rise_time,
      set_time] = observatory.target_rise_and_set_times(target.body,
                                                        lst=lst)
-    if not lst:
+
+    if type(rise_time) is ephem.Angle:
+        rise_time = str(rise_time)
+        set_time = str(set_time)
+    elif type(rise_time) is ephem.Date:
         rise_time = rise_time.datetime().strftime("%H:%M:%S")
         set_time = set_time.datetime().strftime("%H:%M:%S")
     else:
-        rise_time = str(rise_time)
-        set_time = str(set_time)
+        rise_time = None
+        set_time = None
 
     clo_clr = bcolors.ENDC
     sep_note = ""
@@ -597,11 +601,16 @@ def obs_table(ref_antenna,
         if cnt < 1:
             note = "Separation from Sun"
         target.body.compute(ref_antenna.observer)
-        separation_angle = ephem.separation(sun.body, target.body)
+        try:
+            separation_angle = ephem.separation(sun.body, target.body)
+            sol_sep_angle = numpy.degrees(separation_angle)
+        except TypeError:
+            # not a Body or Observer object, ignore separation calculation
+            sol_sep_angle = None
         observation_table += table_line(ref_antenna.observer.date,
                                         target,
                                         horizon,
-                                        numpy.degrees(separation_angle),
+                                        sep_angle=sol_sep_angle,
                                         sol_limit=solar_sep,
                                         lst=lst,
                                         notes=note,
@@ -615,6 +624,9 @@ def obs_table(ref_antenna,
             ref_tgt_list = katpt_targets.targets
         sep_angles = []
         for tgt in ref_tgt_list:
+            # ignore some special targets
+            if sol_sep_angle is None:
+                continue
             tgt.body.compute(ref_antenna.observer)
             sep_angles.append(ephem.separation(calibrator.body, tgt.body))
         note = ""
