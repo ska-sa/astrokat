@@ -12,7 +12,7 @@ import katpoint
 from datetime import datetime, timedelta
 
 from .simulate import user_logger, setobserver
-from .utility import katpoint_target
+from . import katpoint_target
 
 try:
     import katconf

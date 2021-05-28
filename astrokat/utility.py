@@ -105,27 +105,6 @@ def timestamp2datetime(timestamp):
     return datetime.datetime.utcfromtimestamp(timestamp)
 
 
-def katpoint_target(target_item):
-    """Construct an expected katpoint target from a target_item string."""
-    target_ = obs_dict.unpack_target(target_item)
-    name = target_['name']
-    fluxmodel = target_['flux_model']
-    if fluxmodel is None:
-        fluxmodel = ()
-    ctag = target_['coord'][0]
-    if 'special' in ctag:
-        x, y = '', ''
-    else:
-        x, y = target_['coord'][1].split()
-    target = "{}, {} {}, {}, {}, {}".format(name,
-                                            ctag,
-                                            target_['tags'],
-                                            x.strip(),
-                                            y.strip(),
-                                            fluxmodel)
-    return name, target
-
-
 def get_lst(yaml_lst):
     """Extract lst range from YAML key.
 
