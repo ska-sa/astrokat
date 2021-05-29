@@ -321,9 +321,6 @@ def katpoint_target(target_str=None,
             y = target_dict["coord"][1].split()[1].strip()
         tags = target_dict["tags"]
         flux_model = target_dict["flux_model"]
-    else:
-        if (x is None or y is None):
-            raise RuntimeError('Ill defined target, require: x and y')
 
     target = "{}, {} {}".format(name,
                                 ctag,
@@ -339,9 +336,12 @@ def build_target(target_dict, timestamp=None):
     # When unpacking, katpoint's naming convention will be to use the first
     # name, or the name with the '*' if given. This unpacking mimics that
     # expected behaviour to ensure the target can be easily called by name
+    x = None
+    y = None
     ctag = target_dict["coord"][0].strip()
-    x = target_dict["coord"][1].split()[0].strip()
-    y = target_dict["coord"][1].split()[1].strip()
+    if ctag != "special":
+        x = target_dict["coord"][1].split()[0].strip()
+        y = target_dict["coord"][1].split()[1].strip()
     [name_list, katpoint_tgt] = katpoint_target(name=target_dict["name"],
                                                 ctag=ctag,
                                                 x=x, y=y,
