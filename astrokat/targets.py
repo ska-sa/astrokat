@@ -45,7 +45,7 @@ tgt_desc = {
 # celestial targets, horizontal targets, galactic targets, solar system bodies
 # where the solar system bodies are planets and moons in our solar system that
 # do not follow standard celestial orbits.
-coords = ["radec", "azel", "gal"]
+coords = ["radec", "azel", "gal", "special"]
 
 
 # -- library function --
@@ -223,14 +223,20 @@ def get_radec_coords(target_str, timestamp=None, convert_azel=False):
     type_, coord_ = target_str.split('=')
     tgt_type = type_.strip()
     tgt_coord = coord_.strip()
-
     # a fundamental assumption will be that the user will give coordinates
     # in degrees, thus all input and output are in degrees
     if tgt_type == 'radec':
-        ra_deg, dec_deg = np.array(tgt_coord.split(), dtype=float)
-        pointing = SkyCoord(ra=ra_deg * u.degree,
-                            dec=dec_deg * u.degree,
-                            frame='icrs')
+        try:
+            ra_deg, dec_deg = np.array(tgt_coord.split(), dtype=float)
+            pointing = SkyCoord(ra=ra_deg * u.degree,
+                                dec=dec_deg * u.degree,
+                                frame='icrs')
+        except ValueError:
+            ra_, dec_ = tgt_coord.split()
+            pointing = SkyCoord(ra=ra_.strip(),
+                                dec=dec_.strip(),
+                                unit=(u.hourangle, u.deg),
+                                frame='icrs')
         ra_hms, dec_dms = tuple2str_(pointing.ra, pointing.dec)
         tgt_coord = '{} {}'.format(str(ra_hms), str(dec_dms))
     elif tgt_type == 'gal':
@@ -310,19 +316,21 @@ def katpoint_target(target_str=None,
         target_dict = unpack_target(target_str)
         name = target_dict["name"]
         ctag = target_dict["coord"][0]
-        x = target_dict["coord"][1].split()[0].strip()
-        y = target_dict["coord"][1].split()[1].strip()
+        if ctag != "special":
+            x = target_dict["coord"][1].split()[0].strip()
+            y = target_dict["coord"][1].split()[1].strip()
         tags = target_dict["tags"]
         flux_model = target_dict["flux_model"]
     else:
         if (x is None or y is None):
             raise RuntimeError('Ill defined target, require: x and y')
 
-    target = "{}, {} {}, {}, {}, {}".format(name,
-                                            ctag,
-                                            tags,
-                                            x, y,
-                                            flux_model)
+    target = "{}, {} {}".format(name,
+                                ctag,
+                                tags)
+    if x is not None and y is not None:
+        target += ", {}, {}, {}".format(x, y,
+                                        flux_model)
     return name, target
 
 
