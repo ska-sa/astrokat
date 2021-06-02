@@ -502,14 +502,14 @@ def table_line(datetime,
     sep_note = ""
     if sep_angle is not None:
         sep_note = "%.2f" % sep_angle
-    if cal_limit is not None:
-        if sep_angle > cal_limit:
-            clo_clr = bcolors.WARNING
-            sep_note += " ***"
-    if sol_limit is not None:
-        if sep_angle < sol_limit:
-            clo_clr = bcolors.FAIL
-            sep_note += " ***"
+        if cal_limit is not None:
+            if sep_angle > cal_limit:
+                clo_clr = bcolors.WARNING
+                sep_note += " ***"
+        if sol_limit is not None:
+            if sep_angle < sol_limit:
+                clo_clr = bcolors.FAIL
+                sep_note += " ***"
 
     table_info = "{: <16}{: <32}{: <16}{: <16}{: <16}{: <16}{: <16}{: <16}\n".format(
         target.name,
