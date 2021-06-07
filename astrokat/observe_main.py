@@ -38,6 +38,27 @@ except ImportError:
 DUMP_RATE_TOLERANCE = 0.002
 
 
+# -- Utility functions --
+def __horizontal_coordinates__(target, observer, datetime_):
+    """Utility function to calculate ephem horizontal coordinates"""
+    observer.date = ephem.date(datetime_)
+    target.compute(observer)
+    return target.az, target.alt
+
+
+def __same_day__(start_lst, end_lst, local_lst):
+    """Utility function to check LST ranges ending before midnight"""
+    return (ephem.hours(local_lst) >= ephem.hours(str(start_lst))) and (
+        ephem.hours(local_lst) < ephem.hours(str(end_lst)))
+
+
+def __next_day__(start_lst, end_lst, local_lst):
+    """Utility function to check LST ranges ending after midnight"""
+    return (ephem.hours(local_lst) < ephem.hours(str(start_lst))) and (
+        ephem.hours(local_lst) > ephem.hours(str(end_lst)))
+# -- Utility functions --
+
+
 def observe(session, target_info, **kwargs):
     """Target observation functionality.
 
@@ -179,11 +200,6 @@ def above_horizon(target,
     """Check target visibility.
        Utility function to calculate ephem horizontal coordinates
     """
-    def __horizontal_coordinates__(target, observer, datetime_):
-        """Utility function to calculate ephem horizontal coordinates"""
-        observer.date = ephem.date(datetime_)
-        target.compute(observer)
-        return target.az, target.alt
 
     # use local copies so you do not overwrite target time attribute
     horizon = ephem.degrees(str(horizon))
@@ -374,10 +390,16 @@ def run_observation(opts, kat):
     with start_session(kat.array, **vars(opts)) as session:
         session.standard_setup(**vars(opts))
 
-        # Target observation loop
         # Each observation loop contains a number of observation cycles over LST ranges
         # For a single observation loop, only a start LST and duration is required
+        # Target observation loop
+        nr_obs_loops = len(obs_plan_params["observation_loop"])
         for obs_cntr, observation_cycle in enumerate(obs_plan_params["observation_loop"]):
+            if nr_obs_loops > 1:
+                user_logger.info("Observation loop {} of {}."
+                                 .format(obs_cntr + 1, nr_obs_loops))
+                user_logger.info("Loop LST range {}."
+                                 .format(observation_cycle["LST"]))
             # Unpack all target information
             if not ("target_list" in observation_cycle.keys()):
                 user_logger.error(
@@ -414,7 +436,25 @@ def run_observation(opts, kat):
             user_logger.trace("TRACE: observer at start\n {}".format(observer))
 
             # Only observe targets in valid LST range
-            [start_lst, end_lst] = get_lst(observation_cycle["LST"])
+            if nr_obs_loops > 1 and obs_cntr < nr_obs_loops - 1:
+                [start_lst, end_lst] = get_lst(observation_cycle["LST"],
+                                               multi_loop=True)
+                if end_lst is None:
+                    # for multi loop the end lst is required
+                    raise RuntimeError('Multi-loop observations require end LST times')
+                next_obs_plan = obs_plan_params["observation_loop"][obs_cntr + 1]
+                [next_start_lst,
+                 next_end_lst] = get_lst(next_obs_plan["LST"])
+                user_logger.trace("TRACE: current LST range {}-{}".format(
+                    ephem.hours(str(start_lst)),
+                    ephem.hours(str(end_lst))))
+                user_logger.trace("TRACE: next LST range {}-{}".format(
+                    ephem.hours(str(next_start_lst)),
+                    ephem.hours(str(next_end_lst))))
+            else:
+                next_start_lst = None
+                next_end_lst = None
+                [start_lst, end_lst] = get_lst(observation_cycle["LST"])
 
             # Verify the observation is in a valid LST range
             # and that it is worth while continuing with the observation
@@ -423,30 +463,23 @@ def run_observation(opts, kat):
             local_lst = observer.sidereal_time()
             user_logger.trace("TRACE: Local LST {}".format(ephem.hours(local_lst)))
             # Only observe targets in current LST range
+            log_msg = "Local LST outside LST range {}-{}".format(
+                      ephem.hours(str(start_lst)), ephem.hours(str(end_lst)))
             if float(start_lst) < end_lst:
-                in_range = (ephem.hours(local_lst) >= ephem.hours(str(start_lst))) and (
-                    ephem.hours(local_lst) < ephem.hours(str(end_lst))
-                )
-                if not in_range:
-                    user_logger.error(
-                        "Local LST outside LST range "
-                        "{}-{}".format(
-                            ephem.hours(str(start_lst)), ephem.hours(str(end_lst))
-                        )
-                    )
+                # lst ends before midnight
+                if not __same_day__(start_lst, end_lst, local_lst):
+                    if obs_cntr < nr_obs_loops - 1:
+                        user_logger.info(log_msg)
+                    else:
+                        user_logger.error(log_msg)
                     continue
             else:
-                # else assume rollover at midnight to next day
-                out_range = (ephem.hours(local_lst) < ephem.hours(str(start_lst))) and (
-                    ephem.hours(local_lst) > ephem.hours(str(end_lst))
-                )
-                if out_range:
-                    user_logger.error(
-                        "Local LST outside LST range "
-                        "{}-{}".format(
-                            ephem.hours(str(start_lst)), ephem.hours(str(end_lst))
-                        )
-                    )
+                # lst ends after midnight
+                if __next_day__(start_lst, end_lst, local_lst):
+                    if obs_cntr < nr_obs_loops - 1:
+                        user_logger.info(log_msg)
+                    else:
+                        user_logger.error(log_msg)
                     continue
 
             # Verify that it is worth while continuing with the observation
@@ -466,6 +499,7 @@ def run_observation(opts, kat):
                         "Not all targets are currently visible - please re-run the script"
                         "with --visibility for information"
                     )
+
             # List sources and their associated functions from observation tags
             not_cals_filter_list = []
             for cal_type in cal_tags:
@@ -738,6 +772,16 @@ def run_observation(opts, kat):
                     user_logger.info("Observation list completed - ending observation")
                     done = True
 
+                # for multiple loop, check start lst of next loop
+                if next_start_lst is not None:
+                    check_local_lst = observer.sidereal_time()
+                    if (check_local_lst > next_start_lst) or (
+                        not __next_day__(next_start_lst,
+                                         next_end_lst,
+                                         check_local_lst)):
+                        user_logger.info('Moving to next LST loop')
+                        done = True
+
                 # End if there is nothing to do
                 if not targets_visible:
                     user_logger.warning(
@@ -748,38 +792,39 @@ def run_observation(opts, kat):
 
         user_logger.trace("TRACE: observer at end\n {}".format(observer))
         # display observation cycle statistics
-        print
-        user_logger.info("Observation loop statistics")
-        total_obs_time = observation_timer - session.start_time
-        if obs_duration < 0:
-            user_logger.info("Single run through observation target list")
-        else:
+        if nr_obs_loops < 2:
+            print
+            user_logger.info("Observation loop statistics")
+            total_obs_time = observation_timer - session.start_time
+            if obs_duration < 0:
+                user_logger.info("Single run through observation target list")
+            else:
+                user_logger.info(
+                    "Desired observation time {:.2f} sec "
+                    "({:.2f} min)".format(obs_duration, obs_duration / 60.0)
+                )
             user_logger.info(
-                "Desired observation time {:.2f} sec "
-                "({:.2f} min)".format(obs_duration, obs_duration / 60.0)
+                "Total observation time {:.2f} sec "
+                "({:.2f} min)".format(total_obs_time, total_obs_time / 60.0)
             )
-        user_logger.info(
-            "Total observation time {:.2f} sec "
-            "({:.2f} min)".format(total_obs_time, total_obs_time / 60.0)
-        )
-        if len(obs_targets) > 0:
-            user_logger.info("Targets observed :")
-            for unique_target in np.unique(obs_targets["name"]):
-                cntrs = obs_targets[obs_targets["name"] == unique_target]["obs_cntr"]
-                durations = obs_targets[obs_targets["name"] == unique_target][
-                    "duration"
-                ]
-                if np.isnan(durations).any():
-                    user_logger.info(
-                        "{} observed {} times".format(unique_target, np.sum(cntrs))
-                    )
-                else:
-                    user_logger.info(
-                        "{} observed for {} sec".format(
-                            unique_target, np.sum(cntrs * durations)
+            if len(obs_targets) > 0:
+                user_logger.info("Targets observed :")
+                for unique_target in np.unique(obs_targets["name"]):
+                    cntrs = obs_targets[obs_targets["name"] == unique_target]["obs_cntr"]
+                    durations = obs_targets[obs_targets["name"] == unique_target][
+                        "duration"
+                    ]
+                    if np.isnan(durations).any():
+                        user_logger.info(
+                            "{} observed {} times".format(unique_target, np.sum(cntrs))
                         )
-                    )
-        print
+                    else:
+                        user_logger.info(
+                            "{} observed for {} sec".format(
+                                unique_target, np.sum(cntrs * durations)
+                            )
+                        )
+            print
 
 
 def main(args):
