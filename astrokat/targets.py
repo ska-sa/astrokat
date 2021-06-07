@@ -238,10 +238,6 @@ def get_radec_coords(target_str, timestamp=None, convert_azel=False):
                                 dec=dec_.strip(),
                                 unit=(u.hourangle, u.deg),
                                 frame='icrs')
-        # ra_deg, dec_deg = np.array(tgt_coord.split(), dtype=float)
-        # pointing = SkyCoord(ra=ra_deg * u.degree,
-        #                     dec=dec_deg * u.degree,
-        #                     frame='icrs')
         ra_hms, dec_dms = tuple2str_(pointing.ra, pointing.dec)
         tgt_coord = '{} {}'.format(str(ra_hms), str(dec_dms))
     elif tgt_type == 'gal':
