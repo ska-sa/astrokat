@@ -227,10 +227,21 @@ def get_radec_coords(target_str, timestamp=None, convert_azel=False):
     # a fundamental assumption will be that the user will give coordinates
     # in degrees, thus all input and output are in degrees
     if tgt_type == 'radec':
-        ra_deg, dec_deg = np.array(tgt_coord.split(), dtype=float)
-        pointing = SkyCoord(ra=ra_deg * u.degree,
-                            dec=dec_deg * u.degree,
-                            frame='icrs')
+        try:
+            ra_deg, dec_deg = np.array(tgt_coord.split(), dtype=float)
+            pointing = SkyCoord(ra=ra_deg * u.degree,
+                                dec=dec_deg * u.degree,
+                                frame='icrs')
+        except ValueError:
+            ra_, dec_ = tgt_coord.split()
+            pointing = SkyCoord(ra=ra_.strip(),
+                                dec=dec_.strip(),
+                                unit=(u.hourangle, u.deg),
+                                frame='icrs')
+        # ra_deg, dec_deg = np.array(tgt_coord.split(), dtype=float)
+        # pointing = SkyCoord(ra=ra_deg * u.degree,
+        #                     dec=dec_deg * u.degree,
+        #                     frame='icrs')
         ra_hms, dec_dms = tuple2str_(pointing.ra, pointing.dec)
         tgt_coord = '{} {}'.format(str(ra_hms), str(dec_dms))
     elif tgt_type == 'gal':
