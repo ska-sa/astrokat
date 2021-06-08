@@ -101,11 +101,28 @@ def observe(session, target_info, **kwargs):
     # do the different observations depending on requested type
     session.label(obs_type.strip())
     user_logger.trace("TRACE: performing {} observation on {}".format(obs_type, target))
-    if "scan" in obs_type:  # compensating for ' and spaces around key values
-        if "drift_scan" in obs_type:
-            scan_func = scans.drift_scan
+    if "drift_scan" in obs_type:
+        target_visible = scans.drift_scan(session,
+                                          target,
+                                          duration=duration,
+                                          nd_period=nd_period,
+                                          lead_time=nd_lead)
+    elif "scan" in obs_type:  # compensating for ' and spaces around key values
+        if "raster_scan" in obs_type:
+            if ("raster_scan" not in kwargs.keys()) or (
+                    "num_scans" not in kwargs["raster_scan"]):
+                raise RuntimeError("{} needs 'num_scans' parameter"
+                                   .format(obs_type.capitalize()))
+            nscans = float(kwargs["raster_scan"]["num_scans"])
+            if "scan_duration" not in kwargs["raster_scan"]:
+                kwargs["raster_scan"]["scan_duration"] = duration / nscans
+        else:
+            if 'scan' not in kwargs.keys():
+                kwargs['scan'] = {'duration': duration}
+            else:
+                kwargs['scan']['duration'] = duration
         # TODO: fix raster scan and remove this scan hack
-        elif "forwardscan" in obs_type:
+        if "forwardscan" in obs_type:
             scan_func = scans.forwardscan
             obs_type = "scan"
         elif "reversescan" in obs_type:
@@ -118,19 +135,11 @@ def observe(session, target_info, **kwargs):
             scan_func = scans.raster_scan
         else:
             scan_func = scans.scan
-        if obs_type in kwargs:  # user settings other than defaults
-            target_visible = scan_func(session,
-                                       target,
-                                       nd_period=nd_period,
-                                       lead_time=nd_lead,
-                                       **kwargs[obs_type])
-        else:
-            if 'drift_scan' in obs_type:
-                target_visible = scan_func(session,
-                                           target,
-                                           duration=duration,
-                                           nd_period=nd_period,
-                                           lead_time=nd_lead)
+        target_visible = scan_func(session,
+                                   target,
+                                   nd_period=nd_period,
+                                   lead_time=nd_lead,
+                                   **kwargs[obs_type])
 
     else:  # track is default
         if nd_period is not None:
