@@ -38,6 +38,13 @@ except ImportError:
 DUMP_RATE_TOLERANCE = 0.002
 
 
+def __horizontal_coordinates__(target, observer, datetime_):
+    """Utility function to calculate ephem horizontal coordinates"""
+    observer.date = ephem.date(datetime_)
+    target.compute(observer)
+    return target.az, target.alt
+
+
 def observe(session, target_info, **kwargs):
     """Target observation functionality.
 
@@ -179,12 +186,6 @@ def above_horizon(target,
     """Check target visibility.
        Utility function to calculate ephem horizontal coordinates
     """
-    def __horizontal_coordinates__(target, observer, datetime_):
-        """Utility function to calculate ephem horizontal coordinates"""
-        observer.date = ephem.date(datetime_)
-        target.compute(observer)
-        return target.az, target.alt
-
     # use local copies so you do not overwrite target time attribute
     horizon = ephem.degrees(str(horizon))
 
@@ -570,8 +571,7 @@ def run_observation(opts, kat):
                     visible = True
                     if type(katpt_target.body) is ephem.FixedBody:
                         visible = above_horizon(target=katpt_target.body.copy(),
-                                                observer=katpt_target.antenna.observer,
-                                                # observer=observer.copy(),
+                                                observer=observer.copy(),
                                                 horizon=opts.horizon,
                                                 duration=target_duration)
                     if not visible:
