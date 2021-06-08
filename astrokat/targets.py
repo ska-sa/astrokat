@@ -297,8 +297,13 @@ def unpack_target(target_str, timestamp=None):
             target['flux_model'] = ()
         if 'type' in key.strip():
             target['obs_type'] = value.strip()
+        if 'nd' in key.strip():
+            target['noise_diode'] = value.strip()
     if "coord" not in target.keys():
         raise RuntimeError("Target \'{}\' not currently supported by default".
+                           format(target_str))
+    if "duration" not in target.keys():
+        raise RuntimeError("Target \'{}\' definition needs duration parameter".
                            format(target_str))
     return target
 
