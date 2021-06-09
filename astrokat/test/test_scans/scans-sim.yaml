@@ -1,0 +1,32 @@
+# scan and raster scan observation
+# > python astrokat-lst.py --lst 18.
+# 2018-10-31 18.0 LST corresponds to 2018-10-31 13:56:00Z UTC
+instrument:
+  band: l
+  product: c856M4k
+  integration_time: 2
+durations:
+  start_time: 2018-10-31 14:00:00
+scan:
+  start: -3.0,0.0
+  end: 3.0,0.0
+  index: -1
+  projection: zenithal-equidistant
+raster_scan:
+  num_scans: 3
+  scan_extent: 6.0
+  scan_spacing: 0.5
+  scan_in_azimuth: True
+  projection: plate-carree
+observation_loop:
+  - LST: 18:0
+    target_list:
+      - name=nd_track_1934, radec=19:39:25.03 -63:42:45.63, tags=target, duration=30.0
+      - name=track_1934, radec=19:39:25.03 -63:42:45.63, tags=target, duration=30.0, type=track
+      - name=drift_1934, radec=19:39:25.03 -63:42:45.63, tags=target, duration=60.0, type=drift_scan
+      - name=scan_target, azel=50.26731 43.70517, tags=target, duration=30.0, type=scan
+      - name=raster_scan_target, azel=50.26731 43.70517, tags=target, duration=90.0, type=raster_scan
+      - name=raster_scan_target, azel=50.26731 43.70517, tags=target, duration=60.0, type=return_scan
+      - name=scan_azel, azel=50.26731 43.70517, tags=target, duration=30.0, type=forwardscan
+      - name=scan_azel, azel=50.26731 43.70517, tags=target, duration=30.0, type=reversescan
+
