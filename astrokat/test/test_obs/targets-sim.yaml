@@ -8,5 +8,4 @@ observation_loop:
       - name=target0_radec, radec=0 -90, tags=target, duration=10.0
       - name=target1_gal, gal=-10 40, tags=target, duration=10.0
       - name=target2_azel, azel=10 50, tags=target, duration=10.0
-      - name=target2_gal, gal=-10 40, tags=target, duration=10.0
       - name=target3_azel, azel=10 50, tags=target, duration=10.0, type=scan
