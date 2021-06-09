@@ -834,6 +834,18 @@ def main(args):
     if opts.yaml:
         opts.obs_plan_params = read_yaml(opts.yaml)
 
+    # ensure sessions has the YAML horizon value if given
+    if "horizon" in opts.obs_plan_params:
+        opts.horizon = opts.obs_plan_params["horizon"]
+    else:
+        opts.horizon = 20.0  # deg above horizon default
+
+    # set log level
+    if opts.debug:
+        user_logger.setLevel(logging.DEBUG)
+    if opts.trace:
+        user_logger.setLevel(logging.TRACE)
+
     # process the flat list of targets into a structure with sources
     # convert celestial targets coordinates to all be equatorial
     # horizontal coordinates for scans, will also be converted to enable delay tracking
@@ -846,18 +858,6 @@ def main(args):
         obs_targets = targets.read(obs_loop["target_list"],
                                    timestamp=start_ts)
         opts.obs_plan_params['observation_loop'][cntr]['target_list'] = obs_targets
-
-    # ensure sessions has the YAML horizon value if given
-    if "horizon" in opts.obs_plan_params:
-        opts.horizon = opts.obs_plan_params["horizon"]
-    else:
-        opts.horizon = 20.0  # deg above horizon default
-
-    # set log level
-    if opts.debug:
-        user_logger.setLevel(logging.DEBUG)
-    if opts.trace:
-        user_logger.setLevel(logging.TRACE)
 
     # setup and observation
     with Telescope(opts) as kat:
