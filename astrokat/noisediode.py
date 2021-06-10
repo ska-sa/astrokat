@@ -245,7 +245,8 @@ def on(kat,
     user_logger.debug('DEBUG: now {}, sleep {}'
                       .format(time.time(),
                               sleeptime))
-    time.sleep(sleeptime)  # default sleep to see for signal to get through
+    if sleeptime > 0:
+        time.sleep(sleeptime)  # default sleep to see for signal to get through
     user_logger.debug('DEBUG: now {}, slept {}'
                       .format(time.time(),
                               sleeptime))
@@ -344,7 +345,8 @@ def trigger(kat,
                           .format(off_time - on_time))
         user_logger.debug('DEBUG: sleeping for {} [sec]'
                           .format(sleeptime))
-        time.sleep(sleeptime)
+        if sleeptime > 0:
+            time.sleep(sleeptime)
         user_logger.trace('TRACE: ts after sleep {} ({})'
                           .format(time.time(),
                                   time.ctime(time.time())))
@@ -374,7 +376,8 @@ def trigger(kat,
     user_logger.debug('DEBUG: now {}, sleep {}'
                       .format(time.time(),
                               sleeptime))
-    time.sleep(sleeptime)  # default sleep to see for signal to get through
+    if sleeptime > 0:
+        time.sleep(sleeptime)  # default sleep to see for signal to get through
     user_logger.debug('DEBUG: now {}, slept {}'
                       .format(time.time(),
                               sleeptime))
