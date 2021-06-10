@@ -29,7 +29,9 @@ class TestAstrokatYAML(unittest.TestCase):
         result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn("Initialising Drift_scan target 1934-638 for 180.0 sec", result)
         self.assertIn("Drift_scan observation for 180.0 sec", result)
-        self.assertIn("Slewed to Az: -172:57:37.1 El: 56:27:26.4 at azel (-173.0, 56.5) deg", result)
+        self.assertIn("Slewed to Az: -172:57:37.1 El: 56:27:26.4 at azel "
+                      "(-173.0, 56.5) deg",
+                      result)
         self.assertIn("Tracked Az: -172:57:37.1 El: 56:27:26.4 for 180 seconds", result)
 
     def test_raster_scan_basic_sim(self):
@@ -37,7 +39,8 @@ class TestAstrokatYAML(unittest.TestCase):
         execute_observe_main("test_scans/raster-scan-sim-test.yaml")
         # get result and make sure everything ran properly
         result = LoggedTelescope.user_logger_stream.getvalue()
-        self.assertIn("Initialising Raster_scan target raster_1934-638 for 90.0 sec", result)
+        self.assertIn("Initialising Raster_scan target raster_1934-638 for 90.0 sec",
+                      result)
 
     def test_scan_basic_sim(self):
         """Not much to do: check scan initiate log msg"""
