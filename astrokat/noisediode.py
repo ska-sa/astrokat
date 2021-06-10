@@ -455,6 +455,7 @@ def pattern(kat,
                              start_time,
                              nd_setup=nd_setup,
                              cycle=cycle)
+
     # NaN timestamp return during ND pattern request invalidates observation
     # requirements, abort observation
     if not np.isfinite(timestamp):
@@ -470,7 +471,8 @@ def pattern(kat,
     wait_time = timestamp - time.time()
     user_logger.trace('TRACE: delta {}'
                       .format(wait_time))
-    time.sleep(wait_time)
+    if wait_time > 0:
+        time.sleep(wait_time)
     user_logger.trace('TRACE: set nd pattern at {}, slept {}'
                       .format(time.time(),
                               wait_time))
