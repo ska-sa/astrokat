@@ -92,7 +92,7 @@ def scan(session, target, nd_period=None, **kwargs):
 
     """
     # trigger noise diode if set
-    trigger(session.kat, session, duration=nd_period)
+    #trigger(session.kat, session, duration=nd_period)
     try:
         timestamp = session.time
     except AttributeError:
@@ -178,6 +178,7 @@ def reversescan(session, target, nd_period=None, **kwargs):
     """
     import numpy as np
     import copy
+    import datetime
     # trigger noise diode if set
     #trigger(session.kat, session, duration=nd_period)
     scanargs = dict(kwargs)
@@ -196,6 +197,7 @@ def reversescan(session, target, nd_period=None, **kwargs):
     direction = False
     if 'direction'  in kwargs.keys():
         direction = True
+        del(scanargs['direction'])
     el,az_min,az_max,t_start,t_end = scan_area(tar ,antenna,offset_deg=1)   # pre-position >4 min in the future
     if 15.0 > np.degrees(el) :
         user_logger.warning("Source and scan below horison ")
@@ -224,19 +226,21 @@ def reversescan(session, target, nd_period=None, **kwargs):
     scan_end = np.degrees(az_max-(az_min+az_max)/2.)
 
     
-    scanargs["start"] = scan_start
-    scanargs["end"] = scan_end
+    scanargs["start"] = scan_start,0.0
+    scanargs["end"] = scan_end,0.0
     target_visible = False
-    while time.time() <= t_end.datetime().timestamp() :
+    
+    print("Time values",time.time() , t_end.datetime(),(float(t_end.datetime().strftime('%s')) - float(datetime.datetime(1970,1,1).strftime('%s')) ) )
+    while time.time() <=  (float(t_end.datetime().strftime('%s')) - float(datetime.datetime(1970,1,1).strftime('%s')) ):  # t_end.datetime().timestamp() : 
         if direction :
-            scanargs["start"] = scan_start
-            scanargs["end"] = scan_end
+            scanargs["start"] = scan_start,0.0
+            scanargs["end"] = scan_end,0.0
             target_visible += scan(session, scan_target, nd_period=nd_period, **scanargs)
             user_logger.info("scan time %s"%(time.time()))
             direction = False
         else :
-            scanargs["start"] = scan_end
-            scanargs["end"] = scan_start
+            scanargs["start"] = scan_end,0.0
+            scanargs["end"] = scan_start,0.0
             target_visible += scan(session, scan_target, nd_period=nd_period, **scanargs)
             user_logger.info("scan time %s"%(time.time()))
             direction = True
