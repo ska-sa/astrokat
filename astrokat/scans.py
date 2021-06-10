@@ -230,19 +230,18 @@ def reversescan(session, target, nd_period=None, **kwargs):
     scanargs["end"] = scan_end,0.0
     target_visible = False
     
-    print("Time values",time.time() , t_end.datetime(),(float(t_end.datetime().strftime('%s')) - float(datetime.datetime(1970,1,1).strftime('%s')) ) )
     while time.time() <=  (float(t_end.datetime().strftime('%s')) - float(datetime.datetime(1970,1,1).strftime('%s')) ):  # t_end.datetime().timestamp() : 
         if direction :
             scanargs["start"] = scan_start,0.0
             scanargs["end"] = scan_end,0.0
+            user_logger.info("Scan extent  %s , %s "%(scanargs["start"][0],scanargs["end"][0]) )
             target_visible += scan(session, scan_target, nd_period=nd_period, **scanargs)
-            user_logger.info("scan time %s"%(time.time()))
             direction = False
         else :
             scanargs["start"] = scan_end,0.0
             scanargs["end"] = scan_start,0.0
+            user_logger.info("Scan extent  %s , %s "%(scanargs["start"][0],scanargs["end"][0]) )
             target_visible += scan(session, scan_target, nd_period=nd_period, **scanargs)
-            user_logger.info("scan time %s"%(time.time()))
             direction = True
     return target_visible
 
