@@ -11,6 +11,11 @@ from .utility import datetime2timestamp, timestamp2datetime
 
 import numpy as np
 
+try:
+    from katcorelib import user_logger
+except ImportError:
+    from .simulate import user_logger
+
 
 # target description definition
 tgt_desc = {
@@ -248,6 +253,10 @@ def get_radec_coords(target_str, timestamp=None, convert_azel=False):
         tgt_coord = '{} {}'.format(str(ra_hms), str(dec_dms))
     elif tgt_type == 'azel' and convert_azel:
         az_deg, el_deg = np.array(tgt_coord.split(), dtype=float)
+        user_logger.debug(
+            "DEBUG: (az, el) to (ra, dec) conversion @ "
+            "{} ({})".format(timestamp, timestamp2datetime(timestamp))
+        )
         ra_hms, dec_dms = hor2eq(az_deg,
                                  el_deg,
                                  location,
@@ -269,6 +278,7 @@ def unpack_target(target_str, timestamp=None):
     """
     target = {}
     target_items = [item.strip() for item in target_str.split(",")]
+    user_logger.debug("DEBUG: input target string '{}'".format(target_str))
 
     # find observation type if specified
     obs_type = next((item_ for item_ in target_items if 'type' in item_), None)
@@ -296,9 +306,15 @@ def unpack_target(target_str, timestamp=None):
             target['flux_model'] = ()
         if 'type' in key.strip():
             target['obs_type'] = value.strip()
+        if 'nd' in key.strip():
+            target['noise_diode'] = value.strip()
     if "coord" not in target.keys():
         raise RuntimeError("Target \'{}\' not currently supported by default".
                            format(target_str))
+    if "duration" not in target.keys():
+        raise RuntimeError("Target \'{}\' definition needs duration parameter".
+                           format(target_str))
+    user_logger.debug('DEBUG: output target \n{}'.format(target))
     return target
 
 
@@ -409,7 +425,12 @@ def read(target_items, timestamp=None):
         # pack target dictionary in observation ready target rec-array
         target_ = build_target(target_dict,
                                timestamp=timestamp)
+        user_logger.debug('DEBUG: target object \n{}'.format(target_))
         target_list[cnt] = target_
+    user_logger.debug('DEBUG: target parameters \n{}'.
+                      format(target_list.dtype.names))
+    user_logger.trace('TRACE: target parameters types \n{}'.
+                      format(target_list.dtype))
     return target_list
 
 

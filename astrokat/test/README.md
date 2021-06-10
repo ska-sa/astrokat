@@ -6,7 +6,7 @@ Followed by SDP dry-run simulation on a CAM VM such as `devcomm` to verify the s
 as the simulations, but this time with simulated telescope systems included.
 
 
-## Helper scripts`
+## Helper scripts
 Helper scripts are provided to the users in the `scripts` directory and notebook interfaces through
 COLAB.
 These scripts do not form part of the `AstroKAT` library, but while in use and when updated, these
@@ -29,15 +29,30 @@ List of helper test scripts:
 `./check-csv-convert.sh > output.txt`
 
 
+## Development simulations
+Scan type observations are not operationally supported and added on a best effort for the astronomer
+to verify
+Basic YAML variations for scans are provided and a bash script that show anticipated behaviour for
+checking    
+`./check-scan-observe.sh`
+
+
 ## Offline simulations
 Basic bash integration tests to check that all parts of the functionality is still working after
 development.
 
+When using the bash integration tests, follow the same SOP as for the helper scripts, visually
+comparing the resulting output between the site installed branch and your development branch.
+
 * Some test examples of simulated observations    
-`./check-offline-observe.sh`
+`./check-offline-observe.sh`    
+or for testing    
+`./check-offline-observe.sh > output.txt`    
 
 * Noise diode setting example files    
-`./check-nd-timings.sh`
+`./check-nd-timings.sh`    
+or for testing    
+`./check-nd-timings.sh > output.txt`    
 
 
 ## Use python unit tests
@@ -53,11 +68,59 @@ python -m unittest astrokat.test.test_offline_observe.TestAstrokatYAML.test_two_
 python -m unittest astrokat.test.test_offline_observe.TestAstrokatYAML.test_image_single_sim
 python -m unittest astrokat.test.test_offline_observe.TestAstrokatYAML.test_image_sim
 python -m unittest astrokat.test.test_offline_observe.TestAstrokatYAML.test_below_horizon
-python -m unittest astrokat.test.test_offline_observe.TestAstrokatYAML.test_targets_sim
 ```
 Using tox
 ```
 LC_ALL=C test_flags=astrokat tox -e py27
+```
+
+Or for convenience some tests are grouped into bash scripts for manual testing
+* `./check_offline_observe_units.sh`
+* `./check_nd_units.sh`
+* `./check_scans_units.sh`
+
+
+## VM simulations
+If access to a SARAO GUI mockup/VM is available some CAM dry-runs with simulated telescope systems can
+be used to double check the offline simulations
+
+Building schedule blocks using `IPython` interface
+```
+obs.sb.new(owner='AstroKAT')
+obs.sb.type=katuilib.ScheduleBlockTypes.OBSERVATION
+obs.sb.antenna_spec='available'
+obs.sb.controlled_resources_spec='cbf,sdp'
+obs.sb.description='AstroKAT development tests'
+obs.sb.proposal_id='devel'
+```
+
+Example test YAML test files
+```
+obs.sb.instruction_set="run-obs-script /home/kat/usersnfs/framework/astrokat/scripts/astrokat-observe.py --yaml /home/kat/usersnfs/ruby/test/nd-pattern-sim.yaml"
+obs.sb.desired_start_time='2019-11-14 07:00:00'
+```
+```
+obs.sb.instruction_set="run-obs-script /home/kat/usersnfs/framework/astrokat/scripts/astrokat-observe.py --yaml /home/kat/usersnfs/ruby/test/nd-trigger-long.yaml"
+obs.sb.desired_start_time='2019-11-14 07:00:00'
+```
+```
+obs.sb.instruction_set="run-obs-script /home/kat/usersnfs/framework/astrokat/scripts/astrokat-observe.py --yaml /home/kat/usersnfs/ruby/test/scans-sim.yaml"
+obs.sb.desired_start_time='2018-10-31 14:00:00'
+```
+```
+obs.sb.instruction_set="run-obs-script /home/kat/usersnfs/framework/astrokat/scripts/astrokat-observe.py --yaml /home/kat/usersnfs/ruby/test/targets-sim.yaml"
+obs.sb.desired_start_time='2018-07-23 18:00:00'
+```
+```
+obs.sb.instruction_set="run-obs-script /home/kat/usersnfs/framework/astrokat/scripts/astrokat-observe.py --yaml /home/kat/usersnfs/ruby/test/image-sim.yaml"
+obs.sb.desired_start_time='2019-02-11 02:10:47'
+```
+
+Add schedule block to mock GUI interface
+```
+obs.sb.to_defined()
+obs.sb.to_approved()
+obs.sb.unload()
 ```
 
 -fin-

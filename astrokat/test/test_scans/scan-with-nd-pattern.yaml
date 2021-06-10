@@ -1,0 +1,17 @@
+# scan observations with noise diode pattern
+noise_diode:
+  antennas: all
+  cycle_len: 20.
+  on_frac: 0.09
+scan:
+  # achieving a scan speed of 5arcmin/sec
+  start: 0.0,0.0
+  end: 10.0,0.0
+  # ensuring azimuth angle remains linear
+  projection: plate-carree
+durations:
+  obs_duration: 600
+observation_loop:
+  - LST: 10.0
+    target_list:
+      - name=scan_azel, azel=50.26731 43.70517, tags=target, duration=120., type=return_scan

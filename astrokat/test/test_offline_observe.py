@@ -30,8 +30,8 @@ class TestAstrokatYAML(unittest.TestCase):
         result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn("Single run through observation target list", result)
         self.assertIn("target0_radec observed for 10.0 sec", result)
-        self.assertIn("target1_azel observed for 10.0 sec", result)
-        self.assertIn("target2_gal observed for 10.0 sec", result)
+        self.assertIn("target1_gal observed for 10.0 sec", result)
+        self.assertIn("target2_azel observed for 10.0 sec", result)
 
     def test_two_calib_sim(self):
         """Tests two calibrators sim."""

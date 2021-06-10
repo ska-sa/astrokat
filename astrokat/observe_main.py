@@ -115,11 +115,28 @@ def observe(session, target_info, **kwargs):
     # do the different observations depending on requested type
     session.label(obs_type.strip())
     user_logger.trace("TRACE: performing {} observation on {}".format(obs_type, target))
-    if "scan" in obs_type:  # compensating for ' and spaces around key values
-        if "drift_scan" in obs_type:
-            scan_func = scans.drift_scan
+    if "drift_scan" in obs_type:
+        target_visible = scans.drift_scan(session,
+                                          target,
+                                          duration=duration,
+                                          nd_period=nd_period,
+                                          lead_time=nd_lead)
+    elif "scan" in obs_type:  # compensating for ' and spaces around key values
+        if "raster_scan" in obs_type:
+            if ("raster_scan" not in kwargs.keys()) or (
+                    "num_scans" not in kwargs["raster_scan"]):
+                raise RuntimeError("{} needs 'num_scans' parameter"
+                                   .format(obs_type.capitalize()))
+            nscans = float(kwargs["raster_scan"]["num_scans"])
+            if "scan_duration" not in kwargs["raster_scan"]:
+                kwargs["raster_scan"]["scan_duration"] = duration / nscans
+        else:
+            if 'scan' not in kwargs.keys():
+                kwargs['scan'] = {'duration': duration}
+            else:
+                kwargs['scan']['duration'] = duration
         # TODO: fix raster scan and remove this scan hack
-        elif "forwardscan" in obs_type:
+        if "forwardscan" in obs_type:
             scan_func = scans.forwardscan
             obs_type = "scan"
         elif "reversescan" in obs_type:
@@ -132,19 +149,11 @@ def observe(session, target_info, **kwargs):
             scan_func = scans.raster_scan
         else:
             scan_func = scans.scan
-        if obs_type in kwargs:  # user settings other than defaults
-            target_visible = scan_func(session,
-                                       target,
-                                       nd_period=nd_period,
-                                       lead_time=nd_lead,
-                                       **kwargs[obs_type])
-        else:
-            if 'drift_scan' in obs_type:
-                target_visible = scan_func(session,
-                                           target,
-                                           duration=duration,
-                                           nd_period=nd_period,
-                                           lead_time=nd_lead)
+        target_visible = scan_func(session,
+                                   target,
+                                   nd_period=nd_period,
+                                   lead_time=nd_lead,
+                                   **kwargs[obs_type])
 
     else:  # track is default
         if nd_period is not None:
@@ -489,7 +498,8 @@ def run_observation(opts, kat):
                 # Quit early if there are no sources to observe
                 if len(catalogue.filter(el_limit_deg=opts.horizon)) == 0:
                     raise NoTargetsUpError(
-                        "No targets are currently visible - please re-run the script later"
+                        "No targets are currently visible - "
+                        "please re-run the script later"
                     )
                 # Quit early if the observation requires all targets to be visible
                 if opts.all_up and (
@@ -603,7 +613,8 @@ def run_observation(opts, kat):
                     visible = True
                     if type(katpt_target.body) is ephem.FixedBody:
                         visible = above_horizon(target=katpt_target.body.copy(),
-                                                observer=katpt_target.antenna.observer,
+                                                # observer=katpt_target.antenna.observer.copy(),
+                                                observer=observer.copy(),
                                                 horizon=opts.horizon,
                                                 duration=target_duration)
                     if not visible:
@@ -868,6 +879,18 @@ def main(args):
     if opts.yaml:
         opts.obs_plan_params = read_yaml(opts.yaml)
 
+    # ensure sessions has the YAML horizon value if given
+    if "horizon" in opts.obs_plan_params:
+        opts.horizon = opts.obs_plan_params["horizon"]
+    else:
+        opts.horizon = 20.0  # deg above horizon default
+
+    # set log level
+    if opts.debug:
+        user_logger.setLevel(logging.DEBUG)
+    if opts.trace:
+        user_logger.setLevel(logging.TRACE)
+
     # process the flat list of targets into a structure with sources
     # convert celestial targets coordinates to all be equatorial
     # horizontal coordinates for scans, will also be converted to enable delay tracking
@@ -880,18 +903,6 @@ def main(args):
         obs_targets = targets.read(obs_loop["target_list"],
                                    timestamp=start_ts)
         opts.obs_plan_params['observation_loop'][cntr]['target_list'] = obs_targets
-
-    # ensure sessions has the YAML horizon value if given
-    if "horizon" in opts.obs_plan_params:
-        opts.horizon = opts.obs_plan_params["horizon"]
-    else:
-        opts.horizon = 20.0  # deg above horizon default
-
-    # set log level
-    if opts.debug:
-        user_logger.setLevel(logging.DEBUG)
-    if opts.trace:
-        user_logger.setLevel(logging.TRACE)
 
     # setup and observation
     with Telescope(opts) as kat:

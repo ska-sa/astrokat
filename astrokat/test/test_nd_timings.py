@@ -27,7 +27,7 @@ class TestAstrokatYAML(unittest.TestCase):
 
         result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn(
-            "activate at 1573714803.0 (includes 3.0 sec lead time)",
+            "activate at 1573714805.0 (includes 5.0 sec lead time)",
             result
         )
         self.assertIn(
@@ -39,7 +39,7 @@ class TestAstrokatYAML(unittest.TestCase):
             result
         )
         self.assertIn(
-            "Switch noise-diode pattern on at 1573714803.0",
+            "Switch noise-diode pattern on at 1573714805.0",
             result
         )
 

@@ -268,7 +268,7 @@ class Observatory(object):
             end_lst_float.append(float(end_lst[-1]))
             if start_lst > end_lst[-1]:
                 end_lst_float[-1] += 24.
-        idx_map = (numpy.asarray(end_lst_float)%24. <= 6)
+        idx_map = (numpy.asarray(end_lst_float) % 24. <= 2. * numpy.pi)
         end_lst_float = numpy.asarray(end_lst_float, dtype=float)
         if numpy.any(idx_map):
             end_lst_float = end_lst_float[idx_map]
