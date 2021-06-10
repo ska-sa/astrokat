@@ -179,7 +179,7 @@ def reversescan(session, target, nd_period=None, **kwargs):
     import numpy as np
     import copy
     # trigger noise diode if set
-    trigger(session.kat, session, duration=nd_period)
+    #trigger(session.kat, session, duration=nd_period)
     scanargs = dict(kwargs)
     if 'radec_p1'  in kwargs.keys() and 'radec_p2'  in kwargs.keys():  # means that there is a target area
         # find lowest setting part or
@@ -195,11 +195,9 @@ def reversescan(session, target, nd_period=None, **kwargs):
         return False
     direction = False
     if 'direction'  in kwargs.keys():
-        user_logger.info("Direction = ",kwargs["direction"])
-        if not str(kwargs["direction"]) == '0':
-            direction = True
+        direction = True
     el,az_min,az_max,t_start,t_end = scan_area(tar ,antenna,offset_deg=1)   # pre-position >4 min in the future
-    if session.kwargs['horizon'] > np.degrees(el) :
+    if 15.0 > np.degrees(el) :
         user_logger.warning("Source and scan below horison ")
         return False
     obs_start_ts = target.antenna.observer.date
