@@ -117,11 +117,56 @@ def forwardscan(session, target, nd_period=None, **kwargs):
     target_visible = scan(session, target, nd_period=nd_period, **kwargs)
     return target_visible
 
+def scan_area(target_list,antenna_,offset_deg=0.1):
+    import copy
+    import numpy as np
+    #returns elevation and the azimuth extents of the scan
+    antenna = copy.copy(antenna_ )
+    print(antenna.observer.date)
+    results = []
+    alt = []
+    az = []
+    time_end = []
+    for i,tar in enumerate(target_list):
+        alt.append(tar.azel()[1]) # should this be time.time()
+        if tar.body.alt < 0 : 
+            print(tar.name + "is below the horizon")
+    antenna.observer.horizon = min(alt)-np.radians(2.) # just a little below the lowest point
+    print('Min alt',min(alt))
+    print('Max alt',max(alt))
+    for i,tar in enumerate(target_list):
+        rising = antenna.observer.next_transit(tar.body)  < antenna.observer.next_setting(tar.body) < antenna.observer.next_rising(tar.body) 
+        print("Target:%s, %s"%(tar.body,rising))
+        results.append(rising)
+    print("Rising::",results)
+    if np.all(results):
+        #return True # rising
+        antenna.observer.horizon = max(alt)+np.radians(offset_deg)#top point
+        print('Rising loop Max alt',max(alt))
+        for i,tar in enumerate(target_list):
+            antenna.observer.next_rising(tar.body) # rise through the scan line
+            az.append(tar.body.rise_az) 
+            time_end.append(tar.body.rise_time)
+            print("Rise loop",tar.body.rise_az,tar.body.alt)
+        print("Scan Points",tar.body.alt,min(az),max(az),min(time_end),max(time_end))
+    else: 
+        antenna.observer.horizon = min(alt)-np.radians(offset_deg)#bottom point
+        print('Setting loop Min alt',min(alt),max(alt))
+        for i,tar in enumerate(target_list):
+            antenna.observer.next_setting(tar.body) # set through the scan line
+            az.append(tar.body.set_az)
+            time_end.append(tar.body.set_time)
+            print("Set loop",tar.body.set_az,tar.body.alt)
+        print("Scan Points",tar.body.alt,min(az),max(az),min(time_end),max(time_end) )
+    return tar.body.alt,min(az),max(az),min(time_end),max(time_end) 
+
 
 def reversescan(session, target, nd_period=None, **kwargs):
     """Reverse scan observation.
 
-    Call to `scan` method described in this module
+    This scan is done in "Reverse"
+    This means that it is given an area to scan
+    rather that a target an parameters
 
     Parameters
     ----------
@@ -131,10 +176,72 @@ def reversescan(session, target, nd_period=None, **kwargs):
         noisediode period
 
     """
-    returnscan = dict(kwargs)
-    returnscan["start"] = kwargs["end"]
-    returnscan["end"] = kwargs["start"]
-    target_visible = scan(session, target, nd_period=nd_period, **returnscan)
+    import numpy as np
+    import copy
+    # trigger noise diode if set
+    trigger(session.kat, session, duration=nd_period)
+    scanargs = dict(kwargs)
+    if 'radec_p1'  in kwargs.keys() and 'radec_p2'  in kwargs.keys():  # means that there is a target area
+        # find lowest setting part or
+        # higest rising part
+        antenna = copy.copy(target.antenna )#.observer.horizon \
+        tar = []
+        for i in range(10):
+            if 'radec_p%i'%(i) in kwargs.keys():
+                tar.append(katpoint.Target('t%i,radec,%s'%(i,kwargs["radec_p%i"%(i)]),antenna=target.antenna ))
+                del(scanargs['radec_p%i'%(i)])
+    else:
+        user_logger.error("No scan area defined")
+        return False
+    direction = False
+    if 'direction'  in kwargs.keys():
+        user_logger.info("Direction = ",kwargs["direction"])
+        if not str(kwargs["direction"]) == '0':
+            direction = True
+    el,az_min,az_max,t_start,t_end = scan_area(tar ,antenna,offset_deg=1)   # pre-position >4 min in the future
+    if session.kwargs['horizon'] > np.degrees(el) :
+        user_logger.warning("Source and scan below horison ")
+        return False
+    obs_start_ts = target.antenna.observer.date
+    scan_target = katpoint.construct_azel_target(katpoint.wrap_angle(az_min), el)
+    scan_target.name = target.name  # make a nice name
+    # katpoint destructively set dates and times during calculation
+    # restore datetime before continuing
+    scan_target.antenna = antenna
+    scan_target.antenna.observer.date = obs_start_ts
+    user_logger.info("Slew to scan start")
+    target_visible = session.track(scan_target, duration=0.0, announce=False) # slew to target.
+
+    el,az_min,az_max,t_start,t_end = scan_area(tar ,antenna)  # True scan # need to add 1/2 of duration to start.
+
+    obs_start_ts = target.antenna.observer.date
+    scan_target = katpoint.construct_azel_target(katpoint.wrap_angle( (az_min+az_max)/2.), el)
+    scan_target.name = target.name  # make a nice name
+    # katpoint destructively set dates and times during calculation
+    # restore datetime before continuing
+    scan_target.antenna = antenna
+    scan_target.antenna.observer.date = obs_start_ts
+
+    scan_start = np.degrees(az_min-(az_min+az_max)/2.)
+    scan_end = np.degrees(az_max-(az_min+az_max)/2.)
+
+    
+    scanargs["start"] = scan_start
+    scanargs["end"] = scan_end
+    target_visible = False
+    while time.time() <= t_end.datetime().timestamp() :
+        if direction :
+            scanargs["start"] = scan_start
+            scanargs["end"] = scan_end
+            target_visible += scan(session, scan_target, nd_period=nd_period, **scanargs)
+            user_logger.info("scan time %s"%(time.time()))
+            direction = False
+        else :
+            scanargs["start"] = scan_end
+            scanargs["end"] = scan_start
+            target_visible += scan(session, scan_target, nd_period=nd_period, **scanargs)
+            user_logger.info("scan time %s"%(time.time()))
+            direction = True
     return target_visible
 
 
@@ -153,10 +260,13 @@ def return_scan(session, target, nd_period=None, **kwargs):
     """
     # set up 2way scan
     user_logger.info("Forward scan over target")
-    target_visible = forwardscan(session, target, nd_period=nd_period, **kwargs)
+    target_visible = scan(session, target, nd_period=nd_period, **kwargs)
 
     user_logger.info("Reverse scan over target")
-    target_visible += reversescan(session, target, nd_period=nd_period, **kwargs)
+    returnscan = dict(kwargs)
+    returnscan["start"] = kwargs["end"]
+    returnscan["end"] = kwargs["start"]
+    target_visible += scan(session, target, nd_period=nd_period, **returnscan)
     return target_visible
 
 
