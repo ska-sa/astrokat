@@ -16,6 +16,8 @@ image-single-sim
 image-sim
 # more calibrator imaging
 image-cals-sim
+# solar system bodies
+solar-sim
 # exit when targets are below horizon
 below-horizon-sim)
 
