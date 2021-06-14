@@ -396,13 +396,14 @@ def run_observation(opts, kat):
             description = opts.proposal_description
         session_opts["description"] = description
 
+    nr_obs_loops = len(obs_plan_params["observation_loop"])
     with start_session(kat.array, **vars(opts)) as session:
         session.standard_setup(**vars(opts))
 
         # Each observation loop contains a number of observation cycles over LST ranges
         # For a single observation loop, only a start LST and duration is required
         # Target observation loop
-        nr_obs_loops = len(obs_plan_params["observation_loop"])
+        observation_timer = time.time()
         for obs_cntr, observation_cycle in enumerate(obs_plan_params["observation_loop"]):
             if nr_obs_loops > 1:
                 user_logger.info("Observation loop {} of {}."
@@ -801,41 +802,42 @@ def run_observation(opts, kat):
                     )
                     done = True
 
-        user_logger.trace("TRACE: observer at end\n {}".format(observer))
-        # display observation cycle statistics
-        if nr_obs_loops < 2:
-            print
-            user_logger.info("Observation loop statistics")
-            total_obs_time = observation_timer - session.start_time
-            if obs_duration < 0:
-                user_logger.info("Single run through observation target list")
-            else:
-                user_logger.info(
-                    "Desired observation time {:.2f} sec "
-                    "({:.2f} min)".format(obs_duration, obs_duration / 60.0)
-                )
+    user_logger.trace("TRACE: observer at end\n {}".format(observer))
+    # display observation cycle statistics
+    # currently only available for single LST range observations
+    if nr_obs_loops < 2:
+        print
+        user_logger.info("Observation loop statistics")
+        total_obs_time = observation_timer - session.start_time
+        if obs_duration < 0:
+            user_logger.info("Single run through observation target list")
+        else:
             user_logger.info(
-                "Total observation time {:.2f} sec "
-                "({:.2f} min)".format(total_obs_time, total_obs_time / 60.0)
+                "Desired observation time {:.2f} sec "
+                "({:.2f} min)".format(obs_duration, obs_duration / 60.0)
             )
-            if len(obs_targets) > 0:
-                user_logger.info("Targets observed :")
-                for unique_target in np.unique(obs_targets["name"]):
-                    cntrs = obs_targets[obs_targets["name"] == unique_target]["obs_cntr"]
-                    durations = obs_targets[obs_targets["name"] == unique_target][
-                        "duration"
-                    ]
-                    if np.isnan(durations).any():
-                        user_logger.info(
-                            "{} observed {} times".format(unique_target, np.sum(cntrs))
+        user_logger.info(
+            "Total observation time {:.2f} sec "
+            "({:.2f} min)".format(total_obs_time, total_obs_time / 60.0)
+        )
+        if len(obs_targets) > 0:
+            user_logger.info("Targets observed :")
+            for unique_target in np.unique(obs_targets["name"]):
+                cntrs = obs_targets[obs_targets["name"] == unique_target]["obs_cntr"]
+                durations = obs_targets[obs_targets["name"] == unique_target][
+                    "duration"
+                ]
+                if np.isnan(durations).any():
+                    user_logger.info(
+                        "{} observed {} times".format(unique_target, np.sum(cntrs))
+                    )
+                else:
+                    user_logger.info(
+                        "{} observed for {} sec".format(
+                            unique_target, np.sum(cntrs * durations)
                         )
-                    else:
-                        user_logger.info(
-                            "{} observed for {} sec".format(
-                                unique_target, np.sum(cntrs * durations)
-                            )
-                        )
-            print
+                    )
+        print
 
 
 def main(args):
