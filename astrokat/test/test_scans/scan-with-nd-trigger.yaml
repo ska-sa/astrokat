@@ -9,6 +9,7 @@ scan:
   projection: plate-carree
 durations:
   obs_duration: 600
+  start_time: 2021-06-14 11:00:00  # outside LST range
 observation_loop:
   - LST: 10.0
     target_list:
