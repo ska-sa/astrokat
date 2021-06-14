@@ -19,7 +19,9 @@ image-cals-sim
 # solar system bodies
 solar-sim
 # exit when targets are below horizon
-below-horizon-sim)
+below-horizon-sim
+# multiple obs loops over multi-lst ranges
+multi-lst-sim)
 
 for infile in ${INPUT[@]}
 do
