@@ -134,6 +134,19 @@ class TestAstrokatYAML(unittest.TestCase):
         self.assertIn("T4R02C02 observed", result)
         self.assertIn("T4R02C04 observed for 360.0 sec", result)
 
+    def test_solar_body(self):
+        """Special target observation of solar system body"""
+        execute_observe_main("test_obs/solar-sim.yaml")
+
+        # get result and make sure everything ran properly
+        result = LoggedTelescope.user_logger_stream.getvalue()
+
+        self.assertIn("Observation targets are ['Jupiter', 'Moon']", result)
+        self.assertIn("Slewed to Jupiter at azel (323.4, 71.0) deg", result)
+        self.assertIn("Slewed to Moon at azel (64.1, 66.3) deg", result)
+        self.assertIn("Jupiter observed for 60.0 sec", result)
+        self.assertIn("Moon observed for 40.0 sec", result)
+
     def test_below_horizon(self):
         """Below horizon test."""
         execute_observe_main("test_obs/below-horizon-sim.yaml")
