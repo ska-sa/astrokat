@@ -55,11 +55,11 @@ tgt_desc = {
 # celestial targets, horizontal targets, galactic targets, solar system bodies
 # where the solar system bodies are planets and moons in our solar system that
 # do not follow standard celestial orbits.
-coords = ["radec", "azel", "gal"]
+SUPPORTED_COORDINATE_TYPES = ["radec", "azel", "gal"]
 
 
 # -- library function --
-def tuple2str_(ra_float, dec_float):
+def radec_to_string(ra_float, dec_float):
     """ICRS string format HH:MM:SS.f, DD:MM:SS.f"""
     ra_str = ra_float.to_string(unit=u.hourangle,
                                 sep=':',
@@ -72,15 +72,15 @@ def tuple2str_(ra_float, dec_float):
     return ra_str, dec_str
 
 
-def get_radec_(pointing,
-               # default output in degrees
-               as_radians=False,
-               as_string=False):
+def radec_from_pointing_object(pointing,
+                               # default output in degrees
+                               as_radians=False,
+                               as_string=False):
     """Astropy object to ICRS format as strings"""
     pnt_radec = pointing.transform_to(ICRS())
     if as_string:
-        ra_hms, dec_dms = tuple2str_(pnt_radec.ra,
-                                     pnt_radec.dec)
+        ra_hms, dec_dms = radec_to_string(pnt_radec.ra,
+                                          pnt_radec.dec)
         return ra_hms, dec_dms
     elif as_radians:
         return pnt_radec.ra.rad, pnt_radec.dec.rad
@@ -90,7 +90,7 @@ def get_radec_(pointing,
 
 
 # -- coordinate conversion utilities --
-def mkat_locale(observer):
+def observer_as_earth_location(observer):
     """Reference position is given in geodetic coordinates (lat, lon, height)
 
     Parameters
@@ -115,8 +115,8 @@ def mkat_locale(observer):
     return location
 
 
-def eq2hor(ra_hms, dec_dms, location, timestamp,
-           as_radians=False):  # default output in degrees
+def radec_to_altaz(ra_hms, dec_dms, location, timestamp,
+                   as_radians=False):  # default output in degrees
     """Convert Equatorial to horizontal for MKAT
 
     Parameters
@@ -128,7 +128,7 @@ def eq2hor(ra_hms, dec_dms, location, timestamp,
 
     Returns
     -------
-    list: [alt, az] horizontal coordinates in degrees
+    tuple: [alt, az] horizontal coordinates in degrees
     """
 
     obs_time = timestamp2datetime(timestamp)
@@ -144,9 +144,9 @@ def eq2hor(ra_hms, dec_dms, location, timestamp,
         return tgt_altaz.alt.deg, tgt_altaz.az.deg
 
 
-def hor2eq(az_deg, el_deg, location, timestamp,
-           # default output in degrees
-           as_radians=False, as_string=False):
+def altaz_to_radec(az_deg, el_deg, location, timestamp,
+                   # default output in degrees
+                   as_radians=False, as_string=False):
     """Convert Horizontal (az, el) to Equatorial (ra, dec)
 
     Parameters
@@ -158,7 +158,7 @@ def hor2eq(az_deg, el_deg, location, timestamp,
 
     Returns
     -------
-    list: [ra, dec] equatorial coordinates in degrees
+    tuple: [ra, dec] equatorial coordinates in degrees
     """
 
     obs_time = timestamp2datetime(timestamp)
@@ -170,14 +170,14 @@ def hor2eq(az_deg, el_deg, location, timestamp,
                      location=location,
                      obstime=obs_time)
 
-    return get_radec_(pointing,
-                      as_radians=as_radians,
-                      as_string=as_string)
+    return radec_from_pointing_object(pointing,
+                                      as_radians=as_radians,
+                                      as_string=as_string)
 
 
-def gal2eq(l_deg, b_deg,
-           # default output in degrees
-           as_radians=False, as_string=False):
+def galactic_to_radec(l_deg, b_deg,
+                      # default output in degrees
+                      as_radians=False, as_string=False):
     """Convert Galactic (l, b) to Equatorial (ra, dec)
 
     Parameters
@@ -187,19 +187,19 @@ def gal2eq(l_deg, b_deg,
 
     Returns
     -------
-    list: [ra, dec] equatorial coordinates in degrees
+    tuple: [ra, dec] equatorial coordinates in degrees
     """
     gal_coord = SkyCoord(l=l_deg * u.degree,  # noqa
                          b=b_deg * u.degree,  # noqa
                          frame=Galactic)
-    return get_radec_(gal_coord,
-                      as_radians=as_radians,
-                      as_string=as_string)
+    return radec_from_pointing_object(gal_coord,
+                                      as_radians=as_radians,
+                                      as_string=as_string)
 
 
-def solar2eq(body, location, timestamp,
-             # default output in degrees
-             as_radians=False, as_string=False):
+def solarbody_to_radec(body, location, timestamp,
+                       # default output in degrees
+                       as_radians=False, as_string=False):
     """Calculate equatorial (ra, dec) for solar body ephemerides
 
     Parameters
@@ -210,7 +210,7 @@ def solar2eq(body, location, timestamp,
 
     Returns
     -------
-    list: [ra, dec] equatorial coordinates in degrees
+    tuple: [ra, dec] equatorial coordinates in degrees
     """
     obs_time = timestamp2datetime(timestamp)
     obs_time = obs_time.strftime("%Y-%m-%d %H:%M:%S")
@@ -218,21 +218,22 @@ def solar2eq(body, location, timestamp,
 
     with solar_system_ephemeris.set('builtin'):
         solar_gcrs = get_body(body, obs_time, location)
-    return get_radec_(solar_gcrs,
-                      as_radians=as_radians,
-                      as_string=as_string)
+    return radec_from_pointing_object(solar_gcrs,
+                                      as_radians=as_radians,
+                                      as_string=as_string)
+# -- coordinate conversion utilities --
 
 
-def get_radec_coords(target_str, timestamp=None, convert_azel=False):
+def get_coordinates_as_radec(target_str, timestamp=None, convert_azel=False):
     """If celestial target is not (Ra, Dec) convert and return (Ra, Dec)"""
     mkat = Observatory().get_location()  # return a katpoint.Antenna object
-    location = mkat_locale(mkat.observer)
+    location = observer_as_earth_location(mkat.observer)
     if timestamp is None:
         timestamp = datetime2timestamp(mkat.observer.date.datetime())
 
-    type_, coord_ = target_str.split('=')
-    tgt_type = type_.strip()
-    tgt_coord = coord_.strip()
+    target_str_type, target_str_coord = target_str.split('=')
+    tgt_type = target_str_type.strip()
+    tgt_coord = target_str_coord.strip()
 
     # a fundamental assumption will be that the user will give coordinates
     # in degrees, thus all input and output are in degrees
@@ -243,18 +244,18 @@ def get_radec_coords(target_str, timestamp=None, convert_azel=False):
                                 dec=dec_deg * u.degree,
                                 frame='icrs')
         except ValueError:
-            ra_, dec_ = tgt_coord.split()
-            pointing = SkyCoord(ra=ra_.strip(),
-                                dec=dec_.strip(),
+            ra_str, dec_str = tgt_coord.split()
+            pointing = SkyCoord(ra=ra_str.strip(),
+                                dec=dec_str.strip(),
                                 unit=(u.hourangle, u.deg),
                                 frame='icrs')
-        ra_hms, dec_dms = tuple2str_(pointing.ra, pointing.dec)
+        ra_hms, dec_dms = radec_to_string(pointing.ra, pointing.dec)
         tgt_coord = '{} {}'.format(str(ra_hms), str(dec_dms))
     elif tgt_type == 'gal':
         l_deg, b_deg = np.array(tgt_coord.split(), dtype=float)
-        ra_hms, dec_dms = gal2eq(l_deg,
-                                 b_deg,
-                                 as_string=True)
+        ra_hms, dec_dms = galactic_to_radec(l_deg,
+                                            b_deg,
+                                            as_string=True)
         tgt_type = "radec"
         tgt_coord = '{} {}'.format(str(ra_hms), str(dec_dms))
     elif tgt_type == 'azel' and convert_azel:
@@ -263,19 +264,17 @@ def get_radec_coords(target_str, timestamp=None, convert_azel=False):
             "DEBUG: (az, el) to (ra, dec) conversion @ "
             "{} ({})".format(timestamp, timestamp2datetime(timestamp))
         )
-        ra_hms, dec_dms = hor2eq(az_deg,
-                                 el_deg,
-                                 location,
-                                 timestamp,
-                                 as_string=True)
+        ra_hms, dec_dms = altaz_to_radec(az_deg,
+                                         el_deg,
+                                         location,
+                                         timestamp,
+                                         as_string=True)
         tgt_type = "radec"
         tgt_coord = '{} {}'.format(str(ra_hms), str(dec_dms))
     else:
         pass  # do nothing just pass the target along
 
-    return [tgt_type, tgt_coord]
-
-# -- coordinate conversion utilities --
+    return tgt_type, tgt_coord
 
 
 def unpack_target(target_str, timestamp=None):
@@ -287,22 +286,22 @@ def unpack_target(target_str, timestamp=None):
     user_logger.debug("DEBUG: input target string '{}'".format(target_str))
 
     # find observation type if specified
-    obs_type = next((item_ for item_ in target_items if 'type' in item_), None)
+    obs_type = next((item for item in target_items if 'type' in item), None)
     convert_azel = False
     if obs_type is not None:
-        _, type_ = obs_type.split('=')
+        _, what_type = obs_type.split('=')
         # if azel coord are scan observation, convert to (ra, dec)
-        convert_azel = 'scan' in type_
+        convert_azel = 'scan' in what_type
 
     target_keys = tgt_desc["names"]
-    for item_ in target_items:
-        key, value = item_.split('=')
-        for coord in coords:
+    for item in target_items:
+        key, value = item.split('=')
+        for coord in SUPPORTED_COORDINATE_TYPES:
             if key.strip().startswith(coord):
-                # get target celestial (ra, dec) coordinates
-                target["coord"] = get_radec_coords(item_,
-                                                   timestamp=timestamp,
-                                                   convert_azel=convert_azel)
+                # convert target coordinates to (ra, dec) in general
+                target["coord"] = get_coordinates_as_radec(item,
+                                                           timestamp=timestamp,
+                                                           convert_azel=convert_azel)
                 break
         if key.strip() in target_keys:
             target[key.strip()] = value.strip()
@@ -427,9 +426,9 @@ def read(target_items, timestamp=None):
         # build astrokat target info from dict definition
         target_dict = unpack_target(target_item, timestamp=timestamp)
         # pack target dictionary in observation ready target rec-array
-        target_ = build_target(target_dict)
-        user_logger.debug('DEBUG: target object \n{}'.format(target_))
-        target_list[cnt] = target_
+        target_tuple = build_target(target_dict)
+        user_logger.debug('DEBUG: target object \n{}'.format(target_tuple))
+        target_list[cnt] = target_tuple
     user_logger.debug('DEBUG: target parameters \n{}'.
                       format(target_list.dtype.names))
     user_logger.trace('TRACE: target parameters types \n{}'.
