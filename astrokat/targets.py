@@ -69,7 +69,8 @@ def radec_to_string(ra_float, dec_float):
                                   precision=3,
                                   alwayssign=True,
                                   pad=True)
-    return ra_str, dec_str
+    # numpy unicode string to python string on return
+    return str(ra_str), str(dec_str)
 
 
 def radec_from_pointing_object(pointing,
@@ -250,14 +251,14 @@ def get_coordinates_as_radec(target_str, timestamp=None, convert_azel=False):
                                 unit=(u.hourangle, u.deg),
                                 frame='icrs')
         ra_hms, dec_dms = radec_to_string(pointing.ra, pointing.dec)
-        tgt_coord = '{} {}'.format(str(ra_hms), str(dec_dms))
+        tgt_coord = '{} {}'.format(ra_hms, dec_dms)
     elif tgt_type == 'gal':
         l_deg, b_deg = np.array(tgt_coord.split(), dtype=float)
         ra_hms, dec_dms = galactic_to_radec(l_deg,
                                             b_deg,
                                             as_string=True)
         tgt_type = "radec"
-        tgt_coord = '{} {}'.format(str(ra_hms), str(dec_dms))
+        tgt_coord = '{} {}'.format(ra_hms, str(dec_dms))
     elif tgt_type == 'azel' and convert_azel:
         az_deg, el_deg = np.array(tgt_coord.split(), dtype=float)
         user_logger.debug(
@@ -270,7 +271,7 @@ def get_coordinates_as_radec(target_str, timestamp=None, convert_azel=False):
                                          timestamp,
                                          as_string=True)
         tgt_type = "radec"
-        tgt_coord = '{} {}'.format(str(ra_hms), str(dec_dms))
+        tgt_coord = '{} {}'.format(ra_hms, dec_dms)
     else:
         pass  # do nothing just pass the target along
 
