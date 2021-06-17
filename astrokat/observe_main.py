@@ -849,15 +849,15 @@ def main(args):
     # process the flat list of targets into a structure with sources
     # convert celestial targets coordinates to all be equatorial
     # horizontal coordinates for scans, will also be converted to enable delay tracking
-    for cntr, obs_loop in enumerate(opts.obs_plan_params['observation_loop']):
+    for obs_dict in opts.obs_plan_params['observation_loop']:
         start_ts = time.time()
         if "durations" in opts.obs_plan_params:
             obs_time_info = opts.obs_plan_params["durations"]
             if "start_time" in obs_time_info:
                 start_ts = datetime2timestamp(obs_time_info["start_time"])
-        obs_targets = targets.read(obs_loop["target_list"],
+        obs_targets = targets.read(obs_dict["target_list"],
                                    timestamp=start_ts)
-        opts.obs_plan_params['observation_loop'][cntr]['target_list'] = obs_targets
+        obs_dict['target_list'] = obs_targets
 
     # setup and observation
     with Telescope(opts) as kat:
