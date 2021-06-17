@@ -1,3 +1,6 @@
+import numpy as np
+import sys
+
 from astropy import units as u
 from astropy.coordinates import Galactic, ICRS
 from astropy.coordinates import SkyCoord, AltAz
@@ -6,10 +9,11 @@ from astropy.coordinates import (solar_system_ephemeris,
 from astropy.coordinates import Longitude, Latitude, EarthLocation
 from astropy.time import Time
 
-from .observatory import Observatory
+# add import guard to prevent circular include
+# when on live system
+if 'astrokat.observatory' not in sys.modules:
+    from .observatory import Observatory
 from .utility import datetime2timestamp, timestamp2datetime
-
-import numpy as np
 
 try:
     from katcorelib import user_logger
