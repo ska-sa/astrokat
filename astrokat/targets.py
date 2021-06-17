@@ -354,7 +354,7 @@ def katpoint_target(target_str=None,
     return name, target
 
 
-def build_target(target_dict, timestamp=None):
+def build_target(target_dict):
     """Restructure dictionary into target defined recarray for observation"""
     # When unpacking, katpoint's naming convention will be to use the first
     # name, or the name with the '*' if given. This unpacking mimics that
@@ -427,8 +427,7 @@ def read(target_items, timestamp=None):
         # build astrokat target info from dict definition
         target_dict = unpack_target(target_item, timestamp=timestamp)
         # pack target dictionary in observation ready target rec-array
-        target_ = build_target(target_dict,
-                               timestamp=timestamp)
+        target_ = build_target(target_dict)
         user_logger.debug('DEBUG: target object \n{}'.format(target_))
         target_list[cnt] = target_
     user_logger.debug('DEBUG: target parameters \n{}'.
