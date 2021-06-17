@@ -32,6 +32,7 @@ class TestAstrokatYAML(unittest.TestCase):
         self.assertIn("target0_radec observed for 10.0 sec", result)
         self.assertIn("target1_gal observed for 10.0 sec", result)
         self.assertIn("target2_azel observed for 10.0 sec", result)
+        self.assertIn("target3_azel, tags=radec target, 15:56:30.60 8:51:02.5", result)
 
     def test_two_calib_sim(self):
         """Tests two calibrators sim."""
