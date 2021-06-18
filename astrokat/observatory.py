@@ -7,15 +7,11 @@ import json
 import katpoint
 import numpy
 import os
-import sys
 
 from datetime import datetime, timedelta
 
 from .simulate import user_logger, setobserver
-# add import guard to prevent circular include
-# when on live system
-if 'astrokat.targets' not in sys.modules:
-    from .targets import katpoint_target
+from .targets import katpoint_target
 
 try:
     import katconf
@@ -186,20 +182,20 @@ class Observatory(object):
         name, target_item = katpoint_target(target_item)
         return self.set_target(target_item)
 
-    def unpack_target(self, target_item):
-        """Unpack full description of target.
+    # def unpack_target(self, target_item):
+    #     """Unpack full description of target.
 
-        Parameters
-        -----------
-        target_item: str
-            Names and descriptions of target(s) which can be pointed at by an antenna
+    #     Parameters
+    #     -----------
+    #     target_item: str
+    #         Names and descriptions of target(s) which can be pointed at by an antenna
 
-        """
-        target_dict = {}
-        for item in target_item.split(","):
-            item_ = item.strip().split("=")
-            target_dict[item_[0].strip()] = item_[1].strip()
-        return target_dict
+    #     """
+    #     target_dict = {}
+    #     for item in target_item.split(","):
+    #         item_ = item.strip().split("=")
+    #         target_dict[item_[0].strip()] = item_[1].strip()
+    #     return target_dict
 
     def lst2hours(self, ephem_lst):
         """Convert time format from ephem LST time to number of hours since epoch.
