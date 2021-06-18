@@ -1,5 +1,3 @@
-from .utility import datetime2timestamp, timestamp2datetime
-
 from astropy import units as u
 from astropy.coordinates import Galactic, ICRS
 from astropy.coordinates import SkyCoord, AltAz
@@ -9,18 +7,13 @@ from astropy.coordinates import Longitude, Latitude, EarthLocation
 from astropy.time import Time
 
 import numpy as np
-import sys
-
-# add import guard to prevent circular include
-# when on live system
-if 'astrokat.observatory' not in sys.modules:
-    from .observatory import Observatory
 
 try:
     from katcorelib import user_logger
 except ImportError:
     from .simulate import user_logger
 
+from .utility import datetime2timestamp, timestamp2datetime
 
 # target description definition
 tgt_desc = {
@@ -225,12 +218,8 @@ def solarbody_to_radec(body, location, timestamp,
 # -- coordinate conversion utilities --
 
 
-def get_coordinates_as_radec(target_str, timestamp=None, convert_azel=False):
+def get_coordinates_as_radec(target_str, observer=None, convert_azel=False):
     """If celestial target is not (Ra, Dec) convert and return (Ra, Dec)"""
-    mkat = Observatory().get_location()  # return a katpoint.Antenna object
-    location = observer_as_earth_location(mkat.observer)
-    if timestamp is None:
-        timestamp = datetime2timestamp(mkat.observer.date.datetime())
 
     target_str_type, target_str_coord = target_str.split('=')
     tgt_type = target_str_type.strip()
@@ -260,10 +249,14 @@ def get_coordinates_as_radec(target_str, timestamp=None, convert_azel=False):
         tgt_type = "radec"
         tgt_coord = '{} {}'.format(ra_hms, str(dec_dms))
     elif tgt_type == 'azel' and convert_azel:
+        if observer is None:
+            raise RuntimeError('(alt, az) -> (ra, dec) need observer input')
+        location = observer_as_earth_location(observer)
+        timestamp = datetime2timestamp(observer.date.datetime())
         az_deg, el_deg = np.array(tgt_coord.split(), dtype=float)
         user_logger.debug(
             "DEBUG: (az, el) to (ra, dec) conversion @ "
-            "{} ({})".format(timestamp, timestamp2datetime(timestamp))
+            "{} ({})".format(observer, observer.date)
         )
         ra_hms, dec_dms = altaz_to_radec(az_deg,
                                          el_deg,
@@ -278,7 +271,7 @@ def get_coordinates_as_radec(target_str, timestamp=None, convert_azel=False):
     return tgt_type, tgt_coord
 
 
-def unpack_target(target_str, timestamp=None):
+def unpack_target(target_str, observer=None):
     """Unpack target string
        Input string format: name=, radec=, tags=, duration=, ...
     """
@@ -301,7 +294,7 @@ def unpack_target(target_str, timestamp=None):
             if key.strip().startswith(coord):
                 # convert target coordinates to (ra, dec) in general
                 target["coord"] = get_coordinates_as_radec(item,
-                                                           timestamp=timestamp,
+                                                           observer=observer,
                                                            convert_azel=convert_azel)
                 break
         if key.strip() in target_keys:
@@ -414,7 +407,7 @@ def build_target(target_dict):
             )
 
 
-def read(target_items, timestamp=None):
+def read(target_items, observer=None):
     """Read targets info.
 
     Unpack targets target items to a katpoint compatible format
@@ -425,7 +418,7 @@ def read(target_items, timestamp=None):
     target_list = np.recarray(ntargets, dtype=tgt_desc)
     for cnt, target_item in enumerate(target_items):
         # build astrokat target info from dict definition
-        target_dict = unpack_target(target_item, timestamp=timestamp)
+        target_dict = unpack_target(target_item, observer=observer)
         # pack target dictionary in observation ready target rec-array
         target_tuple = build_target(target_dict)
         user_logger.debug('DEBUG: target object \n{}'.format(target_tuple))
