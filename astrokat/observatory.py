@@ -182,21 +182,6 @@ class Observatory(object):
         name, target_item = katpoint_target(target_item)
         return self.set_target(target_item)
 
-    # def unpack_target(self, target_item):
-    #     """Unpack full description of target.
-
-    #     Parameters
-    #     -----------
-    #     target_item: str
-    #         Names and descriptions of target(s) which can be pointed at by an antenna
-
-    #     """
-    #     target_dict = {}
-    #     for item in target_item.split(","):
-    #         item_ = item.strip().split("=")
-    #         target_dict[item_[0].strip()] = item_[1].strip()
-    #     return target_dict
-
     def lst2hours(self, ephem_lst):
         """Convert time format from ephem LST time to number of hours since epoch.
 
