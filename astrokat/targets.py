@@ -122,7 +122,7 @@ def radec_to_altaz(ra_hms, dec_dms, location, timestamp,
 
     Returns
     -------
-    tuple: [alt, az] horizontal coordinates in degrees
+    tuple: (alt, az) horizontal coordinates in degrees
     """
 
     obs_time = timestamp2datetime(timestamp)
@@ -152,7 +152,7 @@ def altaz_to_radec(az_deg, el_deg, location, timestamp,
 
     Returns
     -------
-    tuple: [ra, dec] equatorial coordinates in degrees
+    tuple: (ra, dec) equatorial coordinates in degrees
     """
 
     obs_time = timestamp2datetime(timestamp)
@@ -181,7 +181,7 @@ def galactic_to_radec(l_deg, b_deg,
 
     Returns
     -------
-    tuple: [ra, dec] equatorial coordinates in degrees
+    tuple: (ra, dec) equatorial coordinates in degrees
     """
     gal_coord = SkyCoord(l=l_deg * u.degree,  # noqa
                          b=b_deg * u.degree,  # noqa
@@ -204,7 +204,7 @@ def solarbody_to_radec(body, location, timestamp,
 
     Returns
     -------
-    tuple: [ra, dec] equatorial coordinates in degrees
+    tuple: (ra, dec) equatorial coordinates in degrees
     """
     obs_time = timestamp2datetime(timestamp)
     obs_time = obs_time.strftime("%Y-%m-%d %H:%M:%S")
@@ -271,8 +271,8 @@ def get_coordinates_as_radec(target_str, observer=None, convert_azel=False):
     return tgt_type, tgt_coord
 
 
-def unpack_target(target_str, observer=None):
-    """Unpack target string
+def parse_target_string(target_str, observer=None):
+    """Unpack target input string into dictionary for easy parsing
        Input string format: name=, radec=, tags=, duration=, ...
     """
     target = {}
@@ -317,18 +317,18 @@ def unpack_target(target_str, observer=None):
     return target
 
 
-def katpoint_target(target_str=None,
-                    name='source',
-                    ctag='radec',
-                    x=None,
-                    y=None,
-                    tags=None,
-                    flux_model=(),
-                    ):
+def katpoint_target_string(target_str=None,
+                           name='source',
+                           ctag='radec',
+                           x=None,
+                           y=None,
+                           tags=None,
+                           flux_model=(),
+                           ):
     """Construct an expected katpoint target from a target_item string."""
     if target_str is not None:
         # input string format: name=, radec=, tags=, duration=, ...
-        target_dict = unpack_target(target_str)
+        target_dict = parse_target_string(target_str)
         name = target_dict["name"]
         ctag = target_dict["coord"][0]
         x = target_dict["coord"][1].split()[0].strip()
@@ -347,7 +347,7 @@ def katpoint_target(target_str=None,
     return name, target
 
 
-def build_target(target_dict):
+def build_target_tuple(target_dict):
     """Restructure dictionary into target defined recarray for observation"""
     # When unpacking, katpoint's naming convention will be to use the first
     # name, or the name with the '*' if given. This unpacking mimics that
@@ -355,12 +355,13 @@ def build_target(target_dict):
     ctag = target_dict["coord"][0].strip()
     x = target_dict["coord"][1].split()[0].strip()
     y = target_dict["coord"][1].split()[1].strip()
-    [name_list, katpoint_tgt] = katpoint_target(name=target_dict["name"],
-                                                ctag=ctag,
-                                                x=x, y=y,
-                                                tags=target_dict["tags"],
-                                                flux_model=target_dict["flux_model"],
-                                                )
+    flux_model = target_dict["flux_model"]
+    [name_list, katpoint_tgt] = katpoint_target_string(name=target_dict["name"],
+                                                       ctag=ctag,
+                                                       x=x, y=y,
+                                                       tags=target_dict["tags"],
+                                                       flux_model=flux_model,
+                                                       )
     name_list = [name.strip() for name in name_list.split("|")]
     prefered_name = list(filter(lambda x: x.startswith("*"), name_list))
     if prefered_name:
@@ -394,6 +395,7 @@ def build_target(target_dict):
     else:
         obs_cntr = 0
 
+    # see tgt_desc for return field names
     return (target_name,
             target_dict["tags"],
             katpoint_tgt,
@@ -415,19 +417,20 @@ def read(target_items, observer=None):
 
     """
     ntargets = len(target_items)
-    target_list = np.recarray(ntargets, dtype=tgt_desc)
+    target_rec_array = np.recarray(ntargets, dtype=tgt_desc)
     for cnt, target_item in enumerate(target_items):
         # build astrokat target info from dict definition
-        target_dict = unpack_target(target_item, observer=observer)
-        # pack target dictionary in observation ready target rec-array
-        target_tuple = build_target(target_dict)
+        target_dict = parse_target_string(target_item, observer=observer)
+        # accumulate individual target dictionaries into
+        # observation ready target rec-array
+        target_tuple = build_target_tuple(target_dict)
         user_logger.debug('DEBUG: target object \n{}'.format(target_tuple))
-        target_list[cnt] = target_tuple
+        target_rec_array[cnt] = target_tuple
     user_logger.debug('DEBUG: target parameters \n{}'.
-                      format(target_list.dtype.names))
+                      format(target_rec_array.dtype.names))
     user_logger.trace('TRACE: target parameters types \n{}'.
-                      format(target_list.dtype))
-    return target_list
+                      format(target_rec_array.dtype))
+    return target_rec_array
 
 
 # -fin-

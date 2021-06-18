@@ -11,7 +11,7 @@ import os
 from datetime import datetime, timedelta
 
 from .simulate import user_logger, setobserver
-from .targets import katpoint_target
+from .targets import katpoint_target_string
 
 try:
     import katconf
@@ -179,7 +179,7 @@ class Observatory(object):
             Names and descriptions of target(s) which can be pointed at by an antenna
 
         """
-        name, target_item = katpoint_target(target_item)
+        name, target_item = katpoint_target_string(target_item)
         return self.set_target(target_item)
 
     def lst2hours(self, ephem_lst):
