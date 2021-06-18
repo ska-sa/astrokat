@@ -52,9 +52,12 @@ def read_yaml(filename):
         if "start_time" in data["durations"]:
             start_time = data["durations"]["start_time"]
             if isinstance(start_time, str):
-                data["durations"]["start_time"] = datetime.datetime.strptime(
+                start_time = datetime.datetime.strptime(
                     start_time, "%Y-%m-%d %H:%M"
                 )
+            elif isinstance(start_time, datetime.datetime):
+                start_time = start_time.replace(tzinfo=None)
+            data["durations"]["start_time"] = start_time
     if "observation_loop" not in data.keys():
         raise RuntimeError("Nothing to observe, exiting")
     if data["observation_loop"] is None:
@@ -91,7 +94,7 @@ def datetime2timestamp(datetime_obj):
 
     """
     epoch = datetime.datetime.utcfromtimestamp(0)
-    return (datetime_obj.replace(tzinfo=None) - epoch).total_seconds()
+    return (datetime_obj - epoch).total_seconds()
 
 
 def timestamp2datetime(timestamp):
