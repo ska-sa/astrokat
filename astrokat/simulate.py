@@ -154,9 +154,9 @@ class SimSession(object):
         self.start_time = datetime2timestamp(simobserver.date.datetime())
         if "durations" in self.obs_params:
             if "start_time" in self.obs_params["durations"]:
-                self.start_time = katpoint.Timestamp(
-                    str(self.obs_params["durations"]["start_time"])
-                ).secs
+                self.start_time = datetime2timestamp(
+                    self.obs_params["durations"]["start_time"]
+                )
         self.time = self.start_time
         self.katpt_current = None
         self.capture_initialised = False
