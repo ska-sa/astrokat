@@ -14,7 +14,7 @@ import numpy
 import os
 import sys
 
-from astrokat import Observatory, read_yaml, katpoint_target, __version__
+from astrokat import Observatory, read_yaml, katpoint_target_string, __version__
 from astrokat.utility import datetime2timestamp, timestamp2datetime
 from copy import deepcopy
 from datetime import datetime, timedelta
@@ -502,14 +502,14 @@ def table_line(datetime,
     sep_note = ""
     if sep_angle is not None:
         sep_note = "%.2f" % sep_angle
-    if cal_limit is not None:
-        if sep_angle > cal_limit:
-            clo_clr = bcolors.WARNING
-            sep_note += " ***"
-    if sol_limit is not None:
-        if sep_angle < sol_limit:
-            clo_clr = bcolors.FAIL
-            sep_note += " ***"
+        if cal_limit is not None:
+            if sep_angle > cal_limit:
+                clo_clr = bcolors.WARNING
+                sep_note += " ***"
+        if sol_limit is not None:
+            if sep_angle < sol_limit:
+                clo_clr = bcolors.FAIL
+                sep_note += " ***"
 
     table_info = "{: <16}{: <32}{: <16}{: <16}{: <16}{: <16}{: <16}{: <16}\n".format(
         target.name,
@@ -870,7 +870,7 @@ def main(creation_time,
             catalogue.antenna = ref_antenna
             for observation_cycle in data_dict["observation_loop"]:
                 for target_item in observation_cycle["target_list"]:
-                    name, target = katpoint_target(target_item)
+                    name, target = katpoint_target_string(target_item)
                     catalogue.add(katpoint.Target(target))
         else:  # assume CSV
             # output observation stats for catalogue
