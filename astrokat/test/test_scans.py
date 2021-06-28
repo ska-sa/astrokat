@@ -29,10 +29,9 @@ class TestAstrokatYAML(unittest.TestCase):
         result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn("Initialising Drift_scan target 1934-638 for 180.0 sec", result)
         self.assertIn("Drift_scan observation for 180.0 sec", result)
-        self.assertIn("Slewed to Az: -172:57:37.1 El: 56:27:26.4 at azel "
-                      "(-173.0, 56.5) deg",
-                      result)
-        self.assertIn("Tracked Az: -172:57:37.1 El: 56:27:26.4 for 180 seconds", result)
+        target_string = "Az: -172:57:37.1 El: 56:27:26.4"
+        self.assert_started_target_track(target_string, 180.0, result)
+        self.assert_completed_target_track(target_string, 180.0, result)
 
     def test_raster_scan_basic_sim(self):
         """Not much to do: check scan initiate log msg"""
@@ -49,3 +48,26 @@ class TestAstrokatYAML(unittest.TestCase):
         result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn("Initialising Scan target scan_1934-638 for 30.0 sec", result)
         self.assertIn("scan_1934-638 observed for 60.0 sec", result)
+
+    def assert_started_target_track(self, target_string, duration, result):
+        simulate_message = "Slewed to {} at azel".format(target_string)
+        katcorelib_message = "Initiating {:g}-second track on target {!r}".format(
+            duration, target_string)
+        simulated_message_found = simulate_message in result
+        katcorelib_message_found = katcorelib_message in result
+        self.assertTrue(
+            simulated_message_found or katcorelib_message_found,
+            "Neither simulate {!r} nor katcorelib {!r} message found.".format(
+                simulate_message, katcorelib_message)
+        )
+
+    def assert_completed_target_track(self, target_string, duration, result):
+        simulate_message = "Tracked {} for {:g} seconds".format(target_string, duration)
+        katcorelib_message = "target tracked for {:g} seconds".format(duration)
+        simulated_message_found = simulate_message in result
+        katcorelib_message_found = katcorelib_message in result
+        self.assertTrue(
+            simulated_message_found or katcorelib_message_found,
+            "Neither simulate {!r} nor katcorelib {!r} message found.".format(
+                simulate_message, katcorelib_message)
+        )
