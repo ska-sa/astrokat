@@ -1,0 +1,23 @@
+instrument:
+  product: c856M4k
+durations:
+  start_time: 2018-07-23 18:00:00
+scan:
+  start: -3.0,0.0
+  end: 3.0,0.0
+  index: -1
+  projection: zenithal-equidistant
+raster_scan:
+  num_scans: 3
+  scan_extent: 6.0
+  scan_spacing: 0.5
+  scan_in_azimuth: True
+  projection: plate-carree
+observation_loop:
+  - LST: 0.0-23.9
+    target_list:
+      - name=target1_azel, azel=50.26731 43.70517, tags=target, duration=10.0
+      - name=target0_radec, radec=0 -90, tags=target, duration=60.0, type=drift_scan
+      - name=target3_azel_driftscan, azel=50.26731 43.70517, tags=target, duration=180.0, type=drift_scan
+      - name=target4_azel_rasterscan, azel=50.26731 43.70517, tags=target, duration=90.0, type=raster_scan
+      - name=target5_azel_scan, azel=50.26731 43.70517, tags=target, duration=30., type=scan

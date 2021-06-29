@@ -14,19 +14,19 @@ import numpy
 import os
 import sys
 
-from astrokat import Observatory, read_yaml, katpoint_target, __version__
+from astrokat import Observatory, read_yaml, katpoint_target_string, __version__
 from astrokat.utility import datetime2timestamp, timestamp2datetime
 from copy import deepcopy
 from datetime import datetime, timedelta
 
-text_only = False
+global_text_only = False
 try:
     import matplotlib
     import matplotlib.pyplot as plt
     import matplotlib.dates as mdates
     from matplotlib.font_manager import FontProperties
 except ImportError:  # not a processing node
-    text_only = True
+    global_text_only = True
 
 # hard coded globals
 caltag_dict = {
@@ -488,8 +488,9 @@ def table_line(datetime,
 
     """
     observatory = Observatory(horizon=horizon, datetime=datetime)
-    rise_time = observatory._ephem_risetime_(target.body, lst=lst)
-    set_time = observatory._ephem_settime_(target.body, lst=lst)
+    [rise_time,
+     set_time] = observatory.target_rise_and_set_times(target.body,
+                                                       lst=lst)
     if not lst:
         rise_time = rise_time.datetime().strftime("%H:%M:%S")
         set_time = set_time.datetime().strftime("%H:%M:%S")
@@ -501,14 +502,14 @@ def table_line(datetime,
     sep_note = ""
     if sep_angle is not None:
         sep_note = "%.2f" % sep_angle
-    if cal_limit is not None:
-        if sep_angle > cal_limit:
-            clo_clr = bcolors.WARNING
-            sep_note += " ***"
-    if sol_limit is not None:
-        if sep_angle < sol_limit:
-            clo_clr = bcolors.FAIL
-            sep_note += " ***"
+        if cal_limit is not None:
+            if sep_angle > cal_limit:
+                clo_clr = bcolors.WARNING
+                sep_note += " ***"
+        if sol_limit is not None:
+            if sep_angle < sol_limit:
+                clo_clr = bcolors.FAIL
+                sep_note += " ***"
 
     table_info = "{: <16}{: <32}{: <16}{: <16}{: <16}{: <16}{: <16}{: <16}\n".format(
         target.name,
@@ -624,17 +625,20 @@ def obs_table(ref_antenna,
 
 # --write observation catalogue--
 # construct supplementary header information
-def write_header(args, userheader=""):
+def write_header(header_info, userheader=""):
     """Create fancy header to add at the top of the calibrator catalogue.
 
     Adding information such as proposal ID, PI, contact details
 
     """
     catalogue_header = userheader
-    catalogue_header += "# Observation catalogue for proposal ID {}\n".format(
-        args.prop_id)
-    catalogue_header += "# PI: {}\n".format(args.pi)
-    catalogue_header += "# Contact details: {}\n".format(args.contact)
+    if header_info is not None:
+        catalogue_header += "# Observation catalogue for proposal ID {}\n".format(
+            header_info['proposal_id'])
+        catalogue_header += "# PI: {}\n".format(
+            header_info['pi_name'])
+        catalogue_header += "# Contact details: {}\n".format(
+            header_info['pi_contact'])
     return catalogue_header
 
 
@@ -781,13 +785,14 @@ def best_cal_cover(catalogue, katpt_target, ref_antenna):
         # add another calibrator preceding the target
         observatory = Observatory(horizon=horizon,
                                   datetime=ref_antenna.observer.date)
-        tgt_rise_time = observatory._ephem_risetime_(katpt_target.body,
-                                                     lst=False)
+        [tgt_rise_time, _] = observatory.target_rise_and_set_times(katpt_target.body,
+                                                                   lst=False)
         preceding_cals = []
         for each_cal in catalogue:
             try:
-                cal_set_time = observatory._ephem_settime_(each_cal.body,
-                                                           lst=False)
+                [_,
+                 cal_set_time] = observatory.target_rise_and_set_times(each_cal.body,
+                                                                       lst=False)
             except ephem.NeverUpError:
                 continue
             delta_time_to_cal_rise = cal_set_time - tgt_rise_time
@@ -824,37 +829,63 @@ def add_target(target, catalogue, tag=""):
     return catalogue
 
 
-def main(args):
+def main(creation_time,
+         horizon=20.,
+         solar_angle=20.,
+         cal_tags=None,
+         target=None,
+         header_info=None,
+         view_tags=None,
+         mkat_catalogues=False,
+         lst=False,
+         all_cals=False,
+         user_text_only=False,
+         save_fig=False,
+         infile=None,
+         viewfile=None,
+         outfile=None,
+         **kwargs):
     """Run calibration observation."""
+
+    # set defaults
+    if cal_tags is None:
+        cal_tags = ['gain']
+    if view_tags is None:
+        view_tags = ['elevation']
+
     observatory = Observatory()
     location = observatory.location
     node_config_available = observatory.node_config_available
-    creation_time = args.datetime
     ref_antenna = katpoint.Antenna(location)
     ref_antenna.observer.date = ephem.Date(creation_time)
-    ref_antenna.observer.horizon = ephem.degrees(str(args.horizon))
+    ref_antenna.observer.horizon = ephem.degrees(str(horizon))
 
-    if args.view:
+    text_only = (user_text_only or global_text_only)
+
+    if viewfile is not None:
         # check if view file in CSV or YAML
-        data_dict = read_yaml(args.view)
+        data_dict = read_yaml(viewfile)
         if data_dict:
             catalogue = katpoint.Catalogue()
             catalogue.antenna = ref_antenna
             for observation_cycle in data_dict["observation_loop"]:
                 for target_item in observation_cycle["target_list"]:
-                    name, target = katpoint_target(target_item)
+                    name, target = katpoint_target_string(target_item)
                     catalogue.add(katpoint.Target(target))
         else:  # assume CSV
             # output observation stats for catalogue
-            with open(args.view, 'r') as fin:
+            with open(viewfile, 'r') as fin:
                 catalogue = katpoint.Catalogue(fin)
         obs_summary = obs_table(
-            ref_antenna, catalogue=catalogue, solar_sep=args.solar_angle, lst=args.lst
+            ref_antenna,
+            catalogue=catalogue,
+            solar_sep=solar_angle,
+            lst=lst,
         )
         print(obs_summary)
 
-        if not (args.text_only or text_only):
-            for view_option in args.view_tags:
+        if not text_only:
+            for view_option in view_tags:
                 cp_cat = deepcopy(catalogue)
                 if "elevation" in view_option:
                     plot_func = source_elevation
@@ -864,10 +895,10 @@ def main(args):
                     plot_func = source_rise_set
                 plot_func(cp_cat, ref_antenna)
             plt.show()
-        quit()
+        return
 
-    if args.cat_path and os.path.isdir(args.cat_path):
-        catalogue_path = args.cat_path
+    if mkat_catalogues and os.path.isdir(mkat_catalogues):
+        catalogue_path = mkat_catalogues
         config_file_available = True
     else:
         catalogue_path = "katconfig/user/catalogues"
@@ -886,15 +917,17 @@ def main(args):
     # targets to obtain calibrators for
     header = ""
     cal_targets = []
-    if args.target is not None:
+    if target is not None:
         # input target from command line
-        args.target = [tgt.strip() for tgt in args.target]
+        target = [tgt.strip() for tgt in target]
         target = ", ".join(
-            map(str, [args.target[0], "radec target", args.target[1], args.target[2]])
+            map(str, [target[0], "radec target", target[1], target[2]])
         )
         cal_targets = [katpoint.Target(target)]
     else:  # assume the targets are in a file
-        with open(args.infile, "r") as fin:
+        if infile is None:
+            raise RuntimeError('Specify --target or CSV catalogue --infile')
+        with open(infile, "r") as fin:
             # extract targets tagged to be used for calibrator selection
             for line in fin.readlines():
                 if line[0] == "#":  # catch and keep header lines
@@ -915,7 +948,7 @@ def main(args):
 
     for target in cal_targets:
         # add calibrator catalogues and calibrators to catalogue
-        for cal_tag in args.cal_tags:
+        for cal_tag in cal_tags:
             cal_catalogue = os.path.join(
                 catalogue_path,
                 "Lband-{}-calibrators.csv".format(caltag_dict[cal_tag])
@@ -947,7 +980,7 @@ def main(args):
                 )
             else:
                 # for primary calibrators:
-                if args.all_cals:
+                if all_cals:
                     # show all calibrators
                     for calibrator in calibrators:
                         observation_catalogue = add_target(
@@ -976,37 +1009,38 @@ def main(args):
         observation_catalogue = add_target(target, observation_catalogue)
 
     # write observation catalogue
-    catalogue_header = write_header(args, userheader=header)
+    catalogue_header = write_header(header_info, userheader=header)
     catalogue_data = observation_catalogue.sort()
-    if args.outfile is not None:
-        filename = os.path.splitext(os.path.basename(args.outfile))[0] + ".csv"
-        args.outfile = os.path.join(os.path.dirname(args.outfile), filename)
-        write_catalogue(args.outfile, catalogue_header, catalogue_data)
-        print("Observation catalogue {}".format(args.outfile))
+    if outfile is not None:
+        filename = os.path.splitext(os.path.basename(outfile))[0] + ".csv"
+        outfile = os.path.join(os.path.dirname(outfile), filename)
+        write_catalogue(outfile, catalogue_header, catalogue_data)
+        print("Observation catalogue {}".format(outfile))
 
     # output observation stats for catalogue
     obs_summary = obs_table(
         ref_antenna,
         catalogue=catalogue_data,
         ref_tgt_list=cal_targets,
-        solar_sep=args.solar_angle,
-        lst=args.lst,
+        solar_sep=solar_angle,
+        lst=lst,
     )
     print(obs_summary)
 
-    if text_only and not args.text_only:
+    if global_text_only and not user_text_only:
         msg = "Required matplotlib functionalities not available\n"
         msg += "Cannot create elevation plot\n"
         msg += "Only producing catalogue file and output to screen"
         print(msg)
-    if not (text_only or args.text_only):
+
+    if not text_only:
         # create elevation plot for sources
         obs_catalogue = catalogue_header
         for target in catalogue_data:
             obs_catalogue += "{}\n".format(target)
         source_elevation(observation_catalogue,
                          ref_antenna)
-        if args.save_fig:
+        if save_fig:
             imfile = "elevation_utc_lst.png"
             print("Elevation plot {}".format(imfile))
             plt.savefig(imfile, dpi=300)
@@ -1021,6 +1055,26 @@ if __name__ == "__main__":
             continue
         if (arg[0] == "-") and arg[1].isdigit():
             sys.argv[i] = " " + arg
-    main(cli(sys.argv[0]))
+
+    args = cli(sys.argv[0])
+    header_info = {'proposal_id': args.prop_id,
+                   'pi_name': args.pi,
+                   'pi_contact': args.contact}
+    main(creation_time=args.datetime,
+         horizon=args.horizon,
+         solar_angle=args.solar_angle,
+         cal_tags=args.cal_tags,
+         target=args.target,
+         header_info=header_info,
+         view_tags=args.view_tags,
+         mkat_catalogues=args.cat_path,
+         lst=args.lst,
+         all_cals=args.all_cals,
+         user_text_only=args.text_only,
+         save_fig=args.save_fig,
+         infile=args.infile,
+         viewfile=args.view,
+         outfile=args.outfile,
+         )
 
 # -fin-
