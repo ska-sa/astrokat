@@ -16,11 +16,9 @@ setup(
     scripts=[
         "scripts/astrokat-catalogue2obsfile.py",
         "scripts/astrokat-coords.py",
-        "scripts/astrokat-fitflux.py",
         "scripts/astrokat-lst.py",
         "scripts/astrokat-observe.py",
         "scripts/astrokat-targets.py",
-        "scripts/astrokat-uvcoverage.py",
     ],
     url="https://github.com/ska-sa/astrokat",
     license="BSD 2-Clause",
@@ -46,6 +44,6 @@ setup(
     zip_safe=False,
     setup_requires=["katversion"],
     use_katversion=True,
-    install_requires=["pyephem", "katpoint", "matplotlib", "numpy", "pyyaml"],
+    install_requires=["astropy", "pyephem", "katpoint", "matplotlib", "numpy", "pyyaml"],
     extras_require={"live": ["katcorelib", "katconf"]},
 )

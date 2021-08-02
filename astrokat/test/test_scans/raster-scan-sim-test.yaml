@@ -1,0 +1,18 @@
+# scan and raster scan observation
+instrument:
+  band: l
+  product: c856M4k
+  integration_time: 2
+durations:
+  start_time: 2018-10-31 14:00
+  obs_duration: 120.
+raster_scan:
+  num_scans: 3
+  scan_extent: 6.0
+  scan_spacing: 0.5
+  scan_in_azimuth: True
+  projection: plate-carree
+observation_loop:
+  - LST: 18.0
+    target_list:
+      - name=raster_1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, duration=90., type=raster_scan
