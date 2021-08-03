@@ -1,0 +1,44 @@
+# return scan observation with noise diode trigger
+instrument:
+  integration_time: 2
+# set noise diode pattern to fire every 20 seconds and only be on for 0.3s
+noise_diode:
+  antennas: all
+  cycle_len: 20.
+  on_frac: 0.015
+  lead_time: 10.
+
+scan:
+  # achieving a scan speed of 5.0 arcmin/sec
+  duration: 120.0
+  direction: 0
+  radec_p1: 22:16:00.0000, -25:30:00.0000
+  radec_p2: 22:16:00.0000, -35:36:00.0000
+  radec_p3: 23:44:00.0000, -35:36:00.0000
+  radec_p4: 23:44:00.0000, -25:30:00.0000
+  projection: plate-carree
+
+observation_loop:
+  - LST:  00:30-23:30
+    target_list:
+      - name=J0519-4546 | PicA, radec=05:19:49.69 -45:46:44.5, tags=fluxcal bpcal delaycal, type=track, duration=60
+      - name=PicA_u0.7, radec=05:19:49.69 -46:28:44.5, tags=target, type=track, duration=60
+      - name=PicA_d0.7, radec=05:19:49.69 -45:04:44.5, tags=target, type=track, duration=60
+      - name=PicA_l0.7, radec=05:17:49.69 -45:46:44.5, tags=target, type=track, duration=60
+      - name=PicA_r0.7, radec=05:21:49.69 -45:46:44.5, tags=target, type=track, duration=60
+      - name=J0519-4546 | PicA, radec=05:19:49.69 -45:46:44.5, tags=fluxcal bpcal delaycal, type=track, duration=60 
+      - name=scan_azel_with_nd_trigger, radec=23:00:00.0 -30:39:00, duration=120, tags=target, type=reversescan
+      - name=J0519-4546 | PicA, radec=05:19:49.69 -45:46:44.5, tags=fluxcal bpcal delaycal, type=track, duration=60
+      - name=PicA_u0.7, radec=05:19:49.69 -46:28:44.5, tags=target, type=track, duration=60
+      - name=PicA_d0.7, radec=05:19:49.69 -45:04:44.5, tags=target, type=track, duration=60
+      - name=PicA_l0.7, radec=05:17:49.69 -45:46:44.5, tags=target, type=track, duration=60
+      - name=PicA_r0.7, radec=05:21:49.69 -45:46:44.5, tags=target, type=track, duration=60
+      - name=J0519-4546 | PicA, radec=05:19:49.69 -45:46:44.5, tags=fluxcal bpcal delaycal, type=track, duration=60 
+
+
+
+#
+#J1939-6342 | 1934-638, radec bpcal, 19:39:25.0264, -63:42:45.625, (408. 8640. -30.7667 26.4908 -7.0977 0.605334)
+#  J0519-4546 | PicA, radec bpcal fluxcal, 05:19:49.69, -45:46:44.5, (200. 4000. 3.513 -0.303 -0.074)
+#on_frac: 0.09
+#
