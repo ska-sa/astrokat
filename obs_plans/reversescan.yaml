@@ -10,7 +10,7 @@ noise_diode:
 
 scan:
   # achieving a scan speed of 5.0 arcmin/sec
-  duration: 120.0
+  scan_speed: 5.0
   direction: 0
   radec_p1: 22:16:00.0000, -25:30:00.0000
   radec_p2: 22:16:00.0000, -35:36:00.0000
