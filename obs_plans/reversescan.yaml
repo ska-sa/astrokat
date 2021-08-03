@@ -6,34 +6,37 @@ noise_diode:
   antennas: all
   cycle_len: 20.
   on_frac: 0.015
-  lead_time: 10.
+  lead_time: 12.
 
 scan:
   # achieving a scan speed of 5.0 arcmin/sec
   scan_speed: 5.0
   direction: 0
-  radec_p1: 22:16:00.0000, -25:30:00.0000
+  radec_p1: 22:16:00.0000, -25:42:00.0000
   radec_p2: 22:16:00.0000, -35:36:00.0000
   radec_p3: 23:44:00.0000, -35:36:00.0000
-  radec_p4: 23:44:00.0000, -25:30:00.0000
+  radec_p4: 23:44:00.0000, -25:42:00.0000
   projection: plate-carree
 
 observation_loop:
   - LST:  00:30-23:30
     target_list:
-      - name=J0519-4546 | PicA, radec=05:19:49.69 -45:46:44.5, tags=fluxcal bpcal delaycal, type=track, duration=60
-      - name=PicA_u0.7, radec=05:19:49.69 -46:28:44.5, tags=target, type=track, duration=60
-      - name=PicA_d0.7, radec=05:19:49.69 -45:04:44.5, tags=target, type=track, duration=60
-      - name=PicA_l0.7, radec=05:17:49.69 -45:46:44.5, tags=target, type=track, duration=60
-      - name=PicA_r0.7, radec=05:21:49.69 -45:46:44.5, tags=target, type=track, duration=60
-      - name=J0519-4546 | PicA, radec=05:19:49.69 -45:46:44.5, tags=fluxcal bpcal delaycal, type=track, duration=60 
+      - name=PictorA_u0.5, radec=5:19:49.721 -45:16:43.7801, tags=target, type=track, duration=70.0
+      - name=PictorA, radec=5:19:49.721 -45:46:43.7801, tags=target, type=track, duration=70.0
+      - name=PictorA_r0.5, radec=5:22:41.7767 -45:46:35.7098, tags=target, type=track, duration=70.0
+      - name=PictorA, radec=5:19:49.721 -45:46:43.7801, tags=target, type=track, duration=70.0
+      - name=PictorA_d0.5, radec=5:19:49.721 -46:16:43.7801, tags=target, type=track, duration=70.0
+      - name=PictorA, radec=5:19:49.721 -45:46:43.7801, tags=target, type=track, duration=70.0
+      - name=PictorA_l0.5, radec=5:16:57.6653 -45:46:35.7098, tags=target, type=track, duration=70.0
       - name=scan_azel_with_nd_trigger, radec=23:00:00.0 -30:39:00, duration=120, tags=target, type=reversescan
-      - name=J0519-4546 | PicA, radec=05:19:49.69 -45:46:44.5, tags=fluxcal bpcal delaycal, type=track, duration=60
-      - name=PicA_u0.7, radec=05:19:49.69 -46:28:44.5, tags=target, type=track, duration=60
-      - name=PicA_d0.7, radec=05:19:49.69 -45:04:44.5, tags=target, type=track, duration=60
-      - name=PicA_l0.7, radec=05:17:49.69 -45:46:44.5, tags=target, type=track, duration=60
-      - name=PicA_r0.7, radec=05:21:49.69 -45:46:44.5, tags=target, type=track, duration=60
-      - name=J0519-4546 | PicA, radec=05:19:49.69 -45:46:44.5, tags=fluxcal bpcal delaycal, type=track, duration=60 
+      - name=PictorA_u0.5, radec=5:19:49.721 -45:16:43.7801, tags=target, type=track, duration=70.0
+      - name=PictorA, radec=5:19:49.721 -45:46:43.7801, tags=target, type=track, duration=70.0
+      - name=PictorA_r0.5, radec=5:22:41.7767 -45:46:35.7098, tags=target, type=track, duration=70.0
+      - name=PictorA, radec=5:19:49.721 -45:46:43.7801, tags=target, type=track, duration=70.0
+      - name=PictorA_d0.5, radec=5:19:49.721 -46:16:43.7801, tags=target, type=track, duration=70.0
+      - name=PictorA, radec=5:19:49.721 -45:46:43.7801, tags=target, type=track, duration=70.0
+      - name=PictorA_l0.5, radec=5:16:57.6653 -45:46:35.7098, tags=target, type=track, duration=70.0
+
 
 
 
