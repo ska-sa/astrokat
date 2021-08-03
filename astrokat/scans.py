@@ -92,7 +92,7 @@ def scan(session, target, nd_period=None, **kwargs):
 
     """
     # trigger noise diode if set
-    #trigger(session.kat, session, duration=nd_period)
+    trigger(session.kat, session, duration=nd_period)
     try:
         timestamp = session.time
     except AttributeError:
@@ -180,7 +180,7 @@ def reversescan(session, target, nd_period=None, **kwargs):
     import copy
     import datetime
     # trigger noise diode if set
-    #trigger(session.kat, session, duration=nd_period)
+    trigger(session.kat, session, duration=nd_period)
     scanargs = dict(kwargs)
     if 'radec_p1'  in kwargs.keys() and 'radec_p2'  in kwargs.keys():  # means that there is a target area
         # find lowest setting part or
@@ -198,6 +198,9 @@ def reversescan(session, target, nd_period=None, **kwargs):
     if 'direction'  in kwargs.keys():
         direction = True
         del(scanargs['direction'])
+    if 'scan_speed'  in kwargs.keys():
+        scan_speed = kwargs['scan_speed']
+        del(scanargs['scan_speed'])
     el,az_min,az_max,t_start,t_end = scan_area(tar ,antenna,offset_deg=1)   # pre-position >4 min in the future
     if 15.0 > np.degrees(el) :
         user_logger.warning("Source and scan below horison ")
@@ -228,6 +231,10 @@ def reversescan(session, target, nd_period=None, **kwargs):
     
     scanargs["start"] = scan_start,0.0
     scanargs["end"] = scan_end,0.0
+    # 5 arcmin/s if possible so that should translate to 5/cos(el)
+    scan_speed = (scan_speed/60.0)/np.cos(el) # take into accout projection effects of the sky and convert to degrees per second
+    print("elevation = ",el)
+    scanargs["duration"] =abs(scan_start-scan_end)/scan_speed # Duration in seconds.
     target_visible = False
     
     while time.time() <=  (float(t_end.datetime().strftime('%s')) - float(datetime.datetime(1970,1,1).strftime('%s')) ):  # t_end.datetime().timestamp() : 
