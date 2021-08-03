@@ -1,0 +1,23 @@
+# scan observation with noise diode trigger before each scan + nd tracks before and after
+instrument:
+  integration_period: 2
+scan:
+  # achieving a scan speed of 5arcmin/sec
+  start: 0.0,0.0
+  end: 10.0,0.0
+  # ensuring azimuth angle remains linear
+  projection: plate-carree
+durations:
+  obs_duration: 600
+  start_time: 2021-06-14 11:00:00  # outside LST range
+observation_loop:
+  - LST: 10.0
+    target_list:
+      - name=nd_track_before, azel=50.26731 43.70517, tags=target, type=track, duration=0., nd=10.
+      - name=scan_azel, azel=50.26731 43.70517, tags=target, duration=15., type=return_scan, nd=1.8
+      - name=scan_azel, azel=50.26731 43.70517, tags=target, duration=15., type=return_scan, nd=1.8
+      - name=scan_azel, azel=50.26731 43.70517, tags=target, duration=15., type=return_scan, nd=1.8
+      - name=scan_azel, azel=50.26731 43.70517, tags=target, duration=15., type=return_scan, nd=1.8
+      - name=scan_azel, azel=50.26731 43.70517, tags=target, type=track, duration=0., nd=1.8
+      - name=nd_track_before, azel=50.26731 43.70517, tags=target, type=track, duration=0., nd=10.
+

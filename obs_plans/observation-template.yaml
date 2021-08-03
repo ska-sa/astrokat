@@ -1,15 +1,16 @@
 ## Example observation template file listing all available observation options
 # User header information
 # Free form information for user information and description
+# Only add items of required during observation.
+# If any of these resources are not available at runtime, the script will exit without 
 
 ## Information specifying resources that must be available in the active subarray before execution
-## If any of these resources are not available at runtime, the script will exit without observation
 instrument:
   # resources that are fundamentally required for the observation to continue
   pool_resources: m011,m022,ptuse
-  # subarray receptor: l, u, s, x
+  # Subarray receiver selection: l, u, s, x
   band: l
-  # user product
+  # Subarray user product
   product: c856M4k
   # Data capture averaging or integration period in seconds
   integration_time: 8
@@ -35,15 +36,14 @@ durations:  # if left out only single observation run through target list
   obs_duration: 1800  # sec
 ## Optional arguments for scan type observation
 scan:
-  duration: 30.0
   start: -3.0,0.0
   end: 3.0,0.0
   index: -1
   projection: default_proj
-## Optional arguments for raster scan type observation
+## Arguments for raster scan type observation
 raster_scan:
-  num_scans: 3
-  scan_duration: 30.0
+  num_scans: 3  # required to calculate per scan duration
+  scan_duration: 30.0  # optional and will overwrite duration in target specification
   scan_extent: 6.0
   scan_spacing: 0.5
   scan_in_azimuth: True
@@ -53,8 +53,12 @@ observation_loop:
   # time range over which targets listed can be observed (see wiki for target options)
   - LST: 0:00-23:50
     target_list:
-      - name=drift-1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, duration=120.0, type=drift_scan, nd=10
-      # ability to disable the noise diode pattern for this target
-      - name=scan-1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, type=scan, nd=off
       - name=track-1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, duration=120.0
-      - name=cadence-1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, duration=60.0, cadence=180
+      # ability to disable the noise diode pattern for this target if set
+      - name=track-1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, type=track, nd=off
+      # schedule target for observation every 30 mins
+      - name=cadence-1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, duration=60.0, cadence=1800
+      # perform drift scan
+      - name=drift-1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, duration=120.0, type=drift_scan
+      # scan across target and trigger noise diode for 10 sec before scan
+      - name=scan-1934-638, radec=19:39:25.03 -63:42:45.63, tags=target, duration=120.0, type=scan, nd=10

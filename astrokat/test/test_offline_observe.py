@@ -3,10 +3,17 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import unittest
+import katpoint
 
 from mock import patch
 
-from .testutils import LoggedTelescope, execute_observe_main
+from astrokat import utility
+from .testutils import (
+    LoggedTelescope,
+    execute_observe_main,
+    extract_start_time,
+    yaml_path,
+)
 
 
 @patch("astrokat.observe_main.Telescope", LoggedTelescope)
@@ -30,8 +37,9 @@ class TestAstrokatYAML(unittest.TestCase):
         result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn("Single run through observation target list", result)
         self.assertIn("target0_radec observed for 10.0 sec", result)
-        self.assertIn("target1_azel observed for 10.0 sec", result)
-        self.assertIn("target2_gal observed for 10.0 sec", result)
+        self.assertIn("target1_gal observed for 10.0 sec", result)
+        self.assertIn("target2_azel observed for 10.0 sec", result)
+        self.assertIn("target3_azel, tags=radec target, 15:56:30.60 8:51:02.5", result)
 
     def test_two_calib_sim(self):
         """Tests two calibrators sim."""
@@ -162,3 +170,40 @@ class TestAstrokatYAML(unittest.TestCase):
         self.assertIn(
             expected_results, result, "J1833-2103 skipped"
         )
+
+    def test_time_conversion_symmetry(self):
+        """Test katpoint and astrokat time conversion methods match and are symmetrical"""
+        test_files = [
+            "test_obs/below-horizon-sim.yaml",
+            "test_obs/image-cals-sim.yaml",
+            "test_obs/image-sim.yaml",
+            "test_obs/image-single-sim.yaml",
+            "test_obs/targets-sim.yaml",
+            "test_obs/two-calib-sim.yaml",
+        ]
+        for test_file in test_files:
+            file_path = yaml_path(test_file)
+            yaml_start_time = extract_start_time(file_path)
+            yaml_start_time_str = str(yaml_start_time)
+
+            astrokat_sec_since_epoch = utility.datetime2timestamp(yaml_start_time)
+            katpoint_sec_since_epoch = katpoint.Timestamp(yaml_start_time_str).secs
+            self.assertAlmostEqual(
+                astrokat_sec_since_epoch,
+                katpoint_sec_since_epoch,
+                places=6,
+                msg="timestamp conversion mismatch {}".format(test_file)
+            )
+
+            astrokat_datetime = utility.timestamp2datetime(astrokat_sec_since_epoch)
+            katpoint_timestamp = katpoint.Timestamp(katpoint_sec_since_epoch)
+            self.assertEqual(
+                str(astrokat_datetime),
+                yaml_start_time_str,
+                msg="astrokat str time conversion mismatch for {}".format(test_file)
+            )
+            self.assertEqual(
+                str(katpoint_timestamp),
+                yaml_start_time_str,
+                msg="katpoint str time conversion mismatch for {}".format(test_file)
+            )

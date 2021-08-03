@@ -36,27 +36,29 @@ def drift_pointing_offset(target, duration=60.0):
     return target
 
 
-def drift_scan(session, target, nd_period=None, duration=60.0):
+def drift_scan(session, target, duration=60.0, nd_period=None, lead_time=None):
     """Drift scan observation.
 
     Parameters
     ----------
     session: `CaptureSession`
     target: katpoint.Target
-    nd_period: float
-        noisediode period
     duration: float
         scan duration
+    nd_period: float
+        noisediode period
+    lead_time: float
+        noisediode trigger lead time
 
     """
     # trigger noise diode if set
-    trigger(session.kat, session, duration=nd_period)
+    trigger(session.kat, duration=nd_period, lead_time=lead_time)
     target = drift_pointing_offset(target, duration=duration)
     user_logger.info("Drift_scan observation for {} sec".format(duration))
     return session.track(target, duration=duration)
 
 
-def raster_scan(session, target, nd_period=None, **kwargs):
+def raster_scan(session, target, nd_period=None, lead_time=None, **kwargs):
     """Raster scan observation.
 
     Parameters
@@ -65,10 +67,12 @@ def raster_scan(session, target, nd_period=None, **kwargs):
     target: katpoint.Target
     nd_period: float
         noisediode period
+    lead_time: float
+        noisediode trigger lead time
 
     """
     # trigger noise diode if set
-    trigger(session.kat, session, duration=nd_period)
+    trigger(session.kat, duration=nd_period, lead_time=lead_time)
     # TODO: ignoring raster_scan, not currently working robustly
     # TODO: there are errors in raster scan calculations, need some review
     #     session.raster_scan(target,num_scans=2,
@@ -80,7 +84,7 @@ def raster_scan(session, target, nd_period=None, **kwargs):
     return session.raster_scan(target, **kwargs)
 
 
-def scan(session, target, nd_period=None, **kwargs):
+def scan(session, target, nd_period=None, lead_time=None, **kwargs):
     """Run basic scan observation.
 
     Parameters
@@ -89,19 +93,22 @@ def scan(session, target, nd_period=None, **kwargs):
     target: katpoint.Target
     nd_period: float
         noisediode period
+    lead_time: float
+        noisediode trigger lead time
 
     """
     # trigger noise diode if set
-    trigger(session.kat, session, duration=nd_period)
+    trigger(session.kat, duration=nd_period, lead_time=lead_time)
     try:
         timestamp = session.time
     except AttributeError:
         timestamp = time.time()
     user_logger.debug("DEBUG: Starting scan across target: {}".format(timestamp))
+    user_logger.info("Scan target: {}".format(target))
     return session.scan(target, **kwargs)
 
 
-def forwardscan(session, target, nd_period=None, **kwargs):
+def forwardscan(session, target, nd_period=None, lead_time=None, **kwargs):
     """Forward scan observation.
 
     Call to `scan` method described in this module
@@ -112,9 +119,15 @@ def forwardscan(session, target, nd_period=None, **kwargs):
     target: katpoint.Target
     nd_period: float
         noisediode period
+    lead_time: float
+        noisediode trigger lead time
 
     """
-    target_visible = scan(session, target, nd_period=nd_period, **kwargs)
+    target_visible = scan(session,
+                          target,
+                          nd_period=nd_period,
+                          lead_time=lead_time,
+                          **kwargs)
     return target_visible
 
 def scan_area(target_list,antenna_,offset_deg=0.1):
@@ -161,7 +174,7 @@ def scan_area(target_list,antenna_,offset_deg=0.1):
     return tar.body.alt,min(az),max(az),min(time_end),max(time_end) 
 
 
-def reversescan(session, target, nd_period=None, **kwargs):
+def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
     """Reverse scan observation.
 
     This scan is done in "Reverse"
@@ -174,6 +187,8 @@ def reversescan(session, target, nd_period=None, **kwargs):
     target: katpoint.Target
     nd_period: float
         noisediode period
+    lead_time: float
+        noisediode trigger lead time
 
     """
     import numpy as np
@@ -242,18 +257,26 @@ def reversescan(session, target, nd_period=None, **kwargs):
             scanargs["start"] = scan_start,0.0
             scanargs["end"] = scan_end,0.0
             user_logger.info("Scan extent  %s , %s "%(scanargs["start"][0],scanargs["end"][0]) )
-            target_visible += scan(session, scan_target, nd_period=nd_period, **scanargs)
+            target_visible += scan(session,
+                                   scan_target, 
+                                   nd_period=nd_period,
+                                   lead_time=lead_time, 
+                                   **scanargs)
             direction = False
         else :
             scanargs["start"] = scan_end,0.0
             scanargs["end"] = scan_start,0.0
             user_logger.info("Scan extent  %s , %s "%(scanargs["start"][0],scanargs["end"][0]) )
-            target_visible += scan(session, scan_target, nd_period=nd_period, **scanargs)
+            target_visible += scan(session,
+                                   scan_target, 
+                                   nd_period=nd_period,
+                                   lead_time=lead_time, 
+                                   **scanargs)
             direction = True
     return target_visible
 
 
-def return_scan(session, target, nd_period=None, **kwargs):
+def return_scan(session, target, nd_period=None, lead_time=None, **kwargs):
     """Return scan observation.
 
     A temporary fix until raster scan can be fixed
@@ -264,17 +287,27 @@ def return_scan(session, target, nd_period=None, **kwargs):
     target: katpoint.Target
     nd_period: float
         noisediode period
+    lead_time: float
+        noisediode trigger lead time
 
     """
     # set up 2way scan
     user_logger.info("Forward scan over target")
-    target_visible = scan(session, target, nd_period=nd_period, **kwargs)
+    target_visible = scan(session,
+                          target, 
+                          nd_period=nd_period,
+                          lead_time=lead_time,
+                          **kwargs)
 
     user_logger.info("Reverse scan over target")
     returnscan = dict(kwargs)
     returnscan["start"] = kwargs["end"]
     returnscan["end"] = kwargs["start"]
-    target_visible += scan(session, target, nd_period=nd_period, **returnscan)
+    target_visible += scan(session,
+                           target,
+                           nd_period=nd_period,
+                           lead_time=lead_time,
+                           **returnscan)
     return target_visible
 
 

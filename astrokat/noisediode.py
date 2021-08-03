@@ -2,7 +2,6 @@
 from __future__ import division
 from __future__ import absolute_import
 
-
 import time
 
 import katpoint
@@ -124,6 +123,7 @@ def _set_dig_nd_(kat,
                .format(timestamp,
                        katpoint.Timestamp(timestamp)))
         user_logger.debug('DEBUG: {}'.format(msg))
+
     return timestamp
 
 
@@ -235,7 +235,6 @@ def on(kat,
     true_timestamp = _switch_on_off_(kat,
                                      timestamp,
                                      switch=1)  # on
-
     # NaN timestamp return during ND on command means something went wrong
     # abort observation
     if not np.isfinite(true_timestamp):
@@ -246,7 +245,8 @@ def on(kat,
     user_logger.debug('DEBUG: now {}, sleep {}'
                       .format(time.time(),
                               sleeptime))
-    time.sleep(sleeptime)  # default sleep to see for signal to get through
+    if sleeptime > 0:
+        time.sleep(sleeptime)  # default sleep to see for signal to get through
     user_logger.debug('DEBUG: now {}, slept {}'
                       .format(time.time(),
                               sleeptime))
@@ -345,7 +345,8 @@ def trigger(kat,
                           .format(off_time - on_time))
         user_logger.debug('DEBUG: sleeping for {} [sec]'
                           .format(sleeptime))
-        time.sleep(sleeptime)
+        if sleeptime > 0:
+            time.sleep(sleeptime)
         user_logger.trace('TRACE: ts after sleep {} ({})'
                           .format(time.time(),
                                   time.ctime(time.time())))
@@ -375,7 +376,8 @@ def trigger(kat,
     user_logger.debug('DEBUG: now {}, sleep {}'
                       .format(time.time(),
                               sleeptime))
-    time.sleep(sleeptime)  # default sleep to see for signal to get through
+    if sleeptime > 0:
+        time.sleep(sleeptime)  # default sleep to see for signal to get through
     user_logger.debug('DEBUG: now {}, slept {}'
                       .format(time.time(),
                               sleeptime))
@@ -408,6 +410,7 @@ def pattern(kat,
     """
     if lead_time is None:
         lead_time = _DEFAULT_LEAD_TIME
+
     # nd pattern length [sec]
     max_cycle_len = _get_max_cycle_len(kat)
     if float(nd_setup['cycle_len']) > max_cycle_len:
@@ -455,6 +458,7 @@ def pattern(kat,
                              start_time,
                              nd_setup=nd_setup,
                              cycle=cycle)
+
     # NaN timestamp return during ND pattern request invalidates observation
     # requirements, abort observation
     if not np.isfinite(timestamp):
@@ -470,7 +474,8 @@ def pattern(kat,
     wait_time = timestamp - time.time()
     user_logger.trace('TRACE: delta {}'
                       .format(wait_time))
-    time.sleep(wait_time)
+    if wait_time > 0:
+        time.sleep(wait_time)
     user_logger.trace('TRACE: set nd pattern at {}, slept {}'
                       .format(time.time(),
                               wait_time))

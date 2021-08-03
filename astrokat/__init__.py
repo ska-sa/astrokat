@@ -7,20 +7,20 @@ from .__main__ import cli
 from . import noisediode
 from . import correlator
 from . import scans
+from . import targets
 
 from .simulate import user_logger, verify_and_connect, start_session
 from .utility import (
     NoTargetsUpError,
     NotAllTargetsUpError,
     read_yaml,
-    katpoint_target,
     get_lst,
     lst2utc,
     datetime2timestamp,
     timestamp2datetime,
 )
 from .observatory import Observatory, collect_targets
-
+from .targets import katpoint_target_string
 
 # BEGIN VERSION CHECK
 # Get package version when locally imported from repo or via -e develop install
