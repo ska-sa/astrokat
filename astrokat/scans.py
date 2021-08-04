@@ -130,48 +130,49 @@ def forwardscan(session, target, nd_period=None, lead_time=None, **kwargs):
                           **kwargs)
     return target_visible
 
-def scan_area(target_list,antenna_,offset_deg=0.1):
+
+def scan_area(target_list, antenna_, offset_deg=0.1):
     import copy
     import numpy as np
-    #returns elevation and the azimuth extents of the scan
-    antenna = copy.copy(antenna_ )
-    #print(antenna.observer.date)
+    # This function returns the elevation, azimuth extents of the scan
+    antenna = copy.copy(antenna_)
     results = []
     alt = []
     az = []
     time_end = []
-    for i,tar in enumerate(target_list):
-        alt.append(tar.azel()[1]) # should this be time.time()
-        if tar.body.alt < 0 : 
+    for _i, tar in enumerate(target_list):
+        alt.append(tar.azel()[1])  # should this be time.time()
+        if tar.body.alt < 0:
             user_logger.warning(tar.name + "is below the horizon")
-    antenna.observer.horizon = min(alt)-np.radians(2.) # just a little below the lowest point
-    user_logger.debug('Min elevation of scan area at start ',min(alt))
-    user_logger.debug('Max elevation of scan area at start ',max(alt))
-    for i,tar in enumerate(target_list):
-        rising = antenna.observer.next_transit(tar.body)  < antenna.observer.next_setting(tar.body) < antenna.observer.next_rising(tar.body) 
-        user_logger.debug("Is Target rising :%s, %s"%(tar.body,rising))
+    antenna.observer.horizon = min(alt) - np.radians(2.)  # Below the lowest point
+    user_logger.debug('Min elevation of scan area at start ', min(alt))
+    user_logger.debug('Max elevation of scan area at start ', max(alt))
+    for _i, tar in enumerate(target_list):
+        rising = antenna.observer.next_transit(tar.body) < \
+                    antenna.observer.next_setting(tar.body) < \
+                    antenna.observer.next_rising(tar.body)
+        user_logger.debug("Is Target rising :%s, %s" % (tar.body, rising))
         results.append(rising)
-    #print("Rising::",results)
     if np.all(results):
-        #return True # rising
-        antenna.observer.horizon = max(alt)+np.radians(offset_deg)#top point
-        user_logger.debug('Highest elevation for rising source',max(alt))
-        for i,tar in enumerate(target_list):
-            antenna.observer.next_rising(tar.body) # rise through the scan line
-            az.append(tar.body.rise_az) 
+        # Rising sources
+        antenna.observer.horizon = max(alt) + np.radians(offset_deg)  # top point
+        user_logger.debug('Highest elevation for rising source', max(alt))
+        for _i, tar in enumerate(target_list):
+            antenna.observer.next_rising(tar.body)  # rise through the scan line
+            az.append(tar.body.rise_az)
             time_end.append(tar.body.rise_time)
-            #print("Rise loop",tar.body.rise_az,tar.body.alt)
-        user_logger.debug("Scan Area Points",tar.body.alt,min(az),max(az),min(time_end),max(time_end))
-    else: 
-        antenna.observer.horizon = min(alt)-np.radians(offset_deg)#bottom point
-        user_logger.debug('Lowest elevation for setting source',min(alt))
-        for i,tar in enumerate(target_list):
-            antenna.observer.next_setting(tar.body) # set through the scan line
+        user_logger.debug("Scan Area Points", tar.body.alt,
+                          min(az), max(az), min(time_end), max(time_end))
+    else:
+        antenna.observer.horizon = min(alt) - np.radians(offset_deg)  # bottom point
+        user_logger.debug('Lowest elevation for setting source', min(alt))
+        for _i, tar in enumerate(target_list):
+            antenna.observer.next_setting(tar.body)  # Set through the scan line
             az.append(tar.body.set_az)
             time_end.append(tar.body.set_time)
-            #print("Set loop",tar.body.set_az,tar.body.alt)
-        #print("Scan Points",tar.body.alt,min(az),max(az),min(time_end),max(time_end) )
-    return tar.body.alt,min(az),max(az),min(time_end),max(time_end) 
+        user_logger.debug("Scan Area Points", tar.body.alt,
+                          min(az), max(az), min(time_end), max(time_end))
+    return tar.body.alt, min(az), max(az), min(time_end), max(time_end)
 
 
 def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
@@ -197,27 +198,30 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
     # trigger noise diode if set
     trigger(session.kat, duration=nd_period, lead_time=lead_time)
     scanargs = dict(kwargs)
-    if 'radec_p1'  in kwargs.keys() and 'radec_p2'  in kwargs.keys():  # means that there is a target area
+    if 'radec_p1' in kwargs.keys() and 'radec_p2' in kwargs.keys():
+        # means that there is a target area
         # find lowest setting part or
         # higest rising part
-        antenna = copy.copy(target.antenna )#.observer.horizon \
+        antenna = copy.copy(target.antenna)
         tar = []
         for i in range(10):
-            if 'radec_p%i'%(i) in kwargs.keys():
-                tar.append(katpoint.Target('t%i,radec,%s'%(i,kwargs["radec_p%i"%(i)]),antenna=target.antenna ))
-                del(scanargs['radec_p%i'%(i)])
+            if 'radec_p%i' % (i) in kwargs.keys():
+                tar.append(katpoint.Target('t%i,radec,%s' %
+                           (i, kwargs["radec_p%i" % (i)]), antenna=target.antenna))
+                del(scanargs['radec_p%i' % (i)])
     else:
         user_logger.error("No scan area defined")
         return False
     direction = False
-    if 'direction'  in kwargs.keys():
+    if 'direction' in kwargs.keys():
         direction = True
         del(scanargs['direction'])
-    if 'scan_speed'  in kwargs.keys():
+    if 'scan_speed' in kwargs.keys():
         scan_speed = kwargs['scan_speed']
         del(scanargs['scan_speed'])
-    el,az_min,az_max,t_start,t_end = scan_area(tar ,antenna,offset_deg=1)   # pre-position >4 min in the future
-    if 15.0 > np.degrees(el) :
+    el, az_min, az_max, t_start, t_end = scan_area(tar, antenna, offset_deg=1)
+    # pre-position >4 min in the future to take into account slewing
+    if 15.0 > np.degrees(el):
         user_logger.warning("Source and scan below horison ")
         return False
     obs_start_ts = target.antenna.observer.date
@@ -227,50 +231,58 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
     # restore datetime before continuing
     scan_target.antenna = antenna
     scan_target.antenna.observer.date = obs_start_ts
-    user_logger.info("Slew to scan start")
-    target_visible = session.track(scan_target, duration=0.0, announce=False) # slew to target.
+    user_logger.info("Slew to scan start")  # slew to target.
+    target_visible = session.track(scan_target, duration=0.0, announce=False)
 
-    el,az_min,az_max,t_start,t_end = scan_area(tar ,antenna)  # True scan # need to add 1/2 of duration to start.
+    el, az_min, az_max, t_start, t_end = scan_area(tar, antenna)
+    # This is the real scan
 
     obs_start_ts = target.antenna.observer.date
-    scan_target = katpoint.construct_azel_target(katpoint.wrap_angle( (az_min+az_max)/2.), el)
+    scan_target = katpoint.construct_azel_target(
+                    katpoint.wrap_angle((az_min + az_max) / 2.), el)
     scan_target.name = target.name  # make a nice name
     # katpoint destructively set dates and times during calculation
     # restore datetime before continuing
     scan_target.antenna = antenna
     scan_target.antenna.observer.date = obs_start_ts
 
-    scan_start = np.degrees(az_min-(az_min+az_max)/2.)
-    scan_end = np.degrees(az_max-(az_min+az_max)/2.)
+    scan_start = np.degrees(az_min - (az_min + az_max) / 2.)
+    scan_end = np.degrees(az_max - (az_min + az_max) / 2.)
 
-    
-    scanargs["start"] = scan_start,0.0
-    scanargs["end"] = scan_end,0.0
+    scanargs["start"] = scan_start, 0.0
+    scanargs["end"] = scan_end, 0.0
 
-    # 5 arcmin/s if possible so that should translate to 5/cos(el)
-    scan_speed = (scan_speed/60.0)/np.cos(el) # take into accout projection effects of the sky and convert to degrees per second
-    scanargs["duration"] =abs(scan_start-scan_end)/scan_speed # Duration in seconds.
+    # 5 arcmin/s should translate to 5/cos(el)
+    scan_speed = (scan_speed / 60.0) / np.cos(el)
+    # take into accout projection effects of the sky and convert to degrees per second
+    scanargs["duration"] = abs(scan_start - scan_end) / scan_speed  # Duration in seconds
     target_visible = False
-    user_logger.info("Scan duration is %f and scan speed is %f deg/s "%(scanargs["duration"],scan_speed))
-    while time.time() <=  (float(t_end.datetime().strftime('%s')) - float(datetime.datetime(1970,1,1).strftime('%s')) ):  # t_end.datetime().timestamp() : 
-        if direction :
-            scanargs["start"] = scan_start,0.0
-            scanargs["end"] = scan_end,0.0
-            user_logger.info("Scan extent  %s , %s "%(scanargs["start"][0],scanargs["end"][0]) )
+    user_logger.info("Scan duration is %f and scan speed is %f deg/s " %
+                     (scanargs["duration"], scan_speed))
+    while time.time() <= \
+        (float(t_end.datetime().strftime('%s')) -
+         float(datetime.datetime(1970, 1, 1).strftime('%s'))):
+        # This was origanaly t_end.datetime().timestamp()
+        if direction:
+            scanargs["start"] = scan_start, 0.0
+            scanargs["end"] = scan_end, 0.0
+            user_logger.info("Scan extent  %s , %s " %
+                             (scanargs["start"][0], scanargs["end"][0]))
             target_visible += scan(session,
-                                   scan_target, 
+                                   scan_target,
                                    nd_period=nd_period,
-                                   lead_time=lead_time, 
+                                   lead_time=lead_time,
                                    **scanargs)
             direction = False
-        else :
-            scanargs["start"] = scan_end,0.0
-            scanargs["end"] = scan_start,0.0
-            user_logger.info("Scan extent  %s , %s "%(scanargs["start"][0],scanargs["end"][0]) )
+        else:
+            scanargs["start"] = scan_end, 0.0
+            scanargs["end"] = scan_start, 0.0
+            user_logger.info("Scan extent  %s , %s " %
+                             (scanargs["start"][0], scanargs["end"][0]))
             target_visible += scan(session,
-                                   scan_target, 
+                                   scan_target,
                                    nd_period=nd_period,
-                                   lead_time=lead_time, 
+                                   lead_time=lead_time,
                                    **scanargs)
             direction = True
     return target_visible
@@ -294,7 +306,7 @@ def return_scan(session, target, nd_period=None, lead_time=None, **kwargs):
     # set up 2way scan
     user_logger.info("Forward scan over target")
     target_visible = scan(session,
-                          target, 
+                          target,
                           nd_period=nd_period,
                           lead_time=lead_time,
                           **kwargs)
