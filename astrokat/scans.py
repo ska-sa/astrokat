@@ -135,7 +135,7 @@ def scan_area(target_list,antenna_,offset_deg=0.1):
     import numpy as np
     #returns elevation and the azimuth extents of the scan
     antenna = copy.copy(antenna_ )
-    print(antenna.observer.date)
+    #print(antenna.observer.date)
     results = []
     alt = []
     az = []
@@ -143,34 +143,34 @@ def scan_area(target_list,antenna_,offset_deg=0.1):
     for i,tar in enumerate(target_list):
         alt.append(tar.azel()[1]) # should this be time.time()
         if tar.body.alt < 0 : 
-            print(tar.name + "is below the horizon")
+            user_logger.warning(tar.name + "is below the horizon")
     antenna.observer.horizon = min(alt)-np.radians(2.) # just a little below the lowest point
-    print('Min alt',min(alt))
-    print('Max alt',max(alt))
+    user_logger.debug('Min elevation of scan area at start ',min(alt))
+    user_logger.debug('Max elevation of scan area at start ',max(alt))
     for i,tar in enumerate(target_list):
         rising = antenna.observer.next_transit(tar.body)  < antenna.observer.next_setting(tar.body) < antenna.observer.next_rising(tar.body) 
-        print("Target:%s, %s"%(tar.body,rising))
+        user_logger.debug("Is Target rising :%s, %s"%(tar.body,rising))
         results.append(rising)
-    print("Rising::",results)
+    #print("Rising::",results)
     if np.all(results):
         #return True # rising
         antenna.observer.horizon = max(alt)+np.radians(offset_deg)#top point
-        print('Rising loop Max alt',max(alt))
+        user_logger.debug('Highest elevation for rising source',max(alt))
         for i,tar in enumerate(target_list):
             antenna.observer.next_rising(tar.body) # rise through the scan line
             az.append(tar.body.rise_az) 
             time_end.append(tar.body.rise_time)
-            print("Rise loop",tar.body.rise_az,tar.body.alt)
-        print("Scan Points",tar.body.alt,min(az),max(az),min(time_end),max(time_end))
+            #print("Rise loop",tar.body.rise_az,tar.body.alt)
+        user_logger.debug("Scan Area Points",tar.body.alt,min(az),max(az),min(time_end),max(time_end))
     else: 
         antenna.observer.horizon = min(alt)-np.radians(offset_deg)#bottom point
-        print('Setting loop Min alt',min(alt),max(alt))
+        user_logger.debug('Lowest elevation for setting source',min(alt))
         for i,tar in enumerate(target_list):
             antenna.observer.next_setting(tar.body) # set through the scan line
             az.append(tar.body.set_az)
             time_end.append(tar.body.set_time)
-            print("Set loop",tar.body.set_az,tar.body.alt)
-        print("Scan Points",tar.body.alt,min(az),max(az),min(time_end),max(time_end) )
+            #print("Set loop",tar.body.set_az,tar.body.alt)
+        #print("Scan Points",tar.body.alt,min(az),max(az),min(time_end),max(time_end) )
     return tar.body.alt,min(az),max(az),min(time_end),max(time_end) 
 
 
@@ -195,7 +195,7 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
     import copy
     import datetime
     # trigger noise diode if set
-    trigger(session.kat, session, duration=nd_period)
+    trigger(session.kat, duration=nd_period, lead_time=lead_time)
     scanargs = dict(kwargs)
     if 'radec_p1'  in kwargs.keys() and 'radec_p2'  in kwargs.keys():  # means that there is a target area
         # find lowest setting part or
@@ -246,12 +246,12 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
     
     scanargs["start"] = scan_start,0.0
     scanargs["end"] = scan_end,0.0
+
     # 5 arcmin/s if possible so that should translate to 5/cos(el)
     scan_speed = (scan_speed/60.0)/np.cos(el) # take into accout projection effects of the sky and convert to degrees per second
-    print("elevation = ",el)
     scanargs["duration"] =abs(scan_start-scan_end)/scan_speed # Duration in seconds.
     target_visible = False
-    
+    user_logger.info("Scan duration is %f and scan speed is %f deg/s "%(scanargs["duration"],scan_speed))
     while time.time() <=  (float(t_end.datetime().strftime('%s')) - float(datetime.datetime(1970,1,1).strftime('%s')) ):  # t_end.datetime().timestamp() : 
         if direction :
             scanargs["start"] = scan_start,0.0
