@@ -289,6 +289,11 @@ class SimSession(object):
         announce:
 
         """
+        slew_time, az, el = self._fake_slew_(target)
+        time.sleep(slew_time)
+        user_logger.info("Slewed to %s at azel (%.1f, %.1f) deg", target.name, az, el)
+        user_logger.debug("DEBUG: Starting scan across target: {}".format(timestamp))
+        user_logger.info("Scan target: {}".format(target))
         time.sleep(duration)
         return True
 
