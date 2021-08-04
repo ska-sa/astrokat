@@ -149,8 +149,8 @@ def scan_area(target_list, antenna_, offset_deg=0.1):
     user_logger.debug('Max elevation of scan area at start ', max(alt))
     for _i, tar in enumerate(target_list):
         rising = antenna.observer.next_transit(tar.body) < \
-                    antenna.observer.next_setting(tar.body) < \
-                    antenna.observer.next_rising(tar.body)
+            antenna.observer.next_setting(tar.body) < \
+            antenna.observer.next_rising(tar.body)
         user_logger.debug("Is Target rising :%s, %s" % (tar.body, rising))
         results.append(rising)
     if np.all(results):
@@ -239,7 +239,7 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
 
     obs_start_ts = target.antenna.observer.date
     scan_target = katpoint.construct_azel_target(
-                    katpoint.wrap_angle((az_min + az_max) / 2.), el)
+        katpoint.wrap_angle((az_min + az_max) / 2.), el)
     scan_target.name = target.name  # make a nice name
     # katpoint destructively set dates and times during calculation
     # restore datetime before continuing
@@ -259,9 +259,8 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
     target_visible = False
     user_logger.info("Scan duration is %f and scan speed is %f deg/s " %
                      (scanargs["duration"], scan_speed))
-    while time.time() <= \
-        (float(t_end.datetime().strftime('%s')) -
-         float(datetime.datetime(1970, 1, 1).strftime('%s'))):
+    time_zero = float(datetime.datetime(1970, 1, 1).strftime('%s'))
+    while time.time() <= (float(t_end.datetime().strftime('%s')) - time_zero):
         # This was origanaly t_end.datetime().timestamp()
         if direction:
             scanargs["start"] = scan_start, 0.0
