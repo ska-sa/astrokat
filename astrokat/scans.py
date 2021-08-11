@@ -131,11 +131,12 @@ def forwardscan(session, target, nd_period=None, lead_time=None, **kwargs):
     return target_visible
 
 
-def scan_area(target_list, antenna_, offset_deg=0.1):
+def scan_area(target_list, antenna_, obs_start_ts, offset_deg=0.1):
     import copy
     import numpy as np
     # This function returns the elevation, azimuth extents of the scan
     antenna = copy.copy(antenna_)
+    antenna.observer.date = obs_start_ts
     results = []
     alt = []
     az = []
@@ -219,12 +220,14 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
     if 'scan_speed' in kwargs.keys():
         scan_speed = kwargs['scan_speed']
         del(scanargs['scan_speed'])
-    el, az_min, az_max, t_start, t_end = scan_area(tar, antenna, offset_deg=1)
+    obs_start_ts = target.antenna.observer.date
+    el, az_min, az_max, t_start, t_end = scan_area(
+        tar, antenna, obs_start_ts, offset_deg=1)
     # pre-position >4 min in the future to take into account slewing
     if 15.0 > np.degrees(el):
         user_logger.warning("Source and scan below horison ")
         return False
-    obs_start_ts = target.antenna.observer.date
+
     scan_target = katpoint.construct_azel_target(katpoint.wrap_angle(az_min), el)
     scan_target.name = target.name  # make a nice name
     # katpoint destructively set dates and times during calculation
@@ -234,7 +237,7 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
     user_logger.info("Slew to scan start")  # slew to target.
     target_visible = session.track(scan_target, duration=0.0, announce=False)
 
-    el, az_min, az_max, t_start, t_end = scan_area(tar, antenna)
+    el, az_min, az_max, t_start, t_end = scan_area(tar, antenna, obs_start_ts)
     # This is the real scan
 
     obs_start_ts = target.antenna.observer.date
@@ -260,6 +263,8 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
     user_logger.info("Scan duration is %f and scan speed is %f deg/s " %
                      (scanargs["duration"], scan_speed))
     time_zero = float(datetime.datetime(1970, 1, 1).strftime('%s'))
+    user_logger.info("Start Time:%s" % (t_start))
+    user_logger.info("End Time:%s" % (t_end))
     while time.time() <= (float(t_end.datetime().strftime('%s')) - time_zero):
         # This was origanaly t_end.datetime().timestamp()
         if direction:
