@@ -222,7 +222,7 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
         # highest rising part
         antenna = copy.copy(target.antenna)
         target_list = []
-        for i in range(1, _MAX_POINTS_IN_SCAN_AREA_POLYGON+1):
+        for i in range(1, _MAX_POINTS_IN_SCAN_AREA_POLYGON + 1):
             key = 'radec_p%i' % i
             if key in kwargs:
                 target_list.append(
