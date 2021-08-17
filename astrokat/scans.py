@@ -237,7 +237,7 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
     direction = kwargs.get("direction", False)
     scan_speed = kwargs.get("scan_speed", _DEFAULT_SCAN_SPEED_ARCMIN_PER_SEC)
 
-    obs_start_ts = target.antenna.observer.date
+    obs_start_ts = katpoint.Timestamp(time.time()).to_ephem_date()
     # use 1 deg offset to pre-position >4 min in the future to take into account slewing
     el, az_min, az_max, t_start, t_end = _get_scan_area_extents(target_list, antenna,
                                                                 obs_start_ts,
@@ -268,7 +268,7 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
         return False
 
     # This is the real scan
-    obs_start_ts = target.antenna.observer.date
+    obs_start_ts = katpoint.Timestamp(time.time()).to_ephem_date()
     el, az_min, az_max, t_start, t_end = _get_scan_area_extents(target_list, antenna,
                                                                 obs_start_ts)
     scan_target = katpoint.construct_azel_target(
