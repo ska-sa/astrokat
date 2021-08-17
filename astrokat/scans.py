@@ -287,7 +287,7 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
         scanargs["projection"] = kwargs["projection"]
 
     # take into account projection effects of the sky and convert to degrees per second
-    # 5 arcmin/s should translate to 5/cos(el)
+    # E.g., 5 arcmin/s should translate to 5/60/cos(el) deg/s
     scan_speed = (scan_speed / 60.0) / np.cos(el)
     scanargs["duration"] = abs(scan_start - scan_end) / scan_speed  # Duration in seconds
     user_logger.info(
