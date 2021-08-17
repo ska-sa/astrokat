@@ -345,7 +345,7 @@ def return_scan(session, target, nd_period=None, lead_time=None, **kwargs):
     returnscan = dict(kwargs)
     returnscan["start"] = kwargs["end"]
     returnscan["end"] = kwargs["start"]
-    target_visible += scan(session,
+    target_visible &= scan(session,
                            target,
                            nd_period=nd_period,
                            lead_time=lead_time,
