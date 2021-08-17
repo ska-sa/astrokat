@@ -31,7 +31,7 @@ observation_loop:
       - name=PictorA_d0.5, radec=5:19:49.721 -46:16:43.7801, tags=target, type=track, duration=70.0
       - name=PictorA, radec=5:19:49.721 -45:46:43.7801, tags=target, type=track, duration=70.0
       - name=PictorA_l0.5, radec=5:16:57.6653 -45:46:35.7098, tags=target, type=track, duration=70.0
-      - name=scan_azel_with_nd_trigger, radec=05:00:00.0 -30:39:00, duration=120, tags=target, type=reversescan
+      - name=scan_azel_with_nd_trigger, radec=05:00:00.0 -30:39:00, duration=0, tags=target, type=reversescan
       - name=PictorA_u0.5, radec=5:19:49.721 -45:16:43.7801, tags=target, type=track, duration=70.0
       - name=PictorA, radec=5:19:49.721 -45:46:43.7801, tags=target, type=track, duration=70.0
       - name=PictorA_r0.5, radec=5:22:41.7767 -45:46:35.7098, tags=target, type=track, duration=70.0

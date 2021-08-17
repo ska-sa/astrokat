@@ -290,13 +290,13 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
     # 5 arcmin/s should translate to 5/cos(el)
     scan_speed = (scan_speed / 60.0) / np.cos(el)
     scanargs["duration"] = abs(scan_start - scan_end) / scan_speed  # Duration in seconds
-    target_visible = False
     user_logger.info(
-        "Scan duration is %.2f and scan speed is %.3f deg/s",
+        "Scan duration is %.2f and scan speed is %.2f deg/s",
         scanargs["duration"], scan_speed
     )
     user_logger.info("Start Time: %s", t_start)
     user_logger.info("End Time: %s", t_end)
+    num_scan_lines = 0
     while time.time() <= t_end.secs:
         if direction:
             scanargs["start"] = scan_start, 0.0
@@ -304,15 +304,18 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
         else:
             scanargs["start"] = scan_end, 0.0
             scanargs["end"] = scan_start, 0.0
-        user_logger.info("Scan extent  %.2f , %.2f " %
+        user_logger.info("Azimuth scan extent [%.1f, %.1f]" %
                          (scanargs["start"][0], scanargs["end"][0]))
-        target_visible += scan(session,
-                               scan_target,
-                               nd_period=nd_period,
-                               lead_time=lead_time,
-                               **scanargs)
+        target_visible = scan(session,
+                              scan_target,
+                              nd_period=nd_period,
+                              lead_time=lead_time,
+                              **scanargs)
         direction = not direction
-    return target_visible
+        if target_visible:
+            num_scan_lines += 1
+    user_logger.info("Scan completed - %s scan lines", num_scan_lines)
+    return num_scan_lines > 0
 
 
 def return_scan(session, target, nd_period=None, lead_time=None, **kwargs):
