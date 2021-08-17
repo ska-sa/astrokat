@@ -86,7 +86,7 @@ class TestAstrokatYAML(unittest.TestCase):
         return el, az_min, az_max, t_start, t_end
 
     def test_reverse_scan_basic_sim(self):
-        """Test of drift scan over an area in the sky."""
+        """Test of reverse scan over an area in the sky."""
         execute_observe_main("test_scans/reverse-scan-test.yaml")
         # get result and make sure everything ran properly
         result = LoggedTelescope.user_logger_stream.getvalue()
