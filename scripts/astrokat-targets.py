@@ -14,7 +14,7 @@ import numpy
 import os
 import sys
 
-from astrokat import Observatory, read_yaml, katpoint_target, __version__
+from astrokat import Observatory, read_yaml, katpoint_target_string, __version__
 from astrokat.utility import datetime2timestamp, timestamp2datetime
 from copy import deepcopy
 from datetime import datetime, timedelta
@@ -907,7 +907,7 @@ def main(creation_time,
             catalogue.antenna = ref_antenna
             for observation_cycle in data_dict["observation_loop"]:
                 for target_item in observation_cycle["target_list"]:
-                    name, target = katpoint_target(target_item)
+                    name, target = katpoint_target_string(target_item)
                     catalogue.add(katpoint.Target(target))
         else:  # assume CSV
             # output observation stats for catalogue

@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import re
 import unittest
 
 from mock import patch
@@ -26,10 +27,16 @@ class TestAstrokatYAML(unittest.TestCase):
         execute_observe_main("test_nd/nd-pattern-sim.yaml")
 
         result = LoggedTelescope.user_logger_stream.getvalue()
-        self.assertIn(
-            "activate at 1573714805.0 (includes 5.0 sec lead time)",
-            result
-        )
+
+        # extract requested timestamp to match against reported timestamp
+        on_timestamp = '1573714805.0'  # default ts
+        request_ref_str = 'Request: Set noise diode pattern to activate'
+        for logmsg in result.split('\n'):
+            if request_ref_str in logmsg:
+                ts = re.compile(r'([0-9.]+) \(includes')  # has subgroup
+                ts_result = ts.search(logmsg)  # match anywhere in the string
+                on_timestamp = ts_result.group(1)
+
         self.assertIn(
             "Antennas found in subarray, setting ND: m011,m022,m033,m044",
             result
@@ -38,10 +45,9 @@ class TestAstrokatYAML(unittest.TestCase):
             "Repeat noise diode pattern every 16.0 sec, with 8.0 sec on",
             result
         )
-        self.assertIn(
-            "Switch noise-diode pattern on at 1573714805.0",
-            result
-        )
+        # evaluate ND on timestamp is requested timestamp
+        report_ref_str = "Switch noise-diode pattern on at {}".format(on_timestamp)
+        self.assertIn(report_ref_str, result)
 
     def test_nd_pattern_ants(self):
         """Tests noisediode simulator."""

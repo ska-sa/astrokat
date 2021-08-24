@@ -104,6 +104,7 @@ def scan(session, target, nd_period=None, lead_time=None, **kwargs):
     except AttributeError:
         timestamp = time.time()
     user_logger.debug("DEBUG: Starting scan across target: {}".format(timestamp))
+    user_logger.info("Scan target: {}".format(target))
     return session.scan(target, **kwargs)
 
 

@@ -275,10 +275,6 @@ class Telescope(object):
         # switch noise-source pattern off (known setup starting observation)
         noisediode.off(self.array)
 
-        # TODO: add part that implements noise diode fire per track
-        # TODO: move this to a callable function,
-        # do it only if worth while to observe
-        # move back to body with session
         # TODO: update correlator settings
         # TODO: names of antennas to use for beamformer if not all is desirable
         return self
@@ -894,17 +890,20 @@ def main(args):
         user_logger.setLevel(logging.TRACE)
 
     # process the flat list of targets into a structure with sources
-    # convert celestial targets coordinates to all be equatorial
-    # horizontal coordinates for scans, will also be converted to enable delay tracking
-    for cntr, obs_loop in enumerate(opts.obs_plan_params['observation_loop']):
-        start_ts = time.time()
+    # convert celestial targets coordinates to all be equatorial (ra,dec)
+    # horizontal coordinates (alt, az)
+    #  for scans, the coordinates will be converted to enable delay tracking
+    #  for tracks the coordinates will be left as is with no delay tracking
+    for obs_dict in opts.obs_plan_params['observation_loop']:
+        start_ts = timestamp2datetime(time.time())
         if "durations" in opts.obs_plan_params:
             obs_time_info = opts.obs_plan_params["durations"]
             if "start_time" in obs_time_info:
-                start_ts = datetime2timestamp(obs_time_info["start_time"])
-        obs_targets = targets.read(obs_loop["target_list"],
-                                   timestamp=start_ts)
-        opts.obs_plan_params['observation_loop'][cntr]['target_list'] = obs_targets
+                start_ts = obs_time_info["start_time"]
+        mkat = astrokat.Observatory(datetime=start_ts)
+        obs_targets = targets.read(obs_dict["target_list"],
+                                   observer=mkat.observer)
+        obs_dict['target_list'] = obs_targets
 
     # setup and observation
     with Telescope(opts) as kat:

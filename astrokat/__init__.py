@@ -20,7 +20,7 @@ from .utility import (
     timestamp2datetime,
 )
 from .observatory import Observatory, collect_targets
-from .targets import katpoint_target
+from .targets import katpoint_target_string
 
 # BEGIN VERSION CHECK
 # Get package version when locally imported from repo or via -e develop install
