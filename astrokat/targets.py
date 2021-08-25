@@ -22,6 +22,7 @@ tgt_desc = {
         "name",
         "tags",
         "target",  # katpoint target str
+        "target_str",  # yaml target str
         # per target observation instructions
         "duration",
         "cadence",
@@ -32,6 +33,7 @@ tgt_desc = {
         "obs_cntr",
     ),
     "formats": (
+        object,
         object,
         object,
         object,
@@ -292,6 +294,7 @@ def parse_target_string(target_str, observer=None):
         key, value = item.split('=')
         for coord in SUPPORTED_COORDINATE_TYPES:
             if key.strip().startswith(coord):
+                target["target_str"] = item
                 # convert target coordinates to (ra, dec) in general
                 target["coord"] = get_coordinates_as_radec(item,
                                                            observer=observer,
@@ -401,6 +404,7 @@ def build_target_tuple(target_dict):
     return (target_name,
             target_dict["tags"],
             katpoint_tgt,
+            target_dict["target_str"],
             duration,
             cadence,
             target_dict["flux_model"],
