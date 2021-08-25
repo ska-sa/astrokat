@@ -1,6 +1,7 @@
 """Observation script and chronology check."""
 
 import ephem
+import katpoint
 import logging
 import numpy as np
 import os
@@ -56,10 +57,22 @@ def __next_day__(start_lst, end_lst, local_lst):
     """Utility function to check LST ranges ending after midnight"""
     return (ephem.hours(local_lst) < ephem.hours(str(start_lst))) and (
         ephem.hours(local_lst) > ephem.hours(str(end_lst)))
+
+
+def __update_azel__(observer, orig_target_str, timestamp):
+    """Utility function to recalculate (ra, dec) from (az, el)"""
+    location = targets.observer_as_earth_location(observer)
+    az_deg, el_deg = np.array(orig_target_str.split(), dtype=float)
+    [ra_hms,
+    dec_dms] = targets.altaz_to_radec(az_deg, el_deg,
+                                      location, timestamp,
+                                      as_string=True)
+    return ra_hms, dec_dms
+
 # -- Utility functions --
 
 
-def observe(session, target_info, **kwargs):
+def observe(session, observer, target_info, **kwargs):
     """Target observation functionality.
 
     Parameters
@@ -74,6 +87,16 @@ def observe(session, target_info, **kwargs):
     target = target_info["target"]
     duration = target_info["duration"]
     obs_type = target_info["obs_type"]
+
+    # update (Ra, Dec) for horizontal coordinates @ obs time
+    if ("azel" in target_info["target_str"]) and ("radec" in target.tags):
+        tgt_coord = target_info["target_str"].split('=')[-1].strip()
+        ra_hms, dec_dms = __update_azel__(observer, tgt_coord, time.time())
+        new_katpt = "{}, {}, {}, {}, ()".format(target_name,
+                                                ' '.join(target.tags),
+                                                ra_hms,
+                                                dec_dms)
+        target = katpoint.Target(new_katpt)
 
     # simple way to get telescope to slew to target
     if "slewonly" in kwargs:
@@ -572,7 +595,7 @@ def run_observation(opts, kat):
 
             # Go to first target before starting capture
             user_logger.info("Slewing to first target")
-            observe(session, obs_targets[0], slewonly=True)
+            observe(session, observer, obs_targets[0], slewonly=True)
             # Only start capturing once we are on target
             session.capture_start()
             user_logger.trace(
@@ -665,7 +688,7 @@ def run_observation(opts, kat):
                                          observer=cat_target.antenna.observer.copy(),
                                          horizon=opts.horizon,
                                          duration=tgt["duration"]):
-                            if observe(session, tgt, **obs_plan_params):
+                            if observe(session, observer, tgt, **obs_plan_params):
                                 targets_visible += True
                                 tgt["obs_cntr"] += 1
                                 tgt["last_observed"] = time.time()
@@ -704,7 +727,7 @@ def run_observation(opts, kat):
                             "observed {}".format(target["last_observed"])
                         )
 
-                        targets_visible += observe(session, target, **obs_plan_params)
+                        targets_visible += observe(session, observer, target, **obs_plan_params)
                         user_logger.trace(
                             "TRACE: observer after track\n {}".format(observer)
                         )
