@@ -72,7 +72,7 @@ def __update_azel__(observer, orig_target_str, timestamp):
 # -- Utility functions --
 
 
-def observe(session, observer, target_info, **kwargs):
+def observe(session, ref_antenna, target_info, **kwargs):
     """Target observation functionality.
 
     Parameters
@@ -91,12 +91,15 @@ def observe(session, observer, target_info, **kwargs):
     # update (Ra, Dec) for horizontal coordinates @ obs time
     if ("azel" in target_info["target_str"]) and ("radec" in target.tags):
         tgt_coord = target_info["target_str"].split('=')[-1].strip()
-        ra_hms, dec_dms = __update_azel__(observer, tgt_coord, time.time())
+        ra_hms, dec_dms = __update_azel__(ref_antenna.observer,
+                                          tgt_coord,
+                                          time.time())
         new_katpt = "{}, {}, {}, {}, ()".format(target_name,
                                                 ' '.join(target.tags),
                                                 ra_hms,
                                                 dec_dms)
-        target = katpoint.Target(new_katpt)
+        target.body._ra = ra_hms
+        target.body._dec = dec_dms
 
     # simple way to get telescope to slew to target
     if "slewonly" in kwargs:
@@ -140,6 +143,7 @@ def observe(session, observer, target_info, **kwargs):
     user_logger.trace("TRACE: performing {} observation on {}".format(obs_type, target))
     if "drift_scan" in obs_type:
         target_visible = scans.drift_scan(session,
+                                          ref_antenna,
                                           target,
                                           duration=duration,
                                           nd_period=nd_period,
@@ -458,7 +462,9 @@ def run_observation(opts, kat):
 
             # observer object handle to track the observation timing in a more user
             # friendly way
-            observer = catalogue._antenna.observer
+#             observer = catalogue._antenna.observer
+            ref_antenna = catalogue.antenna
+            observer = ref_antenna.observer
             start_datetime = timestamp2datetime(time.time())
             observer.date = ephem.Date(start_datetime)
             user_logger.trace(
@@ -598,7 +604,7 @@ def run_observation(opts, kat):
 
             # Go to first target before starting capture
             user_logger.info("Slewing to first target")
-            observe(session, observer, obs_targets[0], slewonly=True)
+            observe(session, ref_antenna, obs_targets[0], slewonly=True)
             # Only start capturing once we are on target
             session.capture_start()
             user_logger.trace(
@@ -690,7 +696,7 @@ def run_observation(opts, kat):
                                          observer=cat_target.antenna.observer.copy(),
                                          horizon=opts.horizon,
                                          duration=tgt["duration"]):
-                            if observe(session, observer, tgt, **obs_plan_params):
+                            if observe(session, ref_antenna, tgt, **obs_plan_params):
                                 targets_visible += True
                                 tgt["obs_cntr"] += 1
                                 tgt["last_observed"] = time.time()
@@ -729,7 +735,7 @@ def run_observation(opts, kat):
                             "observed {}".format(target["last_observed"])
                         )
 
-                        targets_visible += observe(session, observer, target, **obs_plan_params)
+                        targets_visible += observe(session, ref_antenna, target, **obs_plan_params)
                         user_logger.trace(
                             "TRACE: observer after track\n {}".format(observer)
                         )
