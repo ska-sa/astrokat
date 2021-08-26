@@ -705,7 +705,6 @@ def write_catalogue(filename, catalogue_header, katpoint_catalogue):
         for target in sources:
             fcat.write(target)
 
-
 # --write observation catalogue--
 
 
@@ -962,24 +961,25 @@ def main(creation_time,
     # targets to obtain calibrators for
     header = ""
     cal_targets = []
-    if len(target) > 2:
-        # input target from command line
-        target = [tgt.strip() for tgt in target]
-        target = ", ".join(
-            map(str, [target[0], "radec target", target[1], target[2]])
-        )
-        cal_targets = [katpoint.Target(target)]
-    elif len(target) < 2:
-        # input solar body from command line
-        solar_body = target[0].capitalize()
-        katpt_target = katpoint.Target("{}, special".format(solar_body))
-        cal_targets = [katpt_target]
-    elif len(target) == 2:
-        # input target from command line
-        target = [tgt.strip() for tgt in target]
-        target = ", ".join(
-            map(str, [target[0], "xephem target", target[1]]))
-        cal_targets = [katpoint.Target(target)]
+    if target is not None:
+        if len(target) > 2:
+            # input target from command line
+            target = [tgt.strip() for tgt in target]
+            target = ", ".join(
+                map(str, [target[0], "radec target", target[1], target[2]])
+            )
+            cal_targets = [katpoint.Target(target)]
+        elif len(target) < 2:
+            # input solar body from command line
+            solar_body = target[0].capitalize()
+            katpt_target = katpoint.Target("{}, special".format(solar_body))
+            cal_targets = [katpt_target]
+        else:  #if len(target) == 2
+            # input target from command line
+            target = [tgt.strip() for tgt in target]
+            target = ", ".join(
+                map(str, [target[0], "xephem target", target[1]]))
+            cal_targets = [katpoint.Target(target)]
     else:  # assume the targets are in a file
         if infile is None:
             raise RuntimeError('Specify --target or CSV catalogue --infile')
@@ -1124,6 +1124,14 @@ if __name__ == "__main__":
         target = args.xephem
     else:
         target = None
+
+    # check that files exists before continuing
+    if args.infile is not None:
+        if not os.path.isfile(args.infile):
+            raise RuntimeError('Input file {} does not exist'.format(args.infile))
+    if args.view is not None:
+        if not os.path.isfile(args.view):
+            raise RuntimeError('Catalogue file {} does not exist'.format(args.view))
 
     main(creation_time=args.datetime,
          horizon=args.horizon,
