@@ -1,0 +1,14 @@
+# Observation catalogue for proposal ID None
+# PI: None
+# Contact details: None
+instrument:
+  product: c856M32k
+  start_time: 2019-02-07 16:30:00
+durations:
+  obs_duration: 5400.0
+observation_loop:
+  - LST: 20:46-16:47
+    target_list:
+      - name=J0408-6545 | 0408-658, radec=4:08:20.38 -65:45:09.1, tags=bpcal fluxcal, duration=300.0, cadence=3600.0, model=(145.0 18000.0 -0.979 3.3662 -1.1216 0.0861)
+      - name=C/2002 Y1 | C/2002 Y1 (Juels-Holvorcem), xephem=C/2002 Y1~e~103.7816~166.2194~128.8232~242.5695~0~0.9970576~0~4/13.2508/2003~1/01/2000~g6.5~4~0 , tags=solarsys target, duration=900.0
+      - name=J0906-6829 | 0906-682, radec=9:06:52.44 -68:29:39.8, tags=gaincal, duration=90.0, model=(145.0 20000.0 0.768 1.3416 -0.6601 0.0573)
