@@ -44,6 +44,13 @@ setup(
     zip_safe=False,
     setup_requires=["katversion"],
     use_katversion=True,
-    install_requires=["astropy", "pyephem", "katpoint", "matplotlib", "numpy", "pyyaml"],
+    install_requires=[
+        "astropy",
+        "pyephem",
+        "katpoint<1.0",
+        "matplotlib",
+        "numpy",
+        "pyyaml",
+    ],
     extras_require={"live": ["katcorelib", "katconf"]},
 )
