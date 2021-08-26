@@ -115,7 +115,7 @@ def cli(prog):
     ex_group.add_argument(
         "--infile",
         type=str,
-        help="observation targets as CSV input file"
+        help="observation targets listed in CSV file"
     )
     ex_group.add_argument(
         "--target",
@@ -131,6 +131,14 @@ def cli(prog):
         metavar=("Name"),
         help="returns MeerKAT LST range for a solar body, "
              "assumed to be an Ephem special target",
+    )
+    ex_group.add_argument(
+        "--xephem",
+        nargs=2,
+        type=str,
+        metavar=("Name", "Ephemeris"),
+        help="returns MeerKAT LST range for a heliocentric elliptical orbit "
+             "using string in XEphem EDB database format to predict orbital position",
     )
     ex_group.add_argument(
         "--view",
@@ -954,18 +962,24 @@ def main(creation_time,
     # targets to obtain calibrators for
     header = ""
     cal_targets = []
-    if target is not None:
+    if len(target) > 2:
         # input target from command line
         target = [tgt.strip() for tgt in target]
         target = ", ".join(
             map(str, [target[0], "radec target", target[1], target[2]])
         )
         cal_targets = [katpoint.Target(target)]
-    elif args.body is not None:
+    elif len(target) < 2:
         # input solar body from command line
-        solar_body = args.body.capitalize()
+        solar_body = target[0].capitalize()
         katpt_target = katpoint.Target("{}, special".format(solar_body))
         cal_targets = [katpt_target]
+    elif len(target) == 2:
+        # input target from command line
+        target = [tgt.strip() for tgt in target]
+        target = ", ".join(
+            map(str, [target[0], "xephem target", target[1]]))
+        cal_targets = [katpoint.Target(target)]
     else:  # assume the targets are in a file
         if infile is None:
             raise RuntimeError('Specify --target or CSV catalogue --infile')
@@ -1102,11 +1116,20 @@ if __name__ == "__main__":
     header_info = {'proposal_id': args.prop_id,
                    'pi_name': args.pi,
                    'pi_contact': args.contact}
+    if args.target is not None:
+        target = args.target
+    elif args.body is not None:
+        target = [args.body]
+    elif args.xephem is not None:
+        target = args.xephem
+    else:
+        target = None
+
     main(creation_time=args.datetime,
          horizon=args.horizon,
          solar_angle=args.solar_angle,
          cal_tags=args.cal_tags,
-         target=args.target,
+         target=target,
          header_info=header_info,
          view_tags=args.view_tags,
          mkat_catalogues=args.cat_path,
@@ -1116,7 +1139,6 @@ if __name__ == "__main__":
          save_fig=args.save_fig,
          infile=args.infile,
          viewfile=args.view,
-         outfile=args.outfile,
-         )
+         outfile=args.outfile)
 
 # -fin-
