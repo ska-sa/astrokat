@@ -14,7 +14,7 @@ except ImportError:
     from .simulate import user_logger
 
 
-def drift_pointing_offset(target, duration=60.0):
+def drift_pointing_offset(ref_antenna, target, duration=60.0):
     """Drift pointing offset observation.
 
     Parameters
@@ -23,25 +23,25 @@ def drift_pointing_offset(target, duration=60.0):
     duration: float
 
     """
-    obs_start_ts = target.antenna.observer.date
+    obs_start_ts = ref_antenna.observer.date
     transit_time = obs_start_ts + duration / 2.0
     # Stationary transit point becomes new target
-    antenna = target.antenna
-    az, el = target.azel(timestamp=transit_time)
+    az, el = target.azel(timestamp=transit_time, antenna=ref_antenna)
     target = katpoint.construct_azel_target(katpoint.wrap_angle(az), el)
     # katpoint destructively set dates and times during calculation
     # restore datetime before continuing
-    target.antenna = antenna
+    target.antenna = ref_antenna
     target.antenna.observer.date = obs_start_ts
     return target
 
 
-def drift_scan(session, target, duration=60.0, nd_period=None, lead_time=None):
+def drift_scan(session, ref_antenna, target, duration=60.0, nd_period=None, lead_time=None):
     """Drift scan observation.
 
     Parameters
     ----------
     session: `CaptureSession`
+    ref_antenna: katpoint.Antenna
     target: katpoint.Target
     duration: float
         scan duration
@@ -53,7 +53,7 @@ def drift_scan(session, target, duration=60.0, nd_period=None, lead_time=None):
     """
     # trigger noise diode if set
     trigger(session.kat, duration=nd_period, lead_time=lead_time)
-    target = drift_pointing_offset(target, duration=duration)
+    target = drift_pointing_offset(ref_antenna, target, duration=duration)
     user_logger.info("Drift_scan observation for {} sec".format(duration))
     return session.track(target, duration=duration)
 
