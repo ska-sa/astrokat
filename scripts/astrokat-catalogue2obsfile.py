@@ -181,17 +181,20 @@ class UnpackCatalogue(object):
                 print("Could not unpack line:{}".format(line))
                 continue
             else:
-                if len(data_columns) < 3:  # special target definition
-                    [name, tags] = data_columns
-                    if 'special' not in tags:
-                        tags = 'special ' + tags
+                # data columns
+                # name, tags, x_coord, y_coord, flux
+                # if tag is special a solar planetary body is assumed
+                # if tag is xephem the target ephemeris must be given
+                [name, tags] = data_columns[:2]
+                if 'special' in tags:  # ephem solar body definition
                     x_coord = 'special'
                     y_coord = ''
-
-                elif len(data_columns) > 3:
-                    [name, tags, x_coord, y_coord] = data_columns[:4]
+                elif 'xephem' in tags:
+                    x_coord = data_columns[2]
+                    y_coord = ''
                 else:
-                    raise RuntimeError('Unknown target type')
+                    [name, tags, x_coord, y_coord] = data_columns[:4]
+
                 flux = None
                 if len(data_columns) > 4:
                     flux = " ".join(data_columns[4:])
@@ -206,6 +209,8 @@ class UnpackCatalogue(object):
                 prefix = "gal"
             elif tags.startswith("special"):
                 prefix = "special"
+            elif tags.startswith("xephem"):
+                prefix = "xephem"
             else:
                 prefix = "radec"
             if len(name) < 1:
@@ -258,6 +263,7 @@ class BuildObservation(object):
         'name=<name>, gal=<deg float>,<deg float>, tags=<tags>, duration=<sec>'
         'name=<name>, azel=<deg float>,<deg float>, tags=<tags>, duration=<sec>'
         'name=<name>, special=<ephem_name>, tags=<tags>, duration=<sec>'
+        'name=<name>, xephem=<EDB string>, tags=<tags>, duration=<sec>'
 
     """
 
@@ -356,7 +362,8 @@ if __name__ == "__main__":
             }
             instrument = vars(argparse.Namespace(**group_dict))
             break
-    for key in instrument.keys():
+    instrument_keys = list(instrument.keys())
+    for key in instrument_keys:
         if instrument[key] is None:
             del instrument[key]
 
@@ -366,16 +373,14 @@ if __name__ == "__main__":
         target_duration=args.target_duration,
         gaincal_duration=args.secondary_cal_duration,
         bpcal_duration=args.primary_cal_duration,
-        bpcal_interval=args.primary_cal_cadence,
-    )
+        bpcal_interval=args.primary_cal_cadence)
 
     obs_plan = BuildObservation(catalogue)
     # create observation configuration file
     obs_plan.configure(
         instrument=instrument,
         obs_duration=args.max_duration,
-        lst=args.lst
-    )
+        lst=args.lst)
     obs_plan.write_yaml(
         header=header,
         outfile=args.outfile,
