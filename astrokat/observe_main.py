@@ -446,10 +446,13 @@ def run_observation(opts, kat):
                 # add tag evaluation to identify catalogue targets
                 tags = tgt["target"].split(",")[1].strip()
                 for cat_tgt in catalogue:
-                    if name == cat_tgt.name and tags == " ".join(cat_tgt.tags):
-                        tgt["target"] = cat_tgt
-                        obs_tags.extend(cat_tgt.tags)
-                        break
+                    if name == cat_tgt.name:
+                        if ("special" in cat_tgt.tags
+                                or "xephem" in cat_tgt.tags
+                                or tags == " ".join(cat_tgt.tags)):
+                            tgt["target"] = cat_tgt
+                            obs_tags.extend(cat_tgt.tags)
+                            break
             obs_tags = list(set(obs_tags))
             cal_tags = [tag for tag in obs_tags if tag[-3:] == "cal"]
 
@@ -633,7 +636,6 @@ def run_observation(opts, kat):
                     visible = True
                     if type(katpt_target.body) is ephem.FixedBody:
                         visible = above_horizon(target=katpt_target.body.copy(),
-                                                # observer=katpt_target.antenna.observer.copy(),
                                                 observer=observer.copy(),
                                                 horizon=opts.horizon,
                                                 duration=target_duration)
@@ -917,6 +919,8 @@ def main(args):
     # horizontal coordinates (alt, az)
     #  for scans, the coordinates will be converted to enable delay tracking
     #  for tracks the coordinates will be left as is with no delay tracking
+    # planetary bodies are passed through to katpoint Target as is
+    # elliptical solar bodies such as comets are also passed through as katpoint Targets
     for obs_dict in opts.obs_plan_params['observation_loop']:
         start_ts = timestamp2datetime(time.time())
         if "durations" in opts.obs_plan_params:

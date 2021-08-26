@@ -50,7 +50,7 @@ tgt_desc = {
 # celestial targets, horizontal targets, galactic targets, solar system bodies
 # where the solar system bodies are planets and moons in our solar system that
 # do not follow standard celestial orbits.
-SUPPORTED_COORDINATE_TYPES = ["radec", "azel", "gal", "special"]
+SUPPORTED_COORDINATE_TYPES = ["radec", "azel", "gal", "special", "xephem"]
 
 
 # -- library function --
@@ -82,6 +82,19 @@ def radec_from_pointing_object(pointing,
         return pnt_radec.ra.rad, pnt_radec.dec.rad
     else:
         return pnt_radec.ra.deg, pnt_radec.dec.deg
+
+
+def unpack_target_coords(target_coord):
+    x = None
+    y = None
+    ctag = target_coord[0]
+    if ctag != "special":
+        if ctag != "xephem":
+            x = target_coord[1].split()[0].strip()
+            y = target_coord[1].split()[1].strip()
+        else:
+            x = target_coord[1].strip()
+    return ctag, x, y
 # -- library function --
 
 
@@ -333,19 +346,17 @@ def katpoint_target_string(target_str=None,
         # input string format: name=, radec=, tags=, duration=, ...
         target_dict = parse_target_string(target_str)
         name = target_dict["name"]
-        ctag = target_dict["coord"][0]
-        if ctag != "special":
-            x = target_dict["coord"][1].split()[0].strip()
-            y = target_dict["coord"][1].split()[1].strip()
+        ctag, x, y = unpack_target_coords(target_dict["coord"])
         tags = target_dict["tags"]
         flux_model = target_dict["flux_model"]
 
     target = "{}, {} {}".format(name,
                                 ctag,
                                 tags)
-    if x is not None and y is not None:
-        target += ", {}, {}, {}".format(x, y,
-                                        flux_model)
+    if x is not None:
+        target += ", {}".format(x)
+    if y is not None:
+        target += ", {}, {}".format(y, flux_model)
     return name, target
 
 
@@ -354,12 +365,7 @@ def build_target_tuple(target_dict):
     # When unpacking, katpoint's naming convention will be to use the first
     # name, or the name with the '*' if given. This unpacking mimics that
     # expected behaviour to ensure the target can be easily called by name
-    x = None
-    y = None
-    ctag = target_dict["coord"][0].strip()
-    if ctag != "special":
-        x = target_dict["coord"][1].split()[0].strip()
-        y = target_dict["coord"][1].split()[1].strip()
+    ctag, x, y = unpack_target_coords(target_dict["coord"])
     flux_model = target_dict["flux_model"]
     [name_list, katpoint_tgt] = katpoint_target_string(name=target_dict["name"],
                                                        ctag=ctag,
