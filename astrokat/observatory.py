@@ -179,7 +179,7 @@ class Observatory(object):
             Names and descriptions of target(s) which can be pointed at by an antenna
 
         """
-        name, target_item = katpoint_target_string(target_item)
+        name, target_item = katpoint_target_string(target_str=target_item)
         return self.set_target(target_item)
 
     def lst2hours(self, ephem_lst):
