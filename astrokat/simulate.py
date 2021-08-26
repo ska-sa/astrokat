@@ -16,6 +16,8 @@ from .utility import get_lst, datetime2timestamp, timestamp2datetime
 global simobserver
 simobserver = ephem.Observer()
 
+location = "ref, -30:42:39.8, 21:26:38.0, 1035.0, 0.0, , , 1.15"
+ref_antenna = katpoint.Antenna(location)
 
 # MeerKAT receptor parameters for azimuth and elevation slewing
 # (some from specifications, some from empirical data - see JIRA MT-1206).
@@ -309,6 +311,8 @@ class SimSession(object):
 
         """
         az, el = target.azel(simobserver.date)
+#         az, el = target.azel(timestamp=simobserver.date,
+#                              antenna=ref_antenna)
         az = katpoint.rad2deg(az)
         el = katpoint.rad2deg(el)
         return az, el
