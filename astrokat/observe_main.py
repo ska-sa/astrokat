@@ -1,7 +1,6 @@
 """Observation script and chronology check."""
 
 import ephem
-import katpoint
 import logging
 import numpy as np
 import os
@@ -64,9 +63,9 @@ def __update_azel__(observer, orig_target_str, timestamp):
     location = targets.observer_as_earth_location(observer)
     az_deg, el_deg = np.array(orig_target_str.split(), dtype=float)
     [ra_hms,
-    dec_dms] = targets.altaz_to_radec(az_deg, el_deg,
-                                      location, timestamp,
-                                      as_string=True)
+     dec_dms] = targets.altaz_to_radec(az_deg, el_deg,
+                                       location, timestamp,
+                                       as_string=True)
     return ra_hms, dec_dms
 
 # -- Utility functions --
@@ -94,10 +93,6 @@ def observe(session, ref_antenna, target_info, **kwargs):
         ra_hms, dec_dms = __update_azel__(ref_antenna.observer,
                                           tgt_coord,
                                           time.time())
-        new_katpt = "{}, {}, {}, {}, ()".format(target_name,
-                                                ' '.join(target.tags),
-                                                ra_hms,
-                                                dec_dms)
         target.body._ra = ra_hms
         target.body._dec = dec_dms
 
@@ -735,7 +730,10 @@ def run_observation(opts, kat):
                             "observed {}".format(target["last_observed"])
                         )
 
-                        targets_visible += observe(session, ref_antenna, target, **obs_plan_params)
+                        targets_visible += observe(session,
+                                                   ref_antenna,
+                                                   target,
+                                                   **obs_plan_params)
                         user_logger.trace(
                             "TRACE: observer after track\n {}".format(observer)
                         )
