@@ -974,7 +974,7 @@ def main(creation_time,
             solar_body = target[0].capitalize()
             katpt_target = katpoint.Target("{}, special".format(solar_body))
             cal_targets = [katpt_target]
-        else:  #if len(target) == 2
+        else:  # if len(target) == 2
             # input target from command line
             target = [tgt.strip() for tgt in target]
             target = ", ".join(
