@@ -314,8 +314,6 @@ class SimSession(object):
 
         """
         az, el = target.azel(simobserver.date)
-#         az, el = target.azel(timestamp=simobserver.date,
-#                              antenna=ref_antenna)
         az = katpoint.rad2deg(az)
         el = katpoint.rad2deg(el)
         return az, el
