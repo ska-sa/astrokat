@@ -43,7 +43,12 @@ def drift_pointing_offset(ref_antenna, target, duration=60.0):
     return target
 
 
-def drift_scan(session, ref_antenna, target, duration=60.0, nd_period=None, lead_time=None):
+def drift_scan(session,
+               ref_antenna,
+               target,
+               duration=60.0,
+               nd_period=None,
+               lead_time=None):
     """Drift scan observation.
 
     Parameters
