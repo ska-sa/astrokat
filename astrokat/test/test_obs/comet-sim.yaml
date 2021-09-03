@@ -3,8 +3,8 @@
 # Contact details: None
 instrument:
   product: c856M32k
-  start_time: 2019-02-07 16:30:00
 durations:
+  start_time: 2019-02-07 16:30:00
   obs_duration: 5400.0
 observation_loop:
   - LST: 20:46-16:47
