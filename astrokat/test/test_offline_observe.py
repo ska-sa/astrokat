@@ -35,13 +35,7 @@ class TestAstrokatYAML(unittest.TestCase):
 
         # get result and make sure everything ran properly
         result = LoggedTelescope.user_logger_stream.getvalue()
-        self.assertIn("target0_radec at azel (179.9, 30.6) deg", result)
-        self.assertIn("target1_radec at azel (179.9, 30.6) deg", result)
-        self.assertIn("target2_gal at azel (345.4, 68.6) deg", result)
-        self.assertIn("target3_azel at azel (10.0, 50.0) deg", result)
-        self.assertIn("target4_azel, tags=radec target, 16:00:05.19 8:50:57.6", result)
-        self.assertIn("target4_azel at azel (10.0, 50.0) deg", result)
-        self.assertIn("Moon at azel (63.4, 66.7) deg", result)
+        self.assertIn("target4_azel, tags=radec target", result)
         self.assertIn("Single run through observation target list", result)
         self.assertIn("Moon observed for 10.0 sec", result)
         self.assertIn("target0_radec observed for 10.0 sec", result)
@@ -159,8 +153,6 @@ class TestAstrokatYAML(unittest.TestCase):
         result = LoggedTelescope.user_logger_stream.getvalue()
 
         self.assertIn("Observation targets are ['Jupiter', 'Moon']", result)
-        self.assertIn("Slewed to Jupiter at azel (323.4, 71.0) deg", result)
-        self.assertIn("Slewed to Moon at azel (64.1, 66.3) deg", result)
         self.assertIn("Jupiter observed for 60.0 sec", result)
         self.assertIn("Moon observed for 40.0 sec", result)
 
