@@ -82,7 +82,7 @@ class TestAstrokatYAML(unittest.TestCase):
 
         self.assertTrue(
             simulate_messages_found or katcorelib_messages_found,
-            "Neither simulate nor katcorelib message found.")
+            "Neither simulate nor katcorelib message found."
         )
 
     def test_two_calib_sim(self):
@@ -214,7 +214,7 @@ class TestAstrokatYAML(unittest.TestCase):
 
         self.assertTrue(
             simulate_messages_found or katcorelib_messages_found,
-            "Neither simulate nor katcorelib message found.")
+            "Neither simulate nor katcorelib message found."
         )
 
     def test_below_horizon(self):
