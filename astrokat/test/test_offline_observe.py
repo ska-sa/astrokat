@@ -35,14 +35,55 @@ class TestAstrokatYAML(unittest.TestCase):
 
         # get result and make sure everything ran properly
         result = LoggedTelescope.user_logger_stream.getvalue()
-        self.assertIn("target4_azel, tags=radec target", result)
-        self.assertIn("Single run through observation target list", result)
-        self.assertIn("Moon observed for 10.0 sec", result)
-        self.assertIn("target0_radec observed for 10.0 sec", result)
-        self.assertIn("target1_radec observed for 10.0 sec", result)
-        self.assertIn("target2_gal observed for 10.0 sec", result)
-        self.assertIn("target3_azel observed for 10.0 sec", result)
-        self.assertIn("target4_azel observed for 10.0 sec", result)
+
+        # check if messages are in the output of simulated environment
+        sim_target0_msg_found = "target0_radec at azel (179.9, 30.6) deg" in result
+        sim_target1_msg_found = "target1_radec at azel (179.9, 30.6) deg" in result
+        sim_target2_msg_found = "target2_gal at azel (345.4, 68.6) deg" in result
+        sim_target3_msg_found = "target3_azel at azel (10.0, 50.0) deg" in result
+        sim_target4_radec_msg_found = (
+            "target4_azel, tags=radec target, 16:00:05.19 8:50:57.6" in result
+        )
+        sim_target4_msg_found = "target4_azel at azel (10.0, 50.0) deg" in result
+        sim_Moon_msg_found = "Moon at azel (63.4, 66.7) deg" in result
+
+        # check messages are in the ouput of katcorelib
+        corelib_target0_msg_found = "target0_radec observed for 10.0 sec" in result
+        corelib_run_msg_found = "Single run through observation target list" in result
+        corelib_target1_msg_found = "target1_radec observed for 10.0 sec" in result
+        corelib_target2_msg_found = "target2_gal observed for 10.0 sec" in result
+        corelib_target3_msg_found = "target3_azel observed for 10.0 sec" in result
+        corelib_target4_msg_found = "target4_azel observed for 10.0 sec" in result
+        corelib_Moon_msg_found = "Moon observed for 10.0 sec" in result
+
+        # bundle sim message into one list
+        simulate_message_found = [
+            sim_target0_msg_found,
+            sim_target1_msg_found,
+            sim_target2_msg_found,
+            sim_target3_msg_found,
+            sim_target4_radec_msg_found,
+            sim_target4_msg_found,
+            sim_Moon_msg_found,
+        ]
+
+        katcorelib_message_found = [
+            corelib_target0_msg_found,
+            corelib_run_msg_found,
+            corelib_target1_msg_found,
+            corelib_target2_msg_found,
+            corelib_target3_msg_found,
+            corelib_target4_msg_found,
+            corelib_Moon_msg_found,
+        ]
+
+        simulate_messages_found = all(simulate_message_found)
+        katcorelib_messages_found = all(katcorelib_message_found)
+
+        self.assertTrue(
+            simulate_messages_found or katcorelib_messages_found,
+            "Neither simulate nor katcorelib message found.")
+        )
 
     def test_two_calib_sim(self):
         """Tests two calibrators sim."""
@@ -152,9 +193,29 @@ class TestAstrokatYAML(unittest.TestCase):
         # get result and make sure everything ran properly
         result = LoggedTelescope.user_logger_stream.getvalue()
 
-        self.assertIn("Observation targets are ['Jupiter', 'Moon']", result)
-        self.assertIn("Jupiter observed for 60.0 sec", result)
-        self.assertIn("Moon observed for 40.0 sec", result)
+        sim_Jupiter_msg_found = "Slewed to Jupiter at azel (323.4, 71.0) deg" in result
+        sim_Moon_msg_found = "Slewed to Moon at azel (64.1, 66.3) deg" in result
+
+        corelib_Jupiter_Moon_msg_found = (
+            "Observation targets are ['Jupiter', 'Moon']" in result
+        )
+        corelib_Jupiter_msg_found = "Jupiter observed for 60.0 sec" in result
+        corelib_Moon_msg_found = "Moon observed for 40.0 sec" in result
+
+        simulate_message_found = [sim_Jupiter_msg_found, sim_Moon_msg_found]
+        katcorelib_message_found = [
+            corelib_Jupiter_Moon_msg_found,
+            corelib_Jupiter_msg_found,
+            corelib_Moon_msg_found
+        ]
+
+        simulate_messages_found = all(simulate_message_found)
+        katcorelib_messages_found = all(katcorelib_message_found)
+
+        self.assertTrue(
+            simulate_messages_found or katcorelib_messages_found,
+            "Neither simulate nor katcorelib message found.")
+        )
 
     def test_below_horizon(self):
         """Below horizon test."""
