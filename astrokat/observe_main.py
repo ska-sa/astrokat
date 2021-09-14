@@ -58,7 +58,7 @@ def __next_day__(start_lst, end_lst, local_lst):
         ephem.hours(local_lst) > ephem.hours(str(end_lst)))
 
 
-def __update_azel__(observer, orig_target_str, timestamp):
+def __get_radec_from_azel__(observer, orig_target_str, timestamp):
     """Utility function to recalculate (ra, dec) from (az, el)"""
     location = targets.observer_as_earth_location(observer)
     az_deg, el_deg = np.array(orig_target_str.split(), dtype=float)
@@ -90,7 +90,7 @@ def observe(session, ref_antenna, target_info, **kwargs):
     # update (Ra, Dec) for horizontal coordinates @ obs time
     if ("azel" in target_info["target_str"]) and ("radec" in target.tags):
         tgt_coord = target_info["target_str"].split('=')[-1].strip()
-        ra_hms, dec_dms = __update_azel__(ref_antenna.observer,
+        ra_hms, dec_dms = __get_radec_from_azel__(ref_antenna.observer,
                                           tgt_coord,
                                           time.time())
         target.body._ra = ra_hms
