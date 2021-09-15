@@ -90,9 +90,10 @@ def observe(session, ref_antenna, target_info, **kwargs):
     # update (Ra, Dec) for horizontal coordinates @ obs time
     if ("azel" in target_info["target_str"]) and ("radec" in target.tags):
         tgt_coord = target_info["target_str"].split('=')[-1].strip()
-        ra_hms, dec_dms = __get_radec_from_azel__(ref_antenna.observer,
-                                          tgt_coord,
-                                          time.time())
+        ra_hms, dec_dms = __get_radec_from_azel__(
+            ref_antenna.observer, tgt_coord, time.time()
+        )
+
         target.body._ra = ra_hms
         target.body._dec = dec_dms
 
