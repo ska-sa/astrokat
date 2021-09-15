@@ -36,53 +36,82 @@ class TestAstrokatYAML(unittest.TestCase):
         # get result and make sure everything ran properly
         result = LoggedTelescope.user_logger_stream.getvalue()
 
-        # check if messages are in the output of simulated environment
-        sim_target0_msg_found = "target0_radec at azel (179.9, 30.6) deg" in result
-        sim_target1_msg_found = "target1_radec at azel (179.9, 30.6) deg" in result
-        sim_target2_msg_found = "target2_gal at azel (345.4, 68.6) deg" in result
-        sim_target3_msg_found = "target3_azel at azel (10.0, 50.0) deg" in result
-        sim_target4_radec_msg_found = (
-            "target4_azel, tags=radec target, 16:00:05.19 8:50:57.6" in result
+        self.assert_started_target_track(
+            "target0_radec", duration=10.0, az=179.9, el=30.6, logs=result
         )
-        sim_target4_msg_found = "target4_azel at azel (10.0, 50.0) deg" in result
-        sim_Moon_msg_found = "Moon at azel (63.4, 66.7) deg" in result
+        self.assert_started_target_track(
+            "target1_radec", duration=10.0, az=179.9, el=30.6, logs=result
+        )
+        self.assert_started_target_track(
+            "target2_gal", duration=10.0, az=345.4, el=68.6, logs=result
+        )
+        self.assert_started_target_track(
+            "target3_azel", duration=10.0, az=10.0, el=50.0, logs=result
+        )
+        self.assert_started_target_scan(
+            "target4_azel",
+            duration=10.0,
+            az=10.0,
+            el=50.0,
+            sim_radec="16:00:05.19 8:50:57.6",
+            corelib_radec="15:59:15.06 8:50:58.7",
+            log=result
+        )
+        self.assert_started_target_track(
+            "Moon", duration=10.0, az=63.4, el=66.7, log=result
+        )
 
-        # check messages are in the ouput of katcorelib
-        corelib_target0_msg_found = "target0_radec observed for 10.0 sec" in result
-        corelib_run_msg_found = "Single run through observation target list" in result
-        corelib_target1_msg_found = "target1_radec observed for 10.0 sec" in result
-        corelib_target2_msg_found = "target2_gal observed for 10.0 sec" in result
-        corelib_target3_msg_found = "target3_azel observed for 10.0 sec" in result
-        corelib_target4_msg_found = "target4_azel observed for 10.0 sec" in result
-        corelib_Moon_msg_found = "Moon observed for 10.0 sec" in result
+        self.assertIn("Single run through observation target list", result)
+        self.assertIn("Moon observed for 10.0 sec", result)
+        self.assertIn("target0_radec observed for 10.0 sec", result)
+        self.assertIn("target1_radec observed for 10.0 sec", result)
+        self.assertIn("target2_gal observed for 10.0 sec", result)
+        self.assertIn("target3_azel observed for 10.0 sec", result)
+        self.assertIn("target4_azel observed for 10.0 sec", result)
 
-        # bundle sim message into one list
-        simulate_message_found = [
-            sim_target0_msg_found,
-            sim_target1_msg_found,
-            sim_target2_msg_found,
-            sim_target3_msg_found,
-            sim_target4_radec_msg_found,
-            sim_target4_msg_found,
-            sim_Moon_msg_found,
-        ]
-
-        katcorelib_message_found = [
-            corelib_target0_msg_found,
-            corelib_run_msg_found,
-            corelib_target1_msg_found,
-            corelib_target2_msg_found,
-            corelib_target3_msg_found,
-            corelib_target4_msg_found,
-            corelib_Moon_msg_found,
-        ]
-
-        simulate_messages_found = all(simulate_message_found)
-        katcorelib_messages_found = all(katcorelib_message_found)
-
+    def assert_started_target_track(self, target_string, duration, az, el, logs):
+        simulate_message = "Slewed to {} at azel ({:.1f}, {:.1f}) deg".format(
+            target_string, az, el
+        )
+        katcorelib_message = "Initiating {:g}-second track on target {!r}".format(
+            duration, target_string
+        )
+        simulated_message_found = simulate_message in logs
+        katcorelib_message_found = katcorelib_message in logs
         self.assertTrue(
-            simulate_messages_found or katcorelib_messages_found,
-            "Neither simulate nor katcorelib message found."
+            simulated_message_found or katcorelib_message_found,
+            "Neither simulate {!r} nor katcorelib {!r} message found.".format(
+                simulate_message, katcorelib_message)
+        )
+
+    def assert_started_target_scan(
+        self, target_string, duration, az, el, sim_radec, corelib_radec, logs
+    ):
+        simulate_message = "Slewed to {} at azel ({:.1f}, {:.1f}) deg".format(
+            target_string, az, el
+        )
+        katcorelib_message = (
+            "Initiating {:g}-second scan across target {!r}".format(
+                duration, target_string
+            )
+        )
+        simulate_radec_message = "{}, tags=radec target, {}".format(
+            target_string, sim_radec
+        )
+        katcorelib_radec_message = "{}, tags=radec target, {}".format(
+            target_string, corelib_radec
+        )
+        simulated_messages_found = (
+            simulate_message in logs and simulate_radec_message in logs
+        )
+        katcorelib_messages_found = (
+            katcorelib_message in logs and katcorelib_radec_message in logs
+        )
+        self.assertTrue(
+            simulated_messages_found or katcorelib_messages_found,
+            "Neither simulate {!r} nor katcorelib {!r} message found.".format(
+                simulate_message, katcorelib_message
+            ),
         )
 
     def test_two_calib_sim(self):
@@ -187,7 +216,7 @@ class TestAstrokatYAML(unittest.TestCase):
         self.assertIn("T4R02C04 observed for 360.0 sec", result)
 
     def test_solar_body(self):
-        """Special target observation of solar system body"""
+        """Special target observation of solar system body."""
         execute_observe_main("test_obs/solar-sim.yaml")
 
         # get result and make sure everything ran properly
