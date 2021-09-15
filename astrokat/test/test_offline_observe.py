@@ -55,10 +55,10 @@ class TestAstrokatYAML(unittest.TestCase):
             el=50.0,
             sim_radec="16:00:05.19 8:50:57.6",
             corelib_radec="15:59:15.06 8:50:58.7",
-            log=result
+            logs=result
         )
         self.assert_started_target_track(
-            "Moon", duration=10.0, az=63.4, el=66.7, log=result
+            "Moon", duration=10.0, az=63.4, el=66.7, logs=result
         )
 
         self.assertIn("Single run through observation target list", result)
@@ -223,10 +223,10 @@ class TestAstrokatYAML(unittest.TestCase):
         result = LoggedTelescope.user_logger_stream.getvalue()
 
         self.assert_started_target_track(
-            "Jupiter", duration=10.0, az=323.4, el=71.0, logs=result
+            "Jupiter", duration=60.0, az=323.4, el=71.0, logs=result
         )
         self.assert_started_target_track(
-            "Moon", duration=10.0, az=64.1, el=66.3, logs=result
+            "Moon", duration=40.0, az=64.1, el=66.3, logs=result
         )
 
         self.assertIn("Observation targets are ['Jupiter', 'Moon']", result)
