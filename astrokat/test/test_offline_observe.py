@@ -222,29 +222,16 @@ class TestAstrokatYAML(unittest.TestCase):
         # get result and make sure everything ran properly
         result = LoggedTelescope.user_logger_stream.getvalue()
 
-        sim_Jupiter_msg_found = "Slewed to Jupiter at azel (323.4, 71.0) deg" in result
-        sim_Moon_msg_found = "Slewed to Moon at azel (64.1, 66.3) deg" in result
-
-        corelib_Jupiter_Moon_msg_found = (
-            "Observation targets are ['Jupiter', 'Moon']" in result
+        self.assert_started_target_track(
+            "Jupiter", duration=10.0, az=323.4, el=71.0, logs=result
         )
-        corelib_Jupiter_msg_found = "Jupiter observed for 60.0 sec" in result
-        corelib_Moon_msg_found = "Moon observed for 40.0 sec" in result
-
-        simulate_message_found = [sim_Jupiter_msg_found, sim_Moon_msg_found]
-        katcorelib_message_found = [
-            corelib_Jupiter_Moon_msg_found,
-            corelib_Jupiter_msg_found,
-            corelib_Moon_msg_found
-        ]
-
-        simulate_messages_found = all(simulate_message_found)
-        katcorelib_messages_found = all(katcorelib_message_found)
-
-        self.assertTrue(
-            simulate_messages_found or katcorelib_messages_found,
-            "Neither simulate nor katcorelib message found."
+        self.assert_started_target_track(
+            "Moon", duration=10.0, az=64.1, el=66.3, logs=result
         )
+
+        self.assertIn("Observation targets are ['Jupiter', 'Moon']", result)
+        self.assertIn("Jupiter observed for 60.0 sec", result)
+        self.assertIn("Moon observed for 40.0 sec", result)
 
     def test_below_horizon(self):
         """Below horizon test."""
