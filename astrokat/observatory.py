@@ -10,7 +10,7 @@ import os
 
 from datetime import datetime, timedelta
 
-from .simulate import user_logger, setobserver
+from .simulate import user_logger, setobserver, MEERKAT_REFERENCE_LOCATION
 from .targets import katpoint_target_string
 
 try:
@@ -38,7 +38,7 @@ try:
 
 except (ImportError, ValueError):
     # default reference position for MKAT array
-    _ref_location = "ref, -30:42:39.8, 21:26:38.0, 1035.0, 0.0, , , 1.15"
+    _ref_location = MEERKAT_REFERENCE_LOCATION
     _node_config_available = False
 else:
     # default reference position for MKAT array from katconf
