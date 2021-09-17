@@ -814,10 +814,9 @@ def run_observation(opts, kat):
                 if next_start_lst is not None:
                     check_local_lst = observer.sidereal_time()
                     if (check_local_lst > next_start_lst) or (
-                        not _next_day(next_start_lst,
-                                         next_end_lst,
-                                         check_local_lst)):
-                        user_logger.info('Moving to next LST loop')
+                        not _next_day(next_start_lst, next_end_lst, check_local_lst)
+                    ):
+                        user_logger.info("Moving to next LST loop")
                         done = True
 
                 # End if there is nothing to do
