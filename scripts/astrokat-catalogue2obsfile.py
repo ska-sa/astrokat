@@ -289,7 +289,7 @@ class BuildObservation(object):
         """
         obs_plan = {}
         # subarray specific setup options
-        if len(instrument) > 0:
+        if instrument is not None and len(instrument) > 0:
             obs_plan["instrument"] = instrument
         # set observation duration if specified
         if obs_duration is not None:
