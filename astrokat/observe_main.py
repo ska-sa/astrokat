@@ -39,26 +39,26 @@ DUMP_RATE_TOLERANCE = 0.002
 
 
 # -- Utility functions --
-def __horizontal_coordinates__(target, observer, datetime_):
+def _horizontal_coordinates(target, observer, datetime_):
     """Utility function to calculate ephem horizontal coordinates"""
     observer.date = ephem.date(datetime_)
     target.compute(observer)
     return target.az, target.alt
 
 
-def __same_day__(start_lst, end_lst, local_lst):
+def _same_day(start_lst, end_lst, local_lst):
     """Utility function to check LST ranges ending before midnight"""
     return (ephem.hours(local_lst) >= ephem.hours(str(start_lst))) and (
         ephem.hours(local_lst) < ephem.hours(str(end_lst)))
 
 
-def __next_day__(start_lst, end_lst, local_lst):
+def _next_day(start_lst, end_lst, local_lst):
     """Utility function to check LST ranges ending after midnight"""
     return (ephem.hours(local_lst) < ephem.hours(str(start_lst))) and (
         ephem.hours(local_lst) > ephem.hours(str(end_lst)))
 
 
-def __get_radec_from_azel__(observer, orig_target_str, timestamp):
+def _get_radec_from_azel(observer, orig_target_str, timestamp):
     """Utility function to recalculate (ra, dec) from (az, el)"""
     location = targets.observer_as_earth_location(observer)
     az_deg, el_deg = np.array(orig_target_str.split(), dtype=float)
@@ -90,7 +90,7 @@ def observe(session, ref_antenna, target_info, **kwargs):
     # update (Ra, Dec) for horizontal coordinates @ obs time
     if ("azel" in target_info["target_str"]) and ("radec" in target.tags):
         tgt_coord = target_info["target_str"].split('=')[-1].strip()
-        ra_hms, dec_dms = __get_radec_from_azel__(
+        ra_hms, dec_dms = _get_radec_from_azel(
             ref_antenna.observer, tgt_coord, time.time()
         )
 
@@ -239,7 +239,7 @@ def above_horizon(target,
     # must be celestial target (ra, dec)
     # check that target is visible at start of track
     start_ = timestamp2datetime(time.time())
-    [azim, elev] = __horizontal_coordinates__(target,
+    [azim, elev] = _horizontal_coordinates(target,
                                               observer,
                                               start_)
     user_logger.trace(
@@ -251,7 +251,7 @@ def above_horizon(target,
     # check that target will be visible at end of track
     if duration:
         end_ = timestamp2datetime(time.time() + duration)
-        [azim, elev] = __horizontal_coordinates__(target,
+        [azim, elev] = _horizontal_coordinates(target,
                                                   observer,
                                                   end_)
         user_logger.trace(
@@ -501,7 +501,7 @@ def run_observation(opts, kat):
                       ephem.hours(str(start_lst)), ephem.hours(str(end_lst)))
             if float(start_lst) < end_lst:
                 # lst ends before midnight
-                if not __same_day__(start_lst, end_lst, local_lst):
+                if not _same_day(start_lst, end_lst, local_lst):
                     if obs_cntr < nr_obs_loops - 1:
                         user_logger.info(log_msg)
                     else:
@@ -509,7 +509,7 @@ def run_observation(opts, kat):
                     continue
             else:
                 # lst ends after midnight
-                if __next_day__(start_lst, end_lst, local_lst):
+                if _next_day(start_lst, end_lst, local_lst):
                     if obs_cntr < nr_obs_loops - 1:
                         user_logger.info(log_msg)
                     else:
@@ -814,7 +814,7 @@ def run_observation(opts, kat):
                 if next_start_lst is not None:
                     check_local_lst = observer.sidereal_time()
                     if (check_local_lst > next_start_lst) or (
-                        not __next_day__(next_start_lst,
+                        not _next_day(next_start_lst,
                                          next_end_lst,
                                          check_local_lst)):
                         user_logger.info('Moving to next LST loop')
