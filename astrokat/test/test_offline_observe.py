@@ -35,11 +35,84 @@ class TestAstrokatYAML(unittest.TestCase):
 
         # get result and make sure everything ran properly
         result = LoggedTelescope.user_logger_stream.getvalue()
+
+        self.assert_started_target_track(
+            "target0_radec", duration=10.0, az=179.9, el=30.6, logs=result
+        )
+        self.assert_started_target_track(
+            "target1_radec", duration=10.0, az=179.9, el=30.6, logs=result
+        )
+        self.assert_started_target_track(
+            "target2_gal", duration=10.0, az=345.4, el=68.6, logs=result
+        )
+        self.assert_started_target_track(
+            "target3_azel", duration=10.0, az=10.0, el=50.0, logs=result
+        )
+        self.assert_started_target_scan(
+            "target4_azel",
+            duration=10.0,
+            az=10.0,
+            el=50.0,
+            sim_radec="16:00:05.19 8:50:57.6",
+            corelib_radec="15:59:15.06 8:50:58.7",
+            logs=result
+        )
+        self.assert_started_target_track(
+            "Moon", duration=10.0, az=63.4, el=66.7, logs=result
+        )
+
         self.assertIn("Single run through observation target list", result)
+        self.assertIn("Moon observed for 10.0 sec", result)
         self.assertIn("target0_radec observed for 10.0 sec", result)
-        self.assertIn("target1_gal observed for 10.0 sec", result)
-        self.assertIn("target2_azel observed for 10.0 sec", result)
-        self.assertIn("target3_azel, tags=radec target, 15:56:30.60 8:51:02.5", result)
+        self.assertIn("target1_radec observed for 10.0 sec", result)
+        self.assertIn("target2_gal observed for 10.0 sec", result)
+        self.assertIn("target3_azel observed for 10.0 sec", result)
+        self.assertIn("target4_azel observed for 10.0 sec", result)
+
+    def assert_started_target_track(self, target_string, duration, az, el, logs):
+        simulate_message = "Slewed to {} at azel ({:.1f}, {:.1f}) deg".format(
+            target_string, az, el
+        )
+        katcorelib_message = "Initiating {:g}-second track on target {!r}".format(
+            duration, target_string
+        )
+        simulated_message_found = simulate_message in logs
+        katcorelib_message_found = katcorelib_message in logs
+        self.assertTrue(
+            simulated_message_found or katcorelib_message_found,
+            "Neither simulate {!r} nor katcorelib {!r} message found.".format(
+                simulate_message, katcorelib_message)
+        )
+
+    def assert_started_target_scan(
+        self, target_string, duration, az, el, sim_radec, corelib_radec, logs
+    ):
+        simulate_message = "Slewed to {} at azel ({:.1f}, {:.1f}) deg".format(
+            target_string, az, el
+        )
+        katcorelib_message = (
+            "Initiating {:g}-second scan across target {!r}".format(
+                duration, target_string
+            )
+        )
+        simulate_radec_message = "{}, tags=radec target, {}".format(
+            target_string, sim_radec
+        )
+        katcorelib_radec_message = "{}, tags=radec target, {}".format(
+            target_string, corelib_radec
+        )
+        simulated_messages_found = (
+            simulate_message in logs and simulate_radec_message in logs
+        )
+        katcorelib_messages_found = (
+            katcorelib_message in logs and katcorelib_radec_message in logs
+        )
+        self.assertTrue(
+            simulated_messages_found or katcorelib_messages_found,
+            "Neither simulate {!r} nor katcorelib {!r} message found.".format(
+                simulate_message, katcorelib_message
+            ),
+        )
 
     def test_two_calib_sim(self):
         """Tests two calibrators sim."""
@@ -141,6 +214,24 @@ class TestAstrokatYAML(unittest.TestCase):
         # for slew time discrepancies
         self.assertIn("T4R02C02 observed", result)
         self.assertIn("T4R02C04 observed for 360.0 sec", result)
+
+    def test_solar_body(self):
+        """Special target observation of solar system body."""
+        execute_observe_main("test_obs/solar-sim.yaml")
+
+        # get result and make sure everything ran properly
+        result = LoggedTelescope.user_logger_stream.getvalue()
+
+        self.assert_started_target_track(
+            "Jupiter", duration=60.0, az=323.4, el=71.0, logs=result
+        )
+        self.assert_started_target_track(
+            "Moon", duration=40.0, az=64.1, el=66.3, logs=result
+        )
+
+        self.assertIn("Observation targets are ['Jupiter', 'Moon']", result)
+        self.assertIn("Jupiter observed for 60.0 sec", result)
+        self.assertIn("Moon observed for 40.0 sec", result)
 
     def test_below_horizon(self):
         """Below horizon test."""

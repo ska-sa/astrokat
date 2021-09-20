@@ -7,7 +7,6 @@ instrument:
   integration_time: 2
 durations:
   start_time: 2018-10-31 14:00
-  obs_duration: 120.
 scan:
   start: -3.0,0.0
   end: 3.0,0.0

@@ -16,6 +16,8 @@ from .utility import get_lst, datetime2timestamp, timestamp2datetime
 global simobserver
 simobserver = ephem.Observer()
 
+MEERKAT_REFERENCE_LOCATION = "ref, -30:42:39.8, 21:26:38.0, 1035.0, 0.0, , , 1.15"
+ref_antenna = katpoint.Antenna(MEERKAT_REFERENCE_LOCATION)
 
 # MeerKAT receptor parameters for azimuth and elevation slewing
 # (some from specifications, some from empirical data - see JIRA MT-1206).

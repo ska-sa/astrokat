@@ -11,6 +11,7 @@ from mock import patch
 from astrokat import scans
 from .testutils import LoggedTelescope, execute_observe_main
 
+
 @patch("astrokat.observe_main.Telescope", LoggedTelescope)
 class TestAstrokatYAML(unittest.TestCase):
     """Tests astrokat yaml."""

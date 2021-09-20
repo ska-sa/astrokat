@@ -7,7 +7,6 @@ from astrokat import Observatory, __version__
 import argparse
 import sys
 
-
 from contextlib import contextmanager
 
 
@@ -159,74 +158,97 @@ class UnpackCatalogue(object):
             Duration on gain calibrator
         bpcal_duration: float
             Duration on bandpass calibrator
-        bpcal_interval: flat
+        bpcal_interval: float
             How frequent to visit the bandpass calibrator
 
         """
         target_list = []
         header = ""
         with open(self.infile, "r") as fin:
-            for idx, line in enumerate(fin.readlines()):
-                # keep header information
-                if line[0] == "#":
-                    header += line
-                    continue
-                # skip blank lines
-                if len(line) < 2:
-                    continue
-                try:
-                    # unpack data columns
-                    data_columns = [each.strip() for each in line.strip().split(",")]
-                except ValueError:
-                    print("Could not unpack line:{}".format(line))
-                    continue
+            info = fin.readlines()
+        for idx, line in enumerate(info):
+            # keep header information
+            if line[0] == "#":
+                header += line
+                continue
+            # skip blank lines
+            if len(line) < 2:
+                continue
+            try:
+                # unpack data columns
+                data_columns = [each.strip() for each in line.strip().split(",")]
+            except ValueError:
+                print("Could not unpack line:{}".format(line))
+                continue
+            else:
+                # data columns
+                # name, tags, x_coord, y_coord, flux
+                # if tag is special a solar planetary body is assumed
+                # if tag is xephem the target ephemeris must be given
+                [name, tags] = data_columns[:2]
+                if 'special' in tags:  # ephem solar body definition
+                    x_coord = 'special'
+                    y_coord = ''
+                elif 'xephem' in tags:
+                    x_coord = data_columns[2]
+                    y_coord = ''
                 else:
-                    [name, tags, ra, dec] = data_columns[:4]
-                    flux = None
-                    if len(data_columns) > 4:
-                        flux = " ".join(data_columns[4:])
-                        # skip empty brackets it means nothing
-                        if len(flux[1:-1]) < 1:
-                            flux = None
+                    [name, tags, x_coord, y_coord] = data_columns[:4]
 
-                tags = self.tidy_tags(tags.strip())
-                if tags.startswith("azel"):
-                    prefix = "azel"
-                elif tags.startswith("gal"):
-                    prefix = "gal"
-                else:
-                    prefix = "radec"
-                if len(name) < 1:
-                    name = "target{}_{}".format(idx, prefix)
-                target_items = [
-                    name,
-                    prefix,
-                    " ".join([ra, dec]),
-                    tags[len(prefix):].strip(),
-                ]
+                flux = None
+                if len(data_columns) > 4:
+                    flux = " ".join(data_columns[4:])
+                    # skip empty brackets it means nothing
+                    if len(flux[1:-1]) < 1:
+                        flux = None
 
-                target_spec = "name={}, {}={}, tags={}, duration={}"
-                cadence = ", cadence={}"
-                flux_model = ", model={}"
-                if "target" in tags:
-                    target_items.append(target_duration)
-                elif "gaincal" in tags:
+            tags = self.tidy_tags(tags.strip())
+            if tags.startswith("azel"):
+                prefix = "azel"
+            elif tags.startswith("gal"):
+                prefix = "gal"
+            elif tags.startswith("special"):
+                prefix = "special"
+            elif tags.startswith("xephem"):
+                prefix = "xephem"
+            else:
+                prefix = "radec"
+            if len(name) < 1:
+                name = "target{}_{}".format(idx, prefix)
+
+            target_items = [
+                name,
+                prefix,
+                " ".join([x_coord, y_coord]),
+                tags[len(prefix):].strip(),
+            ]
+
+            target_spec = "name={}, {}={}, tags={}, duration={}"
+            cadence = ", cadence={}"
+            flux_model = ", model={}"
+            if "cal" in tags:
+                if "gain" in tags or "delay" in tags:
+                    # secondary calibrators
                     target_items.append(gaincal_duration)
                 else:
+                    # primary calibrators
                     target_items.append(bpcal_duration)
                     if bpcal_interval is not None:
                         target_spec += cadence
                         target_items.append(bpcal_interval)
-                if flux is not None:
-                    target_spec += flux_model
-                    target_items.append(flux)
-                try:
-                    target = target_spec.format(*target_items)
-                except IndexError:
-                    msg = "Incorrect target definition\n"
-                    msg += "Verify line: {}".format(line.strip())
-                    raise RuntimeError(msg)
-                target_list.append(target)
+            else:
+                target_items.append(target_duration)
+            if flux is not None:
+                target_spec += flux_model
+                target_items.append(flux)
+
+            try:
+                target = target_spec.format(*target_items)
+            except IndexError:
+                msg = "Incorrect target definition\n"
+                msg += "Verify line: {}".format(line.strip())
+                raise RuntimeError(msg)
+            target_list.append(target)
         return header, target_list
 
 
@@ -238,6 +260,10 @@ class BuildObservation(object):
     target_list: list
         A list of targets with the format
         'name=<name>, radec=<HH:MM:SS.f>,<DD:MM:SS.f>, tags=<tags>, duration=<sec>'
+        'name=<name>, gal=<deg float>,<deg float>, tags=<tags>, duration=<sec>'
+        'name=<name>, azel=<deg float>,<deg float>, tags=<tags>, duration=<sec>'
+        'name=<name>, special=<ephem_name>, tags=<tags>, duration=<sec>'
+        'name=<name>, xephem=<EDB string>, tags=<tags>, duration=<sec>'
 
     """
 
@@ -245,7 +271,10 @@ class BuildObservation(object):
         self.target_list = target_list
         self.configuration = None
 
-    def configure(self, instrument={}, obs_duration=None, lst=None):
+    def configure(self,
+                  instrument=None,
+                  obs_duration=None,
+                  lst=None):
         """Set up of the MeerKAT telescope for running observation.
 
         Parameters
@@ -260,7 +289,7 @@ class BuildObservation(object):
         """
         obs_plan = {}
         # subarray specific setup options
-        if len(instrument) > 0:
+        if instrument is not None and len(instrument) > 0:
             obs_plan["instrument"] = instrument
         # set observation duration if specified
         if obs_duration is not None:
@@ -273,11 +302,15 @@ class BuildObservation(object):
         if lst is None:
             lst = "{}-{}".format(start_lst, end_lst)
         # observational setup
-        obs_plan["observation_loop"] = [{"lst": lst, "target_list": self.target_list}]
+        obs_plan["observation_loop"] = [{"lst": lst,
+                                         "target_list": self.target_list}]
         self.configuration = obs_plan
         return obs_plan
 
-    def write_yaml(self, header=None, configuration=None, outfile="obs_config.yaml"):
+    def write_yaml(self,
+                   header=None,
+                   configuration=None,
+                   outfile=None):
         """Write the yaml observation file.
 
         Returns
@@ -329,7 +362,8 @@ if __name__ == "__main__":
             }
             instrument = vars(argparse.Namespace(**group_dict))
             break
-    for key in instrument.keys():
+    instrument_keys = list(instrument.keys())
+    for key in instrument_keys:
         if instrument[key] is None:
             del instrument[key]
 
@@ -339,14 +373,17 @@ if __name__ == "__main__":
         target_duration=args.target_duration,
         gaincal_duration=args.secondary_cal_duration,
         bpcal_duration=args.primary_cal_duration,
-        bpcal_interval=args.primary_cal_cadence,
-    )
-    obs_plan = BuildObservation(catalogue)
+        bpcal_interval=args.primary_cal_cadence)
 
+    obs_plan = BuildObservation(catalogue)
     # create observation configuration file
     obs_plan.configure(
-        instrument=instrument, obs_duration=args.max_duration, lst=args.lst
+        instrument=instrument,
+        obs_duration=args.max_duration,
+        lst=args.lst)
+    obs_plan.write_yaml(
+        header=header,
+        outfile=args.outfile,
     )
-    obs_plan.write_yaml(header=header, outfile=args.outfile)
 
 # -fin-

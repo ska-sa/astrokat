@@ -1,0 +1,9 @@
+instrument:
+  product: c856M4k
+durations:
+  start_time: 2018-07-23 18:00:00
+observation_loop:
+  - LST: 0.0-23.9
+    target_list:
+      - name=Jupiter, special=special, tags=target, duration=60.0
+      - name=Moon, special=special, tags=target, duration=40.0
