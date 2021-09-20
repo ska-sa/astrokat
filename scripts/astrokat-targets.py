@@ -115,7 +115,7 @@ def cli(prog):
     ex_group.add_argument(
         "--infile",
         type=str,
-        help="observation targets as CSV input file"
+        help="observation targets listed in CSV file"
     )
     ex_group.add_argument(
         "--target",
@@ -124,6 +124,21 @@ def cli(prog):
         metavar=("Name", "RA", "Decl"),
         help="returns MeerKAT LST range for a celestial target "
              "with coordinates 'HH:MM:SS DD:MM:SS'",
+    )
+    ex_group.add_argument(
+        "--body",
+        type=str,
+        metavar=("Name"),
+        help="returns MeerKAT LST range for a solar body, "
+             "assumed to be an Ephem special target",
+    )
+    ex_group.add_argument(
+        "--xephem",
+        nargs=2,
+        type=str,
+        metavar=("Name", "Ephemeris"),
+        help="returns MeerKAT LST range for a heliocentric elliptical orbit "
+             "using string in XEphem EDB database format to predict orbital position",
     )
     ex_group.add_argument(
         "--view",
@@ -374,9 +389,10 @@ def source_elevation(catalogue, ref_antenna):
             elev.append(numpy.degrees(target.body.alt))
 
         label = "{} ".format(target.name)
-        target.tags.remove("radec")
-        if "target" in target.tags:
-            target.tags.remove("target")
+        rm_tags = ["radec", "special", "target"]
+        for rm_tag in rm_tags:
+            if rm_tag in target.tags:
+                target.tags.remove(rm_tag)
         label += ", ".join(target.tags)
 
         myplot, = plt.plot_date(timestamps,
@@ -491,12 +507,16 @@ def table_line(datetime,
     [rise_time,
      set_time] = observatory.target_rise_and_set_times(target.body,
                                                        lst=lst)
-    if not lst:
+
+    if type(rise_time) is ephem.Angle:
+        rise_time = str(rise_time)
+        set_time = str(set_time)
+    elif type(rise_time) is ephem.Date:
         rise_time = rise_time.datetime().strftime("%H:%M:%S")
         set_time = set_time.datetime().strftime("%H:%M:%S")
     else:
-        rise_time = str(rise_time)
-        set_time = str(set_time)
+        rise_time = None
+        set_time = None
 
     clo_clr = bcolors.ENDC
     sep_note = ""
@@ -511,11 +531,19 @@ def table_line(datetime,
                 clo_clr = bcolors.FAIL
                 sep_note += " ***"
 
+    # ephem has difference between defining astrometric coordinates
+    # for FixedBody vs Body objects
+    try:
+        RA = target.body._ra
+        DECL = target.body._dec
+    except AttributeError:
+        RA = target.body.a_ra
+        DECL = target.body.a_dec
     table_info = "{: <16}{: <32}{: <16}{: <16}{: <16}{: <16}{: <16}{: <16}\n".format(
         target.name,
         " ".join(target.tags),
-        str(target.body._ra),
-        str(target.body._dec),
+        str(RA),
+        str(DECL),
         rise_time,
         set_time,
         sep_note,
@@ -581,11 +609,16 @@ def obs_table(ref_antenna,
         if cnt < 1:
             note = "Separation from Sun"
         target.body.compute(ref_antenna.observer)
-        separation_angle = ephem.separation(sun.body, target.body)
+        try:
+            separation_angle = ephem.separation(sun.body, target.body)
+            sol_sep_angle = numpy.degrees(separation_angle)
+        except TypeError:
+            # not a Body or Observer object, ignore separation calculation
+            sol_sep_angle = None
         observation_table += table_line(ref_antenna.observer.date,
                                         target,
                                         horizon,
-                                        numpy.degrees(separation_angle),
+                                        sep_angle=sol_sep_angle,
                                         sol_limit=solar_sep,
                                         lst=lst,
                                         notes=note,
@@ -599,6 +632,9 @@ def obs_table(ref_antenna,
             ref_tgt_list = katpt_targets.targets
         sep_angles = []
         for tgt in ref_tgt_list:
+            # ignore some special targets
+            if sol_sep_angle is None:
+                continue
             tgt.body.compute(ref_antenna.observer)
             sep_angles.append(ephem.separation(calibrator.body, tgt.body))
         note = ""
@@ -668,7 +704,6 @@ def write_catalogue(filename, catalogue_header, katpoint_catalogue):
         fcat.write(catalogue_header)
         for target in sources:
             fcat.write(target)
-
 
 # --write observation catalogue--
 
@@ -769,41 +804,50 @@ def best_cal_cover(catalogue, katpt_target, ref_antenna):
         closest calibrator
     separation_angle: float
         separation angle in degrees
-    pred_calibrator: katpoint.Target object
+    buffer_calibrator: katpoint.Target object
         additional calibrator for LST coverage
-    pred_separation: float
+    buffer_separation: float
         additional separation_angle in degrees
 
     """
     calibrator, separation = _closest_calibrator_(
         catalogue, katpt_target.body, ref_antenna.observer
     )
-    pred_calibrator = None
-    pred_separation = 180.0
+    buffer_calibrator = None
+    buffer_separation = 180.0
     horizon = numpy.degrees(ref_antenna.observer.horizon)
     if separation > 20.0:  # calibrator rises some time after target
         # add another calibrator preceding the target
         observatory = Observatory(horizon=horizon,
                                   datetime=ref_antenna.observer.date)
-        [tgt_rise_time, _] = observatory.target_rise_and_set_times(katpt_target.body,
-                                                                   lst=False)
-        preceding_cals = []
+        [tgt_rise_time,
+         tgt_set_time] = observatory.target_rise_and_set_times(katpt_target.body,
+                                                               lst=False)
+        closest_cals = []
         for each_cal in catalogue:
             try:
-                [_,
+                [cal_rise_time,
                  cal_set_time] = observatory.target_rise_and_set_times(each_cal.body,
                                                                        lst=False)
             except ephem.NeverUpError:
                 continue
+            except ephem.AlwaysUpError:
+                continue
             delta_time_to_cal_rise = cal_set_time - tgt_rise_time
-            if (delta_time_to_cal_rise) > 0:
-                preceding_cals.append([each_cal.name, delta_time_to_cal_rise])
-        pred_cal_idx = numpy.array(preceding_cals)[:, 1].astype(float).argmin()
-        pred_calibrator = catalogue[preceding_cals[pred_cal_idx][0]]
-        pred_separation = ephem.separation(katpt_target.body,
-                                           pred_calibrator.body)
-        pred_separation = numpy.degrees(pred_separation)
-    return calibrator, separation, pred_calibrator, pred_separation
+            if delta_time_to_cal_rise > 0:
+                # calc that rise before the target
+                closest_cals.append([each_cal.name, delta_time_to_cal_rise])
+            delta_time_to_cal_set = tgt_set_time - cal_rise_time
+            if delta_time_to_cal_set > 0:
+                # calc that sets after the target
+                closest_cals.append([each_cal.name, delta_time_to_cal_set])
+        if len(closest_cals) > 0:
+            buffer_cal_idx = numpy.array(closest_cals)[:, 1].astype(float).argmin()
+            buffer_calibrator = catalogue[closest_cals[buffer_cal_idx][0]]
+            buffer_separation = ephem.separation(katpt_target.body,
+                                                 buffer_calibrator.body)
+            buffer_separation = numpy.degrees(buffer_separation)
+    return calibrator, separation, buffer_calibrator, buffer_separation
 
 
 def add_target(target, catalogue, tag=""):
@@ -918,12 +962,24 @@ def main(creation_time,
     header = ""
     cal_targets = []
     if target is not None:
-        # input target from command line
-        target = [tgt.strip() for tgt in target]
-        target = ", ".join(
-            map(str, [target[0], "radec target", target[1], target[2]])
-        )
-        cal_targets = [katpoint.Target(target)]
+        if len(target) > 2:
+            # input target from command line
+            target = [tgt.strip() for tgt in target]
+            target = ", ".join(
+                map(str, [target[0], "radec target", target[1], target[2]])
+            )
+            cal_targets = [katpoint.Target(target)]
+        elif len(target) < 2:
+            # input solar body from command line
+            solar_body = target[0].capitalize()
+            katpt_target = katpoint.Target("{}, special".format(solar_body))
+            cal_targets = [katpt_target]
+        else:  # if len(target) == 2
+            # input target from command line
+            target = [tgt.strip() for tgt in target]
+            target = ", ".join(
+                map(str, [target[0], "xephem target", target[1]]))
+            cal_targets = [katpoint.Target(target)]
     else:  # assume the targets are in a file
         if infile is None:
             raise RuntimeError('Specify --target or CSV catalogue --infile')
@@ -990,16 +1046,16 @@ def main(creation_time,
                     # find the best coverage over the target visibility period
                     [calibrator,
                      separation_angle,
-                     preceding_calibrator,
-                     preceding_calibrator_separation_angle] = best_cal_cover(
+                     buffer_calibrator,
+                     buffer_calibrator_separation_angle] = best_cal_cover(
                         calibrators, target, ref_antenna
                     )
                     if (
-                        preceding_calibrator is not None
-                        and preceding_calibrator_separation_angle < 90.0
+                        buffer_calibrator is not None
+                        and buffer_calibrator_separation_angle < 90.0
                     ):
                         observation_catalogue = add_target(
-                            preceding_calibrator,
+                            buffer_calibrator,
                             observation_catalogue,
                             tag=cal_tag + "cal",
                         )
@@ -1060,11 +1116,28 @@ if __name__ == "__main__":
     header_info = {'proposal_id': args.prop_id,
                    'pi_name': args.pi,
                    'pi_contact': args.contact}
+    if args.target is not None:
+        target = args.target
+    elif args.body is not None:
+        target = [args.body]
+    elif args.xephem is not None:
+        target = args.xephem
+    else:
+        target = None
+
+    # check that files exists before continuing
+    if args.infile is not None:
+        if not os.path.isfile(args.infile):
+            raise RuntimeError('Input file {} does not exist'.format(args.infile))
+    if args.view is not None:
+        if not os.path.isfile(args.view):
+            raise RuntimeError('Catalogue file {} does not exist'.format(args.view))
+
     main(creation_time=args.datetime,
          horizon=args.horizon,
          solar_angle=args.solar_angle,
          cal_tags=args.cal_tags,
-         target=args.target,
+         target=target,
          header_info=header_info,
          view_tags=args.view_tags,
          mkat_catalogues=args.cat_path,
@@ -1074,7 +1147,6 @@ if __name__ == "__main__":
          save_fig=args.save_fig,
          infile=args.infile,
          viewfile=args.view,
-         outfile=args.outfile,
-         )
+         outfile=args.outfile)
 
 # -fin-

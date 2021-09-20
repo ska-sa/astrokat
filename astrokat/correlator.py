@@ -1,4 +1,8 @@
 """Setting correlator configuration values different from default values."""
+try:
+    from katcorelib import user_logger
+except ImportError:
+    from .simulate import user_logger
 
 
 def set_fengines(session, requant_gains=None, fft_shift=None):

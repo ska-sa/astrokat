@@ -107,7 +107,7 @@ def timestamp2datetime(timestamp):
     return datetime.datetime.utcfromtimestamp(timestamp)
 
 
-def get_lst(yaml_lst):
+def get_lst(yaml_lst, multi_loop=False):
     """Extract lst range from YAML key.
 
     Get the Local Sidereal Time range for when a celestial body can be observed
@@ -142,7 +142,7 @@ def get_lst(yaml_lst):
         time_ = datetime.datetime.strptime("{}".format(start_lst), "%H:%M").time()
         start_lst = time_.hour + time_.minute / 60.0
 
-    if end_lst is None:
+    if not multi_loop and end_lst is None:
         end_lst = (start_lst + 24.0) % 24.0
         if numpy.abs(end_lst - start_lst) < 1.0:
             end_lst = 24.0

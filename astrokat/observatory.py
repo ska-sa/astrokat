@@ -10,7 +10,7 @@ import os
 
 from datetime import datetime, timedelta
 
-from .simulate import user_logger, setobserver
+from .simulate import user_logger, setobserver, MEERKAT_REFERENCE_LOCATION
 from .targets import katpoint_target_string
 
 try:
@@ -38,7 +38,7 @@ try:
 
 except (ImportError, ValueError):
     # default reference position for MKAT array
-    _ref_location = "ref, -30:42:39.8, 21:26:38.0, 1035.0, 0.0, , , 1.15"
+    _ref_location = MEERKAT_REFERENCE_LOCATION
     _node_config_available = False
 else:
     # default reference position for MKAT array from katconf
@@ -179,7 +179,7 @@ class Observatory(object):
             Names and descriptions of target(s) which can be pointed at by an antenna
 
         """
-        name, target_item = katpoint_target_string(target_item)
+        name, target_item = katpoint_target_string(target_str=target_item)
         return self.set_target(target_item)
 
     def lst2hours(self, ephem_lst):
@@ -216,7 +216,16 @@ class Observatory(object):
         for target in target_list:
             target_ = self.get_target(target).body
             start_lst.append(self._ephem_risetime_(target_))
-        start_lst = start_lst[numpy.asarray(start_lst, dtype=float).argmin()]
+
+        start_lst_float = numpy.asarray(start_lst, dtype=float)
+        idx_map = (start_lst_float >= 1)
+        if numpy.any(idx_map):
+            start_lst_float = start_lst_float[idx_map]
+            start_lst = [start_lst[c_] for c_, i_ in enumerate(idx_map) if i_]
+            start_lst = start_lst[start_lst_float.argmin()]
+        else:
+            start_lst = start_lst[start_lst_float.argmin()]
+
         if str_flag:
             return str(start_lst)
         return self.lst2hours(start_lst)
@@ -235,10 +244,22 @@ class Observatory(object):
 
         """
         end_lst = []
+        end_lst_float = []
         for target in target_list:
             target_ = self.get_target(target).body
+            start_lst = self._ephem_risetime_(target_)
             end_lst.append(self._ephem_settime_(target_))
-        end_lst = end_lst[numpy.asarray(end_lst, dtype=float).argmax()]
+            end_lst_float.append(float(end_lst[-1]))
+            if start_lst > end_lst[-1]:
+                end_lst_float[-1] += 24.
+        idx_map = (numpy.asarray(end_lst_float) % 24. <= 2. * numpy.pi)
+        end_lst_float = numpy.asarray(end_lst_float, dtype=float)
+        if numpy.any(idx_map):
+            end_lst_float = end_lst_float[idx_map]
+            end_lst = [end_lst[c_] for c_, i_ in enumerate(idx_map) if i_]
+            end_lst = end_lst[end_lst_float.argmin()]
+        else:
+            end_lst = end_lst[end_lst_float.argmax()]
         if str_flag:
             return str(end_lst)
         return self.lst2hours(end_lst)
