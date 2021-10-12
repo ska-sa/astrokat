@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import unittest
 import katpoint
+import re
 
 from mock import patch
 
@@ -14,6 +15,9 @@ from .testutils import (
     extract_start_time,
     yaml_path,
 )
+
+# CORELIB_RADEC_REGEX = r"15:59:[0-5]\d\.\d+ 8:50:[0-5]\d\.\d+"
+CORELIB_RADEC_REGEX = r"\d\d\:\d\d\:\d\d\.\d+\s-?\d+:\d\d\:\d\d\.\d+"
 
 
 @patch("astrokat.observe_main.Telescope", LoggedTelescope)
