@@ -99,11 +99,13 @@ class TestAstrokatYAML(unittest.TestCase):
                 duration, target_string
             )
         )
+        sim_coordinates_string = re.findall(CORELIB_RADEC_REGEX, sim_radec)[0]
+        corelib_coordinates_string = re.findall(CORELIB_RADEC_REGEX, sim_radec)[0]
         simulate_radec_message = "{}, tags=radec target, {}".format(
-            target_string, sim_radec
+            target_string, sim_coordinates_string
         )
         katcorelib_radec_message = "{}, tags=radec target, {}".format(
-            target_string, corelib_radec
+            target_string, corelib_coordinates_string
         )
         simulated_messages_found = (
             simulate_message in logs and simulate_radec_message in logs
