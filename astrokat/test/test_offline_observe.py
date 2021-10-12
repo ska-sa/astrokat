@@ -16,7 +16,6 @@ from .testutils import (
     yaml_path,
 )
 
-# CORELIB_RADEC_REGEX = r"15:59:[0-5]\d\.\d+ 8:50:[0-5]\d\.\d+"
 CORELIB_RADEC_REGEX = r"\d\d\:\d\d\:\d\d\.\d+\s-?\d+:\d\d\:\d\d\.\d+"
 
 
@@ -100,7 +99,7 @@ class TestAstrokatYAML(unittest.TestCase):
             )
         )
         sim_coordinates_string = re.findall(CORELIB_RADEC_REGEX, sim_radec)[0]
-        corelib_coordinates_string = re.findall(CORELIB_RADEC_REGEX, sim_radec)[0]
+        corelib_coordinates_string = re.findall(CORELIB_RADEC_REGEX, corelib_radec)[0]
         simulate_radec_message = "{}, tags=radec target, {}".format(
             target_string, sim_coordinates_string
         )
