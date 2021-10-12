@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import unittest
 import katpoint
+import re
 
 from mock import patch
 
