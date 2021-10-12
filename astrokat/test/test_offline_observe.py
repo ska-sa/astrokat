@@ -16,8 +16,6 @@ from .testutils import (
     yaml_path,
 )
 
-CORELIB_RADEC_REGEX = r"\d\d\:\d\d\:\d\d\.\d+\s-?\d+:\d\d\:\d\d\.\d+"
-
 
 @patch("astrokat.observe_main.Telescope", LoggedTelescope)
 class TestAstrokatYAML(unittest.TestCase):
@@ -56,8 +54,8 @@ class TestAstrokatYAML(unittest.TestCase):
             duration=10.0,
             az=10.0,
             el=50.0,
-            sim_radec="16:00:05.19 8:50:57.6",
-            corelib_radec="15:59:15.06 8:50:58.7",
+            sim_radec_regex=r"16:00:05.19 8:50:57.6",
+            corelib_radec_regex=r"15:59:[0-5]\d\.\d+ 8:50:[0-5]\d\.\d+",
             logs=result
         )
         self.assert_started_target_track(
@@ -88,7 +86,7 @@ class TestAstrokatYAML(unittest.TestCase):
         )
 
     def assert_started_target_scan(
-        self, target_string, duration, az, el, sim_radec, corelib_radec, logs
+        self, target_string, duration, az, el, sim_radec_regex, corelib_radec_regex, logs
     ):
         simulate_message = "Slewed to {} at azel ({:.1f}, {:.1f}) deg".format(
             target_string, az, el
@@ -98,19 +96,19 @@ class TestAstrokatYAML(unittest.TestCase):
                 duration, target_string
             )
         )
-        sim_coordinates_string = re.findall(CORELIB_RADEC_REGEX, sim_radec)[0]
-        corelib_coordinates_string = re.findall(CORELIB_RADEC_REGEX, corelib_radec)[0]
-        simulate_radec_message = "{}, tags=radec target, {}".format(
-            target_string, sim_coordinates_string
+        simulate_radec_message_regex = r"{}, tags=radec target, {}".format(
+            target_string, sim_radec_regex
         )
-        katcorelib_radec_message = "{}, tags=radec target, {}".format(
-            target_string, corelib_coordinates_string
+        katcorelib_radec_message_regex = r"{}, tags=radec target, {}".format(
+            target_string, corelib_radec_regex
         )
         simulated_messages_found = (
-            simulate_message in logs and simulate_radec_message in logs
+            simulate_message in logs
+            and re.search(simulate_radec_message_regex, logs, re.MULTILINE) is not None
         )
         katcorelib_messages_found = (
-            katcorelib_message in logs and katcorelib_radec_message in logs
+            katcorelib_message in logs
+            and re.search(katcorelib_radec_message_regex, logs, re.MULTILINE) is not None
         )
         self.assertTrue(
             simulated_messages_found or katcorelib_messages_found,
