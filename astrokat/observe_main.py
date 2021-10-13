@@ -38,14 +38,40 @@ except ImportError:
 DUMP_RATE_TOLERANCE = 0.002
 
 
-def __horizontal_coordinates__(target, observer, datetime_):
+# -- Utility functions --
+def _horizontal_coordinates(target, observer, datetime_):
     """Utility function to calculate ephem horizontal coordinates"""
     observer.date = ephem.date(datetime_)
     target.compute(observer)
     return target.az, target.alt
 
 
-def observe(session, target_info, **kwargs):
+def _same_day(start_lst, end_lst, local_lst):
+    """Utility function to check LST ranges ending before midnight"""
+    return (ephem.hours(local_lst) >= ephem.hours(str(start_lst))) and (
+        ephem.hours(local_lst) < ephem.hours(str(end_lst)))
+
+
+def _next_day(start_lst, end_lst, local_lst):
+    """Utility function to check LST ranges ending after midnight"""
+    return (ephem.hours(local_lst) < ephem.hours(str(start_lst))) and (
+        ephem.hours(local_lst) > ephem.hours(str(end_lst)))
+
+
+def _get_radec_from_azel(observer, orig_target_str, timestamp):
+    """Utility function to recalculate (ra, dec) from (az, el)"""
+    location = targets.observer_as_earth_location(observer)
+    az_deg, el_deg = np.array(orig_target_str.split(), dtype=float)
+    [ra_hms,
+     dec_dms] = targets.altaz_to_radec(az_deg, el_deg,
+                                       location, timestamp,
+                                       as_string=True)
+    return ra_hms, dec_dms
+
+# -- Utility functions --
+
+
+def observe(session, ref_antenna, target_info, **kwargs):
     """Target observation functionality.
 
     Parameters
@@ -60,6 +86,16 @@ def observe(session, target_info, **kwargs):
     target = target_info["target"]
     duration = target_info["duration"]
     obs_type = target_info["obs_type"]
+
+    # update (Ra, Dec) for horizontal coordinates @ obs time
+    if ("azel" in target_info["target_str"]) and ("radec" in target.tags):
+        tgt_coord = target_info["target_str"].split('=')[-1].strip()
+        ra_hms, dec_dms = _get_radec_from_azel(
+            ref_antenna.observer, tgt_coord, time.time()
+        )
+
+        target.body._ra = ra_hms
+        target.body._dec = dec_dms
 
     # simple way to get telescope to slew to target
     if "slewonly" in kwargs:
@@ -103,6 +139,7 @@ def observe(session, target_info, **kwargs):
     user_logger.trace("TRACE: performing {} observation on {}".format(obs_type, target))
     if "drift_scan" in obs_type:
         target_visible = scans.drift_scan(session,
+                                          ref_antenna,
                                           target,
                                           duration=duration,
                                           nd_period=nd_period,
@@ -195,13 +232,14 @@ def above_horizon(target,
     """Check target visibility.
        Utility function to calculate ephem horizontal coordinates
     """
+
     # use local copies so you do not overwrite target time attribute
     horizon = ephem.degrees(str(horizon))
 
     # must be celestial target (ra, dec)
     # check that target is visible at start of track
     start_ = timestamp2datetime(time.time())
-    [azim, elev] = __horizontal_coordinates__(target,
+    [azim, elev] = _horizontal_coordinates(target,
                                               observer,
                                               start_)
     user_logger.trace(
@@ -213,7 +251,7 @@ def above_horizon(target,
     # check that target will be visible at end of track
     if duration:
         end_ = timestamp2datetime(time.time() + duration)
-        [azim, elev] = __horizontal_coordinates__(target,
+        [azim, elev] = _horizontal_coordinates(target,
                                                   observer,
                                                   end_)
         user_logger.trace(
@@ -365,101 +403,92 @@ def run_observation(opts, kat):
         user_logger.error("Unexpected value: obs_duration: {}".format(obs_duration))
         return
 
-    # Each observation loop contains a number of observation cycles over LST ranges
-    # For a single observation loop, only a start LST and duration is required
-    for observation_cycle in obs_plan_params["observation_loop"]:
-        # Unpack all target information
-        if not ("target_list" in observation_cycle.keys()):
-            user_logger.error(
-                "No targets provided - stopping script instead of hanging around"
-            )
-            continue
-        obs_targets = observation_cycle["target_list"]
-        target_list = obs_targets["target"].tolist()
-        # build katpoint catalogues for tidy handling of targets
-        catalogue = collect_targets(kat.array, target_list)
-        obs_tags = []
-        for tgt in obs_targets:
-            # catalogue names are no longer unique
-            name = tgt["name"]
-            # add tag evaluation to identify catalogue targets
-            tags = tgt["target"].split(",")[1].strip()
-            for cat_tgt in catalogue:
-                if name == cat_tgt.name and tags == " ".join(cat_tgt.tags):
-                    tgt["target"] = cat_tgt
-                    obs_tags.extend(cat_tgt.tags)
-                    break
-        obs_tags = list(set(obs_tags))
-        cal_tags = [tag for tag in obs_tags if tag[-3:] == "cal"]
+    # TODO: the description requirement in sessions should be re-evaluated
+    # since the schedule block has the description
+    # Description argument in instruction_set should be retired, but is
+    # needed by sessions
+    # Assign proposal_description if available, else create a dummy
+    if "description" not in vars(opts):
+        session_opts = vars(opts)
+        description = "Observation run"
+        if "proposal_description" in vars(opts):
+            description = opts.proposal_description
+        session_opts["description"] = description
 
-        # observer object handle to track the observation timing in a more user
-        # friendly way
-        observer = catalogue._antenna.observer
+    nr_obs_loops = len(obs_plan_params["observation_loop"])
+    with start_session(kat.array, **vars(opts)) as session:
+        session.standard_setup(**vars(opts))
 
-        # Only observe targets in valid LST range
-        [start_lst, end_lst] = get_lst(observation_cycle["LST"])
-
-        # Verify that it is worth while continuing with the observation
-        # The filter functions uses the current time as timestamps
-        # and thus incorrectly set the simulation timestamp
-        if not kat.array.dry_run:
-            # Quit early if there are no sources to observe
-            if len(catalogue.filter(el_limit_deg=opts.horizon)) == 0:
-                raise NoTargetsUpError(
-                    "No targets are currently visible - please re-run the script later"
-                )
-            # Quit early if the observation requires all targets to be visible
-            if opts.all_up and (
-                len(catalogue.filter(el_limit_deg=opts.horizon)) != len(catalogue)
-            ):
-                raise NotAllTargetsUpError(
-                    "Not all targets are currently visible - please re-run the script"
-                    "with --visibility for information"
-                )
-        # List sources and their associated functions from observation tags
-        not_cals_filter_list = []
-        for cal_type in cal_tags:
-            not_cals_filter_list.append("~{}".format(cal_type))
-            cal_array = [cal.name for cal in catalogue.filter(cal_type)]
-            if len(cal_array) < 1:
-                continue  # do not display empty tags
-            user_logger.info(
-                "{} calibrators are {}".format(str.upper(cal_type[:-3]), cal_array)
-            )
-        user_logger.info(
-            "Observation targets are [{}]".format(
-                ", ".join(
-                    [
-                        repr(target.name)
-                        for target in catalogue.filter(not_cals_filter_list)
-                    ]
-                )
-            )
-        )
-
-        # TODO: the description requirement in sessions should be re-evaluated
-        # since the schedule block has the description
-        # Description argument in instruction_set should be retired, but is
-        # needed by sessions
-        # Assign proposal_description if available, else create a dummy
-        if "description" not in vars(opts):
-            session_opts = vars(opts)
-            description = "Observation run"
-            if "proposal_description" in vars(opts):
-                description = opts.proposal_description
-            session_opts["description"] = description
-
+        # Each observation loop contains a number of observation cycles over LST ranges
+        # For a single observation loop, only a start LST and duration is required
         # Target observation loop
-        with start_session(kat.array, **vars(opts)) as session:
-            session.standard_setup(**vars(opts))
+        observation_timer = time.time()
+        for obs_cntr, observation_cycle in enumerate(obs_plan_params["observation_loop"]):
+            if nr_obs_loops > 1:
+                user_logger.info("Observation loop {} of {}."
+                                 .format(obs_cntr + 1, nr_obs_loops))
+                user_logger.info("Loop LST range {}."
+                                 .format(observation_cycle["LST"]))
+            # Unpack all target information
+            if not ("target_list" in observation_cycle.keys()):
+                user_logger.error(
+                    "No targets provided - stopping script instead of hanging around"
+                )
+                continue
+            obs_targets = observation_cycle["target_list"]
+            target_list = obs_targets["target"].tolist()
+            # build katpoint catalogues for tidy handling of targets
+            catalogue = collect_targets(kat.array, target_list)
+            obs_tags = []
+            for tgt in obs_targets:
+                # catalogue names are no longer unique
+                name = tgt["name"]
+                # add tag evaluation to identify catalogue targets
+                tags = tgt["target"].split(",")[1].strip()
+                for cat_tgt in catalogue:
+                    if name == cat_tgt.name:
+                        if ("special" in cat_tgt.tags
+                                or "xephem" in cat_tgt.tags
+                                or tags == " ".join(cat_tgt.tags)):
+                            tgt["target"] = cat_tgt
+                            obs_tags.extend(cat_tgt.tags)
+                            break
+            obs_tags = list(set(obs_tags))
+            cal_tags = [tag for tag in obs_tags if tag[-3:] == "cal"]
+
+            # observer object handle to track the observation timing in a more user
+            # friendly way
+#             observer = catalogue._antenna.observer
+            ref_antenna = catalogue.antenna
+            observer = ref_antenna.observer
             start_datetime = timestamp2datetime(time.time())
             observer.date = ephem.Date(start_datetime)
             user_logger.trace(
                 "TRACE: requested start time "
                 "({}) {}".format(datetime2timestamp(start_datetime), start_datetime)
             )
-
             user_logger.trace("TRACE: observer at start\n {}".format(observer))
+
+            # Only observe targets in valid LST range
+            if nr_obs_loops > 1 and obs_cntr < nr_obs_loops - 1:
+                [start_lst, end_lst] = get_lst(observation_cycle["LST"],
+                                               multi_loop=True)
+                if end_lst is None:
+                    # for multi loop the end lst is required
+                    raise RuntimeError('Multi-loop observations require end LST times')
+                next_obs_plan = obs_plan_params["observation_loop"][obs_cntr + 1]
+                [next_start_lst,
+                 next_end_lst] = get_lst(next_obs_plan["LST"])
+                user_logger.trace("TRACE: current LST range {}-{}".format(
+                    ephem.hours(str(start_lst)),
+                    ephem.hours(str(end_lst))))
+                user_logger.trace("TRACE: next LST range {}-{}".format(
+                    ephem.hours(str(next_start_lst)),
+                    ephem.hours(str(next_end_lst))))
+            else:
+                next_start_lst = None
+                next_end_lst = None
+                [start_lst, end_lst] = get_lst(observation_cycle["LST"])
 
             # Verify the observation is in a valid LST range
             # and that it is worth while continuing with the observation
@@ -468,31 +497,64 @@ def run_observation(opts, kat):
             local_lst = observer.sidereal_time()
             user_logger.trace("TRACE: Local LST {}".format(ephem.hours(local_lst)))
             # Only observe targets in current LST range
+            log_msg = "Local LST outside LST range {}-{}".format(
+                      ephem.hours(str(start_lst)), ephem.hours(str(end_lst)))
             if float(start_lst) < end_lst:
-                in_range = (ephem.hours(local_lst) >= ephem.hours(str(start_lst))) and (
-                    ephem.hours(local_lst) < ephem.hours(str(end_lst))
-                )
-                if not in_range:
-                    user_logger.error(
-                        "Local LST outside LST range "
-                        "{}-{}".format(
-                            ephem.hours(str(start_lst)), ephem.hours(str(end_lst))
-                        )
-                    )
+                # lst ends before midnight
+                if not _same_day(start_lst, end_lst, local_lst):
+                    if obs_cntr < nr_obs_loops - 1:
+                        user_logger.info(log_msg)
+                    else:
+                        user_logger.error(log_msg)
                     continue
             else:
-                # else assume rollover at midnight to next day
-                out_range = (ephem.hours(local_lst) < ephem.hours(str(start_lst))) and (
-                    ephem.hours(local_lst) > ephem.hours(str(end_lst))
-                )
-                if out_range:
-                    user_logger.error(
-                        "Local LST outside LST range "
-                        "{}-{}".format(
-                            ephem.hours(str(start_lst)), ephem.hours(str(end_lst))
-                        )
-                    )
+                # lst ends after midnight
+                if _next_day(start_lst, end_lst, local_lst):
+                    if obs_cntr < nr_obs_loops - 1:
+                        user_logger.info(log_msg)
+                    else:
+                        user_logger.error(log_msg)
                     continue
+
+            # Verify that it is worth while continuing with the observation
+            # The filter functions uses the current time as timestamps
+            # and thus incorrectly set the simulation timestamp
+            if not kat.array.dry_run:
+                # Quit early if there are no sources to observe
+                if len(catalogue.filter(el_limit_deg=opts.horizon)) == 0:
+                    raise NoTargetsUpError(
+                        "No targets are currently visible - "
+                        "please re-run the script later"
+                    )
+                # Quit early if the observation requires all targets to be visible
+                if opts.all_up and (
+                    len(catalogue.filter(el_limit_deg=opts.horizon)) != len(catalogue)
+                ):
+                    raise NotAllTargetsUpError(
+                        "Not all targets are currently visible - please re-run the script"
+                        "with --visibility for information"
+                    )
+
+            # List sources and their associated functions from observation tags
+            not_cals_filter_list = []
+            for cal_type in cal_tags:
+                not_cals_filter_list.append("~{}".format(cal_type))
+                cal_array = [cal.name for cal in catalogue.filter(cal_type)]
+                if len(cal_array) < 1:
+                    continue  # do not display empty tags
+                user_logger.info(
+                    "{} calibrators are {}".format(str.upper(cal_type[:-3]), cal_array)
+                )
+            user_logger.info(
+                "Observation targets are [{}]".format(
+                    ", ".join(
+                        [
+                            repr(target.name)
+                            for target in catalogue.filter(not_cals_filter_list)
+                        ]
+                    )
+                )
+            )
 
             # TODO: setup of noise diode pattern should be moved to sessions
             #  so it happens in the line above
@@ -538,7 +600,7 @@ def run_observation(opts, kat):
 
             # Go to first target before starting capture
             user_logger.info("Slewing to first target")
-            observe(session, obs_targets[0], slewonly=True)
+            observe(session, ref_antenna, obs_targets[0], slewonly=True)
             # Only start capturing once we are on target
             session.capture_start()
             user_logger.trace(
@@ -564,9 +626,9 @@ def run_observation(opts, kat):
                 targets_visible = False
                 time_remaining = obs_duration
                 observation_timer = time.time()
-                for cnt, target in enumerate(obs_targets):
+                for tgt_cntr, target in enumerate(obs_targets):
                     katpt_target = target["target"]
-                    user_logger.debug("DEBUG: {} {}".format(cnt, target))
+                    user_logger.debug("DEBUG: {} {}".format(tgt_cntr, target))
                     user_logger.trace(
                         "TRACE: initial observer for target\n {}".format(observer)
                     )
@@ -630,7 +692,7 @@ def run_observation(opts, kat):
                                          observer=cat_target.antenna.observer.copy(),
                                          horizon=opts.horizon,
                                          duration=tgt["duration"]):
-                            if observe(session, tgt, **obs_plan_params):
+                            if observe(session, ref_antenna, tgt, **obs_plan_params):
                                 targets_visible += True
                                 tgt["obs_cntr"] += 1
                                 tgt["last_observed"] = time.time()
@@ -669,7 +731,10 @@ def run_observation(opts, kat):
                             "observed {}".format(target["last_observed"])
                         )
 
-                        targets_visible += observe(session, target, **obs_plan_params)
+                        targets_visible += observe(session,
+                                                   ref_antenna,
+                                                   target,
+                                                   **obs_plan_params)
                         user_logger.trace(
                             "TRACE: observer after track\n {}".format(observer)
                         )
@@ -699,14 +764,14 @@ def run_observation(opts, kat):
                             "TRACE: time remaining {} sec".format(time_remaining)
                         )
 
-                        next_target = obs_targets[(cnt + 1) % len(obs_targets)]
+                        next_target = obs_targets[(tgt_cntr + 1) % len(obs_targets)]
                         user_logger.trace(
                             "TRACE: next target before cadence "
                             "check:\n{}".format(next_target)
                         )
                         # check if there is a cadence target that must be run
                         # instead of next target
-                        for next_cadence_tgt_idx in range(cnt + 1, len(obs_targets)):
+                        for next_cadence_tgt_idx in range(tgt_cntr + 1, len(obs_targets)):
                             next_cadence_target = obs_targets[
                                 next_cadence_tgt_idx % len(obs_targets)
                             ]
@@ -745,6 +810,15 @@ def run_observation(opts, kat):
                     user_logger.info("Observation list completed - ending observation")
                     done = True
 
+                # for multiple loop, check start lst of next loop
+                if next_start_lst is not None:
+                    check_local_lst = observer.sidereal_time()
+                    if (check_local_lst > next_start_lst) or (
+                        not _next_day(next_start_lst, next_end_lst, check_local_lst)
+                    ):
+                        user_logger.info("Moving to next LST loop")
+                        done = True
+
                 # End if there is nothing to do
                 if not targets_visible:
                     user_logger.warning(
@@ -753,8 +827,10 @@ def run_observation(opts, kat):
                     )
                     done = True
 
-        user_logger.trace("TRACE: observer at end\n {}".format(observer))
-        # display observation cycle statistics
+    user_logger.trace("TRACE: observer at end\n {}".format(observer))
+    # display observation cycle statistics
+    # currently only available for single LST range observations
+    if nr_obs_loops < 2:
         print
         user_logger.info("Observation loop statistics")
         total_obs_time = observation_timer - session.start_time
@@ -847,6 +923,8 @@ def main(args):
     # horizontal coordinates (alt, az)
     #  for scans, the coordinates will be converted to enable delay tracking
     #  for tracks the coordinates will be left as is with no delay tracking
+    # planetary bodies are passed through to katpoint Target as is
+    # elliptical solar bodies such as comets are also passed through as katpoint Targets
     for obs_dict in opts.obs_plan_params['observation_loop']:
         start_ts = timestamp2datetime(time.time())
         if "durations" in opts.obs_plan_params:
