@@ -629,9 +629,8 @@ def run_observation(opts, kat):
             )
 
             # Go to first target before starting capture
-            # observe(session, ref_antenna, obs_targets[0], slewonly=True)
+            initial_slew(session, obs_targets[0])
             # Only start capturing once we are on target
-            session.set_target(obs_targets[0], slew_only=True)
             session.capture_start()
             user_logger.trace(
                 "TRACE: capture start time after slew "
