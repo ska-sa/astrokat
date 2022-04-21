@@ -107,9 +107,8 @@ def observe(session, ref_antenna, target_info, **kwargs):
 
     Parameters
     ----------
-    session: `CaptureSession`
-    target_info:
-
+    session: `CaptureSession` object
+    target_info: dictionary with target observation info
     """
     target_visible = False
 
