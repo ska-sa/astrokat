@@ -69,6 +69,37 @@ def _get_radec_from_azel(observer, orig_target_str, timestamp):
     return ra_hms, dec_dms
 
 # -- Utility functions --
+def initial_slew(session, target_info):
+    """Simple way to get telescope to slew to target
+    Parameters
+    ----------
+    session: `CaptureSession` object
+    target_info: dictionary with target observation info
+    """
+    target_name = target_info["name"]
+    katpt_tgt = target_info["target"]
+
+    user_logger.info("Slewing to target {}".format(target_name))
+    # modify set_target to use the new target
+    session.set_target(katpt_tgt)
+    session.activity('slew')
+
+    if session.kat.dry_run:
+        # Apply average slew time
+        session._slew_to(katpt_tgt)
+    else:
+        # Start moving each antenna to the target
+        session.ants.req.mode('POINT')
+
+    # Wait until a quorum is in position (with timeout)
+    success = session.wait(session.ants,
+                           'lock',
+                           True,
+                           timeout=300,
+                           quorum=session.quorum)
+    if success:
+        user_logger.info('target reached')
+    # session.wait will issue a waring if quorum not reached
 
 
 def observe(session, ref_antenna, target_info, **kwargs):
