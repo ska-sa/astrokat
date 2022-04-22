@@ -69,6 +69,8 @@ def _get_radec_from_azel(observer, orig_target_str, timestamp):
     return ra_hms, dec_dms
 
 # -- Utility functions --
+
+
 def initial_slew(session, target_info):
     """Simple way to get telescope to slew to target
     Parameters
@@ -80,13 +82,12 @@ def initial_slew(session, target_info):
     katpt_tgt = target_info["target"]
 
     user_logger.info("Slewing to target {}".format(target_name))
-    # modify set_target to use the new target
-    session.set_target(katpt_tgt)
-    session.activity('slew')
+    session.set_target(katpt_tgt, slew_only=True)
 
     if session.kat.dry_run:
         # Apply average slew time
         session._slew_to(katpt_tgt)
+        #call track() loka time session this will take in the slew_only 
     else:
         # Start moving each antenna to the target
         session.ants.req.mode('POINT')

@@ -197,7 +197,7 @@ class SimSession(object):
 
     def __iter__(self):
         yield self
-        raise StopIteration
+        return
 
     def __exit__(self, type, value, traceback):
         # TODO: self.track_ cleanup for multiple obs loops
