@@ -221,9 +221,9 @@ class SimSession(object):
         time.sleep(_DEFAULT_SLEW_TIME_SEC)
         return True
 
-    def _slew_to(self, target):
+    def _slew_to(self, target, slew_only):
         """TimeSession replacement for wait"""
-        self.track(target, duration=0.0, announce=False, slew_only=True)
+        self.track(target, duration=0.0, announce=False, slew_only)
 
     def track(self, target, duration=0, announce=False):
         """Simulate the track source functionality during observations.

@@ -80,14 +80,14 @@ def initial_slew(session, target_info):
     """
     target_name = target_info["name"]
     katpt_tgt = target_info["target"]
+    slew_only = True
 
     user_logger.info("Slewing to target {}".format(target_name))
-    session.set_target(katpt_tgt, slew_only=True)
+    session.set_target(katpt_tgt, slew_only)
 
     if session.kat.dry_run:
         # Apply average slew time
-        session._slew_to(katpt_tgt)
-        #call track() loka time session this will take in the slew_only 
+        session._slew_to(katpt_tgt, slew_only) 
     else:
         # Start moving each antenna to the target
         session.ants.req.mode('POINT')
