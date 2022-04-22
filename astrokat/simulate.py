@@ -216,6 +216,15 @@ class SimSession(object):
             user_logger.info('INIT')
             self.capture_initialised = True
 
+    def wait(self, *args, **kwargs):
+        """Simulate sessions wait function"""
+        time.sleep(_DEFAULT_SLEW_TIME_SEC)
+        return True
+
+    def _slew_to(self, target):
+        """TimeSession replacement for wait"""
+        self.track(target, duration=0.0, announce=False, slew_only=True)
+
     def track(self, target, duration=0, announce=False):
         """Simulate the track source functionality during observations.
 
