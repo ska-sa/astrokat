@@ -239,9 +239,11 @@ class SimSession(object):
         self.track_ = True
         slew_time, az, el = self._fake_slew_(target)
         time.sleep(slew_time)
-        user_logger.info("Slewed to %s at azel (%.1f, %.1f) deg", target.name, az, el)
+        if announce:
+            user_logger.info("Slewed to %s at azel (%.1f, %.1f) deg", target.name, az, el)
         time.sleep(duration)
-        user_logger.info("Tracked %s for %d seconds", target.name, duration)
+        if duration > 0:
+            user_logger.info("Tracked %s for %d seconds", target.name, duration)
         return True
 
     def raster_scan(
