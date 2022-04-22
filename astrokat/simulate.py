@@ -223,7 +223,7 @@ class SimSession(object):
 
     def _slew_to(self, target, slew_only):
         """TimeSession replacement for wait"""
-        self.track(target, duration=0.0, announce=False, slew_only)
+        self.track(target, slew_only, duration=0.0, announce=False)
 
     def track(self, target, duration=0, announce=False):
         """Simulate the track source functionality during observations.
