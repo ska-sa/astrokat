@@ -131,7 +131,7 @@ def observe(session, ref_antenna, target_info, **kwargs):
 
     # simple way to get telescope to slew to target
     if "slewonly" in kwargs:
-        return session.track(target, duration=0.0, announce=False)
+        return session.track(target, duration=0.0, announce=False, slew_only=True)
 
     # set noise diode behaviour
     nd_setup = None
@@ -632,6 +632,9 @@ def run_observation(opts, kat):
 
             # Go to first target before starting capture
             initial_slew(session, obs_targets[0])
+            # TODO: BN & AM - discuss if we should run
+            # observe(session, obs_targets[0], slewonly=True)
+            # here
             # Only start capturing once we are on target
             session.capture_start()
             user_logger.trace(

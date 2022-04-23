@@ -223,9 +223,9 @@ class SimSession(object):
 
     def _slew_to(self, target, slew_only):
         """TimeSession replacement for wait"""
-        self.track(target, slew_only, duration=0.0, announce=False)
+        self.track(target, duration=0, slew_only=True)
 
-    def track(self, target, slew_only=False, duration=0, announce=False):
+    def track(self, target, duration=0, announce=False, slew_only=False):
         """Simulate the track source functionality during observations.
 
         Parameters
@@ -234,7 +234,11 @@ class SimSession(object):
             The target to be tracked
         duration: int
             Duration of track
-
+        announce : bool, optional
+            True if start of action should be announced, with details of
+            settings
+        slew_only : bool, optional
+            True if only the antenna slews should be performed.
         """
         if slew_only:
             self.track_ = True
