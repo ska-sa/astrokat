@@ -71,23 +71,25 @@ def _get_radec_from_azel(observer, orig_target_str, timestamp):
 # -- Utility functions --
 
 
-def initial_slew(session, target_info):
+def initial_slew(session, target_info, slew_only=True):
     """Simple way to get telescope to slew to target
 
     Parameters
     ----------
     session: `CaptureSession` object
     target_info: dictionary with target observation info
+    slew_only : bool, optional
+        True if only the antenna slews should be performed.
     """
     target_name = target_info["name"]
     katpt_tgt = target_info["target"]
-    slew_only = True
 
     user_logger.info("Slewing to target {}".format(target_name))
     session.set_target(katpt_tgt, slew_only)
 
     if session.kat.dry_run:
         # Apply average slew time
+        # TODO: BN & AM - `_slew_to` method takes a different set of params, discuss
         session._slew_to(katpt_tgt, slew_only)
     else:
         # Start moving each antenna to the target
@@ -104,13 +106,15 @@ def initial_slew(session, target_info):
     # session.wait will issue a warning if quorum not reached
 
 
-def observe(session, ref_antenna, target_info, **kwargs):
+def observe(session, ref_antenna, target_info, slew_only=False, **kwargs):
     """Target observation functionality.
 
     Parameters
     ----------
     session: `CaptureSession` object
     target_info: dictionary with target observation info
+    slew_only : bool, optional
+        True if only the antenna slews should be performed.
     """
     target_visible = False
 
@@ -130,7 +134,7 @@ def observe(session, ref_antenna, target_info, **kwargs):
         target.body._dec = dec_dms
 
     # simple way to get telescope to slew to target
-    if "slewonly" in kwargs:
+    if slew_only:
         return session.track(target, duration=0.0, announce=False, slew_only=True)
 
     # set noise diode behaviour
@@ -632,9 +636,7 @@ def run_observation(opts, kat):
 
             # Go to first target before starting capture
             initial_slew(session, obs_targets[0])
-            # TODO: BN & AM - discuss if we should run
-            # observe(session, obs_targets[0], slewonly=True)
-            # here
+            # observe(session, obs_targets[0], slew_only=True)
             # Only start capturing once we are on target
             session.capture_start()
             user_logger.trace(
