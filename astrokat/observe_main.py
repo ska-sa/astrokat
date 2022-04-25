@@ -71,21 +71,19 @@ def _get_radec_from_azel(observer, orig_target_str, timestamp):
 # -- Utility functions --
 
 
-def initial_slew(session, target_info, slew_only=True):
+def initial_slew(session, target_info):
     """Simple way to get telescope to slew to target
 
     Parameters
     ----------
     session: `CaptureSession` object
     target_info: dictionary with target observation info
-    slew_only : bool, optional
-        True if only the antenna slews should be performed.
     """
     target_name = target_info["name"]
     katpt_tgt = target_info["target"]
 
     user_logger.info("Slewing to target {}".format(target_name))
-    session.set_target(katpt_tgt, slew_only)
+    session.set_target(katpt_tgt, slew_only=True)
 
     if session.kat.dry_run:
         # Apply average slew time
