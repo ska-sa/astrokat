@@ -633,7 +633,6 @@ def run_observation(opts, kat):
 
             # Go to first target before starting capture
             initial_slew(session, obs_targets[0])
-            # observe(session, obs_targets[0], slew_only=True)
             # Only start capturing once we are on target
             session.capture_start()
             user_logger.trace(
