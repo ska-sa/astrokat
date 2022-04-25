@@ -89,8 +89,7 @@ def initial_slew(session, target_info, slew_only=True):
 
     if session.kat.dry_run:
         # Apply average slew time
-        # TODO: BN & AM - `_slew_to` method takes a different set of params, discuss
-        session._slew_to(katpt_tgt, slew_only)
+        session._slew_to(katpt_tgt)
     else:
         # Start moving each antenna to the target
         session.ants.req.mode('POINT')

@@ -33,8 +33,8 @@ class TestAstrokatYAML(unittest.TestCase):
         self.assertIn("Initialising Drift_scan target 1934-638 for 180.0 sec", result)
         self.assertIn("Drift_scan observation for 180.0 sec", result)
         target_string = "Az: -172:57:37.1 El: 56:27:26.4"
-        self.assert_started_target_track(target_string, 180.0, result)
-        self.assert_completed_target_track(target_string, 180.0, result)
+        self.assert_started_target_track(target_string, 180, result)
+        self.assert_completed_target_track(target_string, 180, result)
 
     def test_raster_scan_basic_sim(self):
         """Not much to do: check scan initiate log msg"""
@@ -50,7 +50,7 @@ class TestAstrokatYAML(unittest.TestCase):
         # get result and make sure everything ran properly
         result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn("Initialising Scan target scan_1934-638 for 30.0 sec", result)
-        self.assertIn("scan_1934-638 observed for 60.0 sec", result)
+        self.assertIn("scan_1934-638 observed for 30.0 sec", result)
 
     def test_get_scan_area_extents_for_setting_target(self):
         """Test of function get_scan_area_extents with setting target."""
