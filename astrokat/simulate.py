@@ -225,7 +225,7 @@ class SimSession(object):
         """TimeSession replacement for wait"""
         self.track(target, duration=0, announce=True)
 
-    def track(self, target, duration=0, announce=True):
+    def track(self, target, duration, announce=True):
         """Simulate the track source functionality during observations.
 
         Parameters
@@ -245,11 +245,10 @@ class SimSession(object):
             user_logger.info(
                 "Slewed to %s at azel (%.1f, %.1f) deg", target.name, az, el)
         time.sleep(duration)
-        if duration >= 0:
+        if duration > 0:
             user_logger.info(
                 "Tracked %s for %d seconds", target.name, duration)
         return True
-
 
     def raster_scan(
         self,

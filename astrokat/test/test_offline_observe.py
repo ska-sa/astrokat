@@ -226,10 +226,10 @@ class TestAstrokatYAML(unittest.TestCase):
         result = LoggedTelescope.user_logger_stream.getvalue()
 
         self.assert_started_target_track(
-            "Jupiter", duration=60.0, az=323.4, el=71.0, logs=result
+            "Jupiter", duration=60.0, az=322.9, el=70.9, logs=result
         )
         self.assert_started_target_track(
-            "Moon", duration=40.0, az=64.1, el=66.3, logs=result
+            "Moon", duration=40.0, az=63.9, el=66.5, logs=result
         )
 
         self.assertIn("Observation targets are ['Jupiter', 'Moon']", result)
