@@ -52,6 +52,7 @@ class TestAstrokatYAML(unittest.TestCase):
         self.assert_started_target_track(
             "target4_azel", duration=10.0, az=10.0, el=50.0, logs=result
         )
+        print('Slewed to target4_azel at azel (10.0, 50.0) deg' in result)
         self.assert_started_target_scan(
             "target4_azel",
             duration=10.0,
