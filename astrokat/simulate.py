@@ -216,7 +216,7 @@ class SimSession(object):
             user_logger.info('INIT')
             self.capture_initialised = True
 
-    def track(self, target, duration, announce=False, slew_only=False):
+    def track(self, target, duration=0, announce=False, slew_only=False):
         """Simulate the track source functionality during observations.
 
         Parameters
