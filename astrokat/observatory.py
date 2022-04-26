@@ -166,8 +166,7 @@ class Observatory(object):
             True if only the antenna slews should be performed.
         """
         target = katpoint.Target(target)
-        if not slew_only:
-            target.body.compute(self.observer)
+        target.body.compute(self.observer)
         return target
 
     def get_target(self, target_item):

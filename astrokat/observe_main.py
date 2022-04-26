@@ -103,15 +103,13 @@ def initial_slew(session, target_info):
     # session.wait will issue a warning if quorum not reached
 
 
-def observe(session, ref_antenna, target_info, slew_only=False, **kwargs):
+def observe(session, ref_antenna, target_info, **kwargs):
     """Target observation functionality.
 
     Parameters
     ----------
     session: `CaptureSession` object
     target_info: dictionary with target observation info
-    slew_only : bool, optional
-        True if only the antenna slews should be performed.
     """
     target_visible = False
 
@@ -131,7 +129,7 @@ def observe(session, ref_antenna, target_info, slew_only=False, **kwargs):
         target.body._dec = dec_dms
 
     # simple way to get telescope to slew to target
-    if slew_only:
+    if "slewonly" in kwargs:
         return session.track(target, duration=0.0, announce=False, slew_only=True)
 
     # set noise diode behaviour
@@ -632,7 +630,8 @@ def run_observation(opts, kat):
             )
 
             # Go to first target before starting capture
-            initial_slew(session, obs_targets[0])
+            user_logger.info("Slewing to first target")
+            observe(session, ref_antenna, obs_targets[0], slewonly=True)
             # Only start capturing once we are on target
             session.capture_start()
             user_logger.trace(

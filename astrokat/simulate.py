@@ -225,7 +225,7 @@ class SimSession(object):
         """TimeSession replacement for wait"""
         self.track(target, duration=0, announce=True)
 
-    def track(self, target, duration, announce=True):
+    def track(self, target, duration, announce=False, slew_only=False):
         """Simulate the track source functionality during observations.
 
         Parameters
@@ -237,17 +237,15 @@ class SimSession(object):
         announce : bool, optional
             True if start of action should be announced, with details of
             settings
+        slew_only : bool, optional
+                True if only the antenna slews should be performed.
         """
         self.track_ = True
         slew_time, az, el = self._fake_slew_(target)
         time.sleep(slew_time)
-        if announce:
-            user_logger.info(
-                "Slewed to %s at azel (%.1f, %.1f) deg", target.name, az, el)
+        user_logger.info("Slewed to %s at azel (%.1f, %.1f) deg", target.name, az, el)
         time.sleep(duration)
-        if duration > 0:
-            user_logger.info(
-                "Tracked %s for %d seconds", target.name, duration)
+        user_logger.info("Tracked %s for %d seconds", target.name, duration)
         return True
 
     def raster_scan(
