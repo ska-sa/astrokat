@@ -197,7 +197,7 @@ class SimSession(object):
 
     def __iter__(self):
         yield self
-        return
+        raise StopIteration
 
     def __exit__(self, type, value, traceback):
         # TODO: self.track_ cleanup for multiple obs loops
@@ -215,15 +215,6 @@ class SimSession(object):
             time.sleep(_SIM_OVERHEAD_SEC)
             user_logger.info('INIT')
             self.capture_initialised = True
-
-    def wait(self, *args, **kwargs):
-        """Simulate sessions wait function"""
-        time.sleep(_DEFAULT_SLEW_TIME_SEC)
-        return True
-
-    def _slew_to(self, target):
-        """TimeSession replacement for wait"""
-        self.track(target, duration=0, announce=True)
 
     def track(self, target, duration, announce=False, slew_only=False):
         """Simulate the track source functionality during observations.
