@@ -164,6 +164,9 @@ def observe(session, ref_antenna, target_info, **kwargs):
         elif "reversescan" in obs_type:
             scan_func = scans.reversescan
             obs_type = "scan"
+        elif "reference_pointing_scan" in obs_type:
+            scan_func = scans.reference_pointing_scan
+            obs_type = "scan"
         elif "return_scan" in obs_type:
             scan_func = scans.return_scan
             obs_type = "scan"
