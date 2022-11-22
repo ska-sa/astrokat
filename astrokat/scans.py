@@ -120,6 +120,7 @@ def scan(session, target, nd_period=None, lead_time=None, **kwargs):
     user_logger.info("Scan target: {}".format(target))
     return session.scan(target, **kwargs)
 
+
 def reference_pointing_scan(session, target, nd_period=None, lead_time=None, **kwargs):
     """Perform offset pointings on nearest pointing calibrator.
 
@@ -138,6 +139,7 @@ def reference_pointing_scan(session, target, nd_period=None, lead_time=None, **k
     trigger(session.kat, duration=nd_period, lead_time=lead_time)
     reference_pointing = session.reference_pointing_scan(session, target, **kwargs)
     return reference_pointing
+
 
 def forwardscan(session, target, nd_period=None, lead_time=None, **kwargs):
     """Forward scan observation.
