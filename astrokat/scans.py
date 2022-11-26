@@ -121,7 +121,7 @@ def scan(session, target, nd_period=None, lead_time=None, **kwargs):
     return session.scan(target, **kwargs)
 
 
-def reference_pointing_scan(session, target, nd_period=None, lead_time=None, **kwargs):
+def reference_pointing_scan(session, target, duration, nd_period=None, lead_time=None, **kwargs):
     """Perform offset pointings on nearest pointing calibrator.
 
     Calculate and store pointing offset corrections in telstate
