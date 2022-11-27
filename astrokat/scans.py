@@ -137,7 +137,7 @@ def reference_pointing_scan(session, target, duration, nd_period=None, lead_time
     """
     # trigger noise diode if set
     trigger(session.kat, duration=nd_period, lead_time=lead_time)
-    reference_pointing = session.reference_pointing_scan(session, target, **kwargs)
+    reference_pointing = session.reference_pointing_scan(session, target, duration, **kwargs)
     return reference_pointing
 
 
