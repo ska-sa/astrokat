@@ -303,7 +303,7 @@ class SimSession(object):
         return True
 
     def reference_pointing_scan(
-        self, target=None, duration=5.0, extent=1, num_pointings=10
+        self, target=None, duration=5.0, extent=1, num_pointings=3
     ):
         """Simulate a collection of offset pointings on the nearest pointing
         calibrator.
