@@ -121,7 +121,7 @@ def scan(session, target, nd_period=None, lead_time=None, **kwargs):
     return session.scan(target, **kwargs)
 
 
-def reference_pointing_scan(session, target, duration, nd_period=None, lead_time=None, **kwargs):
+def reference_pointing_scan(session, target, nd_period=None, lead_time=None, **kwargs):
     """Perform offset pointings on nearest pointing calibrator.
 
     Calculate and store pointing offset corrections in telstate
@@ -137,8 +137,8 @@ def reference_pointing_scan(session, target, duration, nd_period=None, lead_time
     """
     # trigger noise diode if set
     trigger(session.kat, duration=nd_period, lead_time=lead_time)
-    reference_pointing = session.reference_pointing_scan(target, **kwargs)
-    return reference_pointing
+    user_logger.info("Reference pointing scan target: {}".format(target))
+    return session.reference_pointing_scan(target, **kwargs)
 
 
 def forwardscan(session, target, nd_period=None, lead_time=None, **kwargs):
