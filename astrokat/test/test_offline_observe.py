@@ -44,7 +44,7 @@ class TestAstrokatYAML(unittest.TestCase):
             "target1_radec", duration=10.0, az=179.9, el=30.6, logs=result
         )
         self.assert_started_target_track(
-            "target2_gal", duration=10.0, az=345.4, el=68.6, logs=result
+            "target2_gal", duration=10.0, az=345.2, el=68.6, logs=result
         )
         self.assert_started_target_track(
             "target3_azel", duration=10.0, az=10.0, el=50.0, logs=result
@@ -229,7 +229,7 @@ class TestAstrokatYAML(unittest.TestCase):
             "Jupiter", duration=60.0, az=323.4, el=71.0, logs=result
         )
         self.assert_started_target_track(
-            "Moon", duration=40.0, az=64.1, el=66.3, logs=result
+            "Moon", duration=40.0, az=63.8, el=66.5, logs=result
         )
 
         self.assertIn("Observation targets are ['Jupiter', 'Moon']", result)
