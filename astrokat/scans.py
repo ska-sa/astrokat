@@ -121,6 +121,26 @@ def scan(session, target, nd_period=None, lead_time=None, **kwargs):
     return session.scan(target, **kwargs)
 
 
+def reference_pointing_scan(session, target, nd_period=None, lead_time=None, **kwargs):
+    """Perform offset pointings on nearest pointing calibrator.
+
+    Calculate and store pointing offset corrections in telstate
+
+    Parameters
+    ----------
+    session: `CaptureSession`
+    target: katpoint.Target
+    nd_period: float
+        noisediode period
+    lead_time: float
+        noisediode trigger lead time
+    """
+    # trigger noise diode if set
+    trigger(session.kat, duration=nd_period, lead_time=lead_time)
+    user_logger.info("Reference pointing scan target: {}".format(target))
+    return session.reference_pointing_scan(target, **kwargs)
+
+
 def forwardscan(session, target, nd_period=None, lead_time=None, **kwargs):
     """Forward scan observation.
 

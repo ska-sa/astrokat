@@ -44,7 +44,7 @@ class TestAstrokatYAML(unittest.TestCase):
             "target1_radec", duration=10.0, az=179.9, el=30.6, logs=result
         )
         self.assert_started_target_track(
-            "target2_gal", duration=10.0, az=345.4, el=68.6, logs=result
+            "target2_gal", duration=10.0, az=345.2, el=68.6, logs=result
         )
         self.assert_started_target_track(
             "target3_azel", duration=10.0, az=10.0, el=50.0, logs=result
@@ -164,7 +164,7 @@ class TestAstrokatYAML(unittest.TestCase):
 
         self.assertIn("1827-360 observed for 30.0 sec", result)
         self.assertIn("1934-638 observed for 120.0 sec", result)
-        self.assertIn("3C286 observed for 40.0 sec", result)
+        self.assertIn("3C286 observed for 80.0 sec", result)
         self.assertIn("T3R04C06 observed for 180.0 sec", result)
         self.assertIn("T4R00C02 observed for 180.0 sec", result)
         self.assertIn("T4R00C04 observed for 180.0 sec", result)
@@ -204,19 +204,19 @@ class TestAstrokatYAML(unittest.TestCase):
         )
         self.assertIn("POL calibrators are ['3C286']", result, "one pol calibrator")
         self.assertIn("1827-360 observed for 30.0 sec", result)
-        self.assertIn("1934-638 observed for 180.0 sec", result)
+        self.assertIn("1934-638 observed for 120.0 sec", result)
         self.assertIn("3C286 observed for 80.0 sec", result)
-        self.assertIn("T3R04C06 observed for 360.0 sec", result)
-        self.assertIn("T4R00C02 observed for 360.0 sec", result)
-        self.assertIn("T4R00C04 observed for 360.0 sec", result)
-        self.assertIn("T4R00C06 observed for 360.0 sec", result)
-        self.assertIn("T4R01C01 observed for 360.0 sec", result)
-        self.assertIn("T4R01C03 observed for 360.0 sec", result)
-        self.assertIn("T4R01C05 observed for 360.0 sec", result)
+        self.assertIn("T3R04C06 observed for 180.0 sec", result)
+        self.assertIn("T4R00C02 observed for 180.0 sec", result)
+        self.assertIn("T4R00C04 observed for 180.0 sec", result)
+        self.assertIn("T4R00C06 observed for 180.0 sec", result)
+        self.assertIn("T4R01C01 observed for 180.0 sec", result)
+        self.assertIn("T4R01C03 observed for 180.0 sec", result)
+        self.assertIn("T4R01C05 observed for 180.0 sec", result)
         # do no need to be super accurate with this target to allow
         # for slew time discrepancies
         self.assertIn("T4R02C02 observed", result)
-        self.assertIn("T4R02C04 observed for 360.0 sec", result)
+        self.assertIn("T4R02C04 observed for 180.0 sec", result)
 
     def test_solar_body(self):
         """Special target observation of solar system body."""
@@ -229,7 +229,7 @@ class TestAstrokatYAML(unittest.TestCase):
             "Jupiter", duration=60.0, az=323.4, el=71.0, logs=result
         )
         self.assert_started_target_track(
-            "Moon", duration=40.0, az=64.1, el=66.3, logs=result
+            "Moon", duration=40.0, az=63.8, el=66.5, logs=result
         )
 
         self.assertIn("Observation targets are ['Jupiter', 'Moon']", result)
