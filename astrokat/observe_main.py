@@ -145,7 +145,6 @@ def observe(session, ref_antenna, target_info, **kwargs):
                                           lead_time=nd_lead)
     elif "reference_pointing_scan" in obs_type:
         scan_func = scans.reference_pointing_scan
-        obs_type = "reference_pointing_scan"
         target_visible = scan_func(session,
                                    target,
                                    nd_period=nd_period,
