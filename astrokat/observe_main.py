@@ -143,13 +143,6 @@ def observe(session, ref_antenna, target_info, **kwargs):
                                           duration=duration,
                                           nd_period=nd_period,
                                           lead_time=nd_lead)
-    elif "reference_pointing_scan" in obs_type:
-        scan_func = scans.reference_pointing_scan
-        target_visible = scan_func(session,
-                                   target,
-                                   nd_period=nd_period,
-                                   lead_time=nd_lead,
-                                   **kwargs[obs_type])
     elif "scan" in obs_type:  # compensating for ' and spaces around key values
         if "raster_scan" in obs_type:
             if ("raster_scan" not in kwargs.keys()) or (
@@ -170,6 +163,9 @@ def observe(session, ref_antenna, target_info, **kwargs):
             obs_type = "scan"
         elif "reversescan" in obs_type:
             scan_func = scans.reversescan
+            obs_type = "scan"
+        elif "reference_pointing_scan" in obs_type:
+            scan_func = scans.reference_pointing_scan
             obs_type = "scan"
         elif "return_scan" in obs_type:
             scan_func = scans.return_scan
