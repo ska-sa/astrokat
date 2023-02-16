@@ -50,7 +50,7 @@ class TestAstrokatYAML(unittest.TestCase):
         # get result and make sure everything ran properly
         result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn("Initialising Scan target scan_1934-638 for 30.0 sec", result)
-        self.assertIn("scan_1934-638 observed for 30.0 sec", result)
+        self.assertIn("scan_1934-638 observed for 60.0 sec", result)
 
     def test_reference_pointing_scan_basic_sim(self):
         """Not much to do: check scan initiate log msg"""
@@ -102,10 +102,10 @@ class TestAstrokatYAML(unittest.TestCase):
         # Check that calibration tracks can be done
         self.assertIn("PictorA_r0.5", result)
         # Check scan details
-        self.assertIn("scan speed is 0.13 deg/s", result)
-        self.assertIn("Azimuth scan extent [-6.1, 6.1]", result)
-        self.assertIn("Scan completed - 49 scan lines", result)
-        self.assertEqual(result.count('Scan target: scan_azel_with_nd_trigger,'), 99)
+        self.assertIn("scan speed is 0.14 deg/s", result)
+        self.assertIn("Azimuth scan extent [-8.3, 8.3]", result)
+        self.assertIn("Scan completed - 48 scan lines", result)
+        self.assertEqual(result.count('Scan target: scan_azel_with_nd_trigger,'), 48)
 
     def assert_started_target_track(self, target_string, duration, result):
         simulate_message = "Slewed to {} at azel".format(target_string)

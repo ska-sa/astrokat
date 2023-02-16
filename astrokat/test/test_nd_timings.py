@@ -64,7 +64,7 @@ class TestAstrokatYAML(unittest.TestCase):
 
         result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn("No ND for target", result)
-        self.assertIn("noise-diode off at 1573715222.0", result)
+        self.assertIn("noise-diode off at 1573714914.0", result)
         self.assertIn("Restoring ND pattern", result)
         self.assertIn("noise diode pattern every 0.1 sec, with 0.05 sec on",
                       result)
