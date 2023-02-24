@@ -733,10 +733,10 @@ def run_observation(opts, kat):
                             "observed {}".format(target["last_observed"])
                         )
 
-                        targets_visible += bool(observe(session,
-                                                        ref_antenna,
-                                                        target,
-                                                        **obs_plan_params))
+                        targets_visible += observe(session,
+                                                   ref_antenna,
+                                                   target,
+                                                   **obs_plan_params)
                         user_logger.trace(
                             "TRACE: observer after track\n {}".format(observer)
                         )

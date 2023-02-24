@@ -58,7 +58,7 @@ class TestAstrokatYAML(unittest.TestCase):
         # get result and make sure everything ran properly
         result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn("Initialising Reference_pointing_scan pointingcal 1934-638 for 120.0 sec", result)
-        self.assertIn("1934-638 observed for 0.0 sec", result)
+        self.assertIn("1934-638 observed for 120.0 sec", result)
 
     def test_get_scan_area_extents_for_setting_target(self):
         """Test of function get_scan_area_extents with setting target."""

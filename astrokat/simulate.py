@@ -347,6 +347,7 @@ class SimSession(object):
         self.track(target, duration=0, announce=False)
         user_logger.info("Waiting for gains to materialise in cal pipeline")
         user_logger.info("Retrieving gains, fitting beams, storing offsets")
+        return True
 
     def _target_azel(self, target):
         """Get azimuth and elevation co-ordinates for a target at the current time.
