@@ -166,7 +166,7 @@ def observe(session, ref_antenna, target_info, **kwargs):
             obs_type = "scan"
         elif "reference_pointing_scan" in obs_type:
             scan_func = scans.reference_pointing_scan
-            obs_type = "reference_pointing_scan"
+            obs_type = "scan"
         elif "return_scan" in obs_type:
             scan_func = scans.return_scan
             obs_type = "scan"
@@ -733,11 +733,10 @@ def run_observation(opts, kat):
                             "observed {}".format(target["last_observed"])
                         )
 
-                        if isinstance(observe(session, ref_antenna, target, **obs_plan_params), bool):
-                            targets_visible += observe(session,
-                                                       ref_antenna,
-                                                       target,
-                                                       **obs_plan_params)
+                        targets_visible += observe(session,
+                                                   ref_antenna,
+                                                   target,
+                                                   **obs_plan_params)
                         user_logger.trace(
                             "TRACE: observer after track\n {}".format(observer)
                         )

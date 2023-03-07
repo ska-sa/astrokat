@@ -2,7 +2,6 @@
 from __future__ import division
 from __future__ import absolute_import
 
-import numpy as np
 import ephem
 import logging
 import numpy
@@ -309,7 +308,6 @@ class SimSession(object):
         calibrator.
         Sleep a `duration` seconds to pretend doing calculation of pointing cal solutions
         and storing them in telstate before reporting to have completed the task.
-
         Parameters
         ----------
         target: katpoint.Target object
@@ -320,11 +318,11 @@ class SimSession(object):
         num_pointings: int
             Number of offset pointings
         """
-        scan = np.linspace(-extent, extent, num_pointings // 2)
-        offsets_along_x = np.c_[scan, np.zeros_like(scan)]
-        offsets_along_y = np.c_[np.zeros_like(scan), scan]
-        offsets = np.r_[offsets_along_y, offsets_along_x]
-        offset_end_times = np.zeros(len(offsets))
+        scan = numpy.linspace(-extent, extent, num_pointings // 2)
+        offsets_along_x = numpy.c_[scan, numpy.zeros_like(scan)]
+        offsets_along_y = numpy.c_[numpy.zeros_like(scan), scan]
+        offsets = numpy.r_[offsets_along_y, offsets_along_x]
+        offset_end_times = numpy.zeros(len(offsets))
         middle_time = 0.0
         weather = {}
 
@@ -349,6 +347,7 @@ class SimSession(object):
         self.track(target, duration=0, announce=False)
         user_logger.info("Waiting for gains to materialise in cal pipeline")
         user_logger.info("Retrieving gains, fitting beams, storing offsets")
+        return True
 
     def _target_azel(self, target):
         """Get azimuth and elevation co-ordinates for a target at the current time.
