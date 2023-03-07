@@ -297,6 +297,54 @@ class SimSession(object):
         time.sleep(duration)
         return True
 
+    def reference_pointing_scan(
+        self, target=None, duration=5.0, extent=1, num_pointings=3
+    ):
+        """Simulate a collection of offset pointings on the nearest pointing
+        calibrator.
+        Sleep a `duration` seconds to pretend doing calculation of pointing cal solutions
+        and storing them in telstate before reporting to have completed the task.
+        Parameters
+        ----------
+        target: katpoint.Target object
+        duration: int or float
+            Duration of scan
+        extent: int/float
+            distance of offset from target, in degrees
+        num_pointings: int
+            Number of offset pointings
+        """
+        scan = numpy.linspace(-extent, extent, num_pointings // 2)
+        offsets_along_x = numpy.c_[scan, numpy.zeros_like(scan)]
+        offsets_along_y = numpy.c_[numpy.zeros_like(scan), scan]
+        offsets = numpy.r_[offsets_along_y, offsets_along_x]
+        offset_end_times = numpy.zeros(len(offsets))
+        middle_time = 0.0
+        weather = {}
+
+        user_logger.info(
+            "Initiating interferometric pointing scan on target "
+            "'%s' (%d pointings of %g seconds each)",
+            target.name,
+            len(offsets),
+            duration,
+        )
+        self.track(target, duration=0, announce=False)
+        # Point to the requested offsets and collect extra data at middle time
+        for n, offset in enumerate(offsets):
+            user_logger.info("initiating track on offset of (%g, %g) degrees", *offset)
+            self.track(target, duration, announce=False)
+            offset_end_times[n] = time.time()
+            if n == len(offsets) // 2 - 1:
+                middle_time = offset_end_times[n]
+                user_logger.info(
+                    "reference time = %.1f, weather = %r", middle_time, weather)
+        user_logger.info("returning to target to complete the scan")
+        self.track(target, duration=0, announce=False)
+        user_logger.info("Waiting for gains to materialise in cal pipeline")
+        user_logger.info("Retrieving gains, fitting beams, storing offsets")
+        return True
+
     def _target_azel(self, target):
         """Get azimuth and elevation co-ordinates for a target at the current time.
 
