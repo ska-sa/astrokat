@@ -304,6 +304,7 @@ class SimSession(object):
         calibrator.
         Sleep a `duration` seconds to pretend doing calculation of pointing cal solutions
         and storing them in telstate before reporting to have completed the task.
+
         Parameters
         ----------
         target: katpoint.Target object
