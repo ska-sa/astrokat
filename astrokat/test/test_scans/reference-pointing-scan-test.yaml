@@ -1,0 +1,16 @@
+# scan and reference pointing scan observation
+instrument:
+  band: l
+  product: c856M4k
+  integration_time: 2
+durations:
+  start_time: 2018-10-31 14:00
+  obs_duration: 120.
+reference_pointing_scan:
+  duration: 120.0
+  num_pointings: 3
+  extent: 1.0
+observation_loop:
+  - LST: 0:00-23:50
+    target_list:
+     - name=1934-638, radec=19:39:25.03 -63:42:45.63, tags=pointingcal, duration=120.0, type=reference_pointing_scan

@@ -35,6 +35,7 @@ caltag_dict = {
     "flux": "flux",
     "gain": "gain",
     "pol": "polarisation",
+    "pointing": "pointing",
 }
 cal_tags = caltag_dict.keys()
 
