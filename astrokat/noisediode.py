@@ -199,7 +199,8 @@ def nd_reset(kat,
     # TODO - bngcebetsha: do we want to do this for ALL antennas or a targeted group such
     # as is done in `_set_dig_nd_()`?
     for ant in antennas:
-        ant.req.dig_noise_source(timestamp, switch)
+        ped = getattr(kat, ant)
+        ped.req.dig_noise_source(timestamp, switch)
 
 
 def _switch_on_off_(kat,
