@@ -103,6 +103,10 @@ def _set_dig_nd_(kat,
         replies[ant] = ped.req.dig_noise_source(timestamp,
                                                 on_fraction,
                                                 cycle_length)
+        # TODO - bngcebetsha: update the switcing off of noise diodes to happen 'now' in
+        # order to avoid attempting to set them when the `timestamp` is in the past.
+        # user_logger.info('Switching off all noise diodes')
+        # replies[ant] = ped.req.dig_noise_source('now', 0)
         if kat.dry_run:
             msg = ('Dry-run: Set noise diode for antenna {} at '
                    'timestamp {}'.format(ant, timestamp))
