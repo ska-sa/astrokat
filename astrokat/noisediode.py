@@ -103,10 +103,6 @@ def _set_dig_nd_(kat,
         replies[ant] = ped.req.dig_noise_source(timestamp,
                                                 on_fraction,
                                                 cycle_length)
-        # TODO - bngcebetsha: update the switcing off of noise diodes to happen 'now' in
-        # order to avoid attempting to set them when the `timestamp` is in the past.
-        # user_logger.info('Switching off all noise diodes')
-        # replies[ant] = ped.req.dig_noise_source('now', 0)
         if kat.dry_run:
             msg = ('Dry-run: Set noise diode for antenna {} at '
                    'timestamp {}'.format(ant, timestamp))
@@ -177,6 +173,33 @@ def _nd_log_msg_(ant,
     user_logger.debug(msg)
 
     return actual_time
+
+
+def nd_reset(kat,
+             timestamp,
+             switch=0):
+    """Reset noise-source on or off.
+
+    Parameters
+    ----------
+    kat : session kat container-like object
+        Container for accessing KATCP resources allocated to schedule block.
+    timestamp : float, optional
+        Time since the epoch as a floating point number [sec]
+    switch: int, optional
+        off = 0 (default), on = 1
+
+    Returns
+    -------
+    timestamp : float
+        Linux timestamp reported by digitiser
+    """
+    antennas = sorted(ant.name for ant in kat.ants)
+    user_logger.info('Switching off all noise diodes')
+    # TODO - bngcebetsha: do we want to do this for ALL antennas or a targeted group such
+    # as is done in `_set_dig_nd_()`?
+    for ant in antennas:
+        ant.req.dig_noise_source(timestamp, switch)
 
 
 def _switch_on_off_(kat,
