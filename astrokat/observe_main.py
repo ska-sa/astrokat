@@ -312,7 +312,7 @@ class Telescope(object):
         # TODO: Return correlator settings to entry values
         # switch noise-source pattern off (ensure this after each observation)
         # if NaN returned at off command, allow to continue
-        noisediode.nd_reset(self.array)
+        noisediode.nd_reset(self.array, time.time())
         # noisediode.off(self.array, allow_ts_err=True)
         self.array.disconnect()
 
