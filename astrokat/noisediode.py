@@ -194,13 +194,8 @@ def nd_reset(kat,
     timestamp : float
         Linux timestamp reported by digitiser
     """
-    antennas = sorted(ant.name for ant in kat.ants)
     user_logger.info('Resetting all noise diodes')
-    # TODO - bngcebetsha: do we want to do this for ALL antennas or a targeted group such
-    # as is done in `_set_dig_nd_()`?
-    for ant in antennas:
-        ped = getattr(kat, ant)
-        ped.req.dig_noise_source(timestamp, switch)
+    kat.ants.req.dig_noise_source(timestamp, switch)
 
 
 def _switch_on_off_(kat,
