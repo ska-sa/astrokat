@@ -176,7 +176,7 @@ def _nd_log_msg_(ant,
 
 
 def nd_reset(kat,
-             timestamp,
+             timestamp="now",
              switch=0):
     """Reset noise-source on or off.
 
@@ -188,13 +188,10 @@ def nd_reset(kat,
         Time since the epoch as a floating point number [sec]
     switch: int, optional
         off = 0 (default), on = 1
-
-    Returns
-    -------
-    timestamp : float
-        Linux timestamp reported by digitiser
     """
-    user_logger.info('Resetting all noise diodes')
+    on_off = {0: 'off', 1: 'on'}
+    user_logger.info('Resetting all noise diodes to "{}"'
+                     .format(on_off[switch]))
     kat.ants.req.dig_noise_source(timestamp, switch)
 
 

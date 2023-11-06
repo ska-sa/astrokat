@@ -296,10 +296,6 @@ class Telescope(object):
         if "instrument" in obs_plan_params:
             self.subarray_setup(obs_plan_params["instrument"])
 
-        # TODO: noise diode implementations should be moved to sessions
-        # switch noise-source pattern off (known setup starting observation)
-        noisediode.off(self.array)
-
         # TODO: update correlator settings
         # TODO: names of antennas to use for beamformer if not all is desirable
         return self
