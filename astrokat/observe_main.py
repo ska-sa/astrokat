@@ -76,9 +76,8 @@ def observe(session, ref_antenna, target_info, **kwargs):
 
     Parameters
     ----------
-    session: `CaptureSession`
-    target_info:
-
+    session: `CaptureSession` object
+    target_info: dictionary with target observation info
     """
     target_visible = False
 
@@ -99,7 +98,7 @@ def observe(session, ref_antenna, target_info, **kwargs):
 
     # simple way to get telescope to slew to target
     if "slewonly" in kwargs:
-        return session.track(target, duration=0.0, announce=False)
+        return session.track(target, duration=0.0, announce=False, slew_only=True)
 
     # set noise diode behaviour
     nd_setup = None
