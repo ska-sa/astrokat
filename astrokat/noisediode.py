@@ -175,6 +175,25 @@ def _nd_log_msg_(ant,
     return actual_time
 
 
+def nd_reset(kat,
+             timestamp="now",
+             switch=0):
+    """Reset noise-source on or off.
+    Parameters
+    ----------
+    kat : session kat container-like object
+        Container for accessing KATCP resources allocated to schedule block.
+    timestamp : float, optional
+        Time since the epoch as a floating point number [sec]
+    switch: int, optional
+        off = 0 (default), on = 1
+    """
+    on_off = {0: 'off', 1: 'on'}
+    user_logger.info('Resetting all noise diodes to "{}"'
+                     .format(on_off[switch]))
+    kat.ants.req.dig_noise_source(timestamp, switch)
+
+
 def _switch_on_off_(kat,
                     timestamp,
                     switch=0):
