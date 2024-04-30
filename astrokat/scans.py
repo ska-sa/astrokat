@@ -32,7 +32,7 @@ def drift_pointing_offset(ref_antenna, target, duration=60.0):
 
     """
     obs_start_ts = ref_antenna.observer.date
-    transit_time = obs_start_ts + duration / 2.0
+    transit_time = (katpoint.Timestamp(obs_start_ts) + duration / 2.0).to_ephem_date()
     # Stationary transit point becomes new target
     az, el = target.azel(timestamp=transit_time, antenna=ref_antenna)
     target = katpoint.construct_azel_target(katpoint.wrap_angle(az), el)
