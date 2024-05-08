@@ -151,7 +151,7 @@ class Observatory(object):
         observer.date = ephem.now()
         return observer
 
-    def set_target(self, target):
+    def set_target(self, target, slew_only=False):
         """Set the target.
 
         MeerKAT Wrapper around a PyEphem.Body object, target is an object
@@ -162,7 +162,8 @@ class Observatory(object):
         target: str
             A comma-separated description which contains parameters such as
             the target name, position, flux model.
-
+        slew_only : bool, optional
+            True if only the antenna slews should be performed.
         """
         target = katpoint.Target(target)
         target.body.compute(self.observer)

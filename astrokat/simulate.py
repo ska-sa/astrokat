@@ -216,7 +216,7 @@ class SimSession(object):
             user_logger.info('INIT')
             self.capture_initialised = True
 
-    def track(self, target, duration=0, announce=False):
+    def track(self, target, duration=0, announce=False, slew_only=False):
         """Simulate the track source functionality during observations.
 
         Parameters
@@ -225,7 +225,11 @@ class SimSession(object):
             The target to be tracked
         duration: int
             Duration of track
-
+        announce : bool, optional
+            True if start of action should be announced, with details of
+            settings
+        slew_only : bool, optional
+                True if only the antenna slews should be performed.
         """
         self.track_ = True
         slew_time, az, el = self._fake_slew_(target)
