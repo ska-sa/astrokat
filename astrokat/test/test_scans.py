@@ -32,7 +32,7 @@ class TestAstrokatYAML(unittest.TestCase):
         result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn("Initialising Drift_scan target 1934-638 for 180.0 sec", result)
         self.assertIn("Drift_scan observation for 180.0 sec", result)
-        target_string = "Az: -172:57:37.1 El: 56:27:26.4"
+        target_string = "Az: -158:55:32.5 El: 52:01:18.0"
         self.assert_started_target_track(target_string, 180.0, result)
         self.assert_completed_target_track(target_string, 180.0, result)
 
