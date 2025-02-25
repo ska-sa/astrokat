@@ -166,7 +166,11 @@ def observe(session, ref_antenna, target_info, **kwargs):
             obs_type = "scan"
         elif "reference_pointing_scan" in obs_type:
             scan_func = scans.reference_pointing_scan
-            obs_type = "scan"
+            obs_type = "reference_pointing_scan"
+            if obs_type not in kwargs.keys():
+                kwargs[obs_type] = {'duration': duration}
+            else:
+                kwargs[obs_type]['duration'] = duration
         elif "return_scan" in obs_type:
             scan_func = scans.return_scan
             obs_type = "scan"
@@ -241,9 +245,7 @@ def above_horizon(target,
     # must be celestial target (ra, dec)
     # check that target is visible at start of track
     start_ = timestamp2datetime(time.time())
-    [azim, elev] = _horizontal_coordinates(target,
-                                              observer,
-                                              start_)
+    [azim, elev] = _horizontal_coordinates(target, observer, start_)
     user_logger.trace(
         "TRACE: target at start (az, el)= ({}, {})".format(azim, elev)
     )
@@ -253,9 +255,7 @@ def above_horizon(target,
     # check that target will be visible at end of track
     if duration:
         end_ = timestamp2datetime(time.time() + duration)
-        [azim, elev] = _horizontal_coordinates(target,
-                                                  observer,
-                                                  end_)
+        [azim, elev] = _horizontal_coordinates(target, observer, end_)
         user_logger.trace(
             "TRACE: target at end (az, el)= ({}, {})".format(azim, elev)
         )
@@ -412,6 +412,17 @@ def run_observation(opts, kat):
         if "proposal_description" in vars(opts):
             description = opts.proposal_description
         session_opts["description"] = description
+
+    if "reference_pointing" in obs_plan_params:
+        user_logger.info("Adjust pointing selected")
+        refpoint_params = obs_plan_params["reference_pointing"]
+        adjust_pointing = refpoint_params["adjust_pointing"]
+        max_age = refpoint_params["pointing_solution_max_age"]
+        max_dist = refpoint_params["pointing_solution_max_dist"]
+        session_opts = vars(opts)
+        session_opts["adjust_pointing"] = adjust_pointing
+        session_opts["pointing_solution_max_age"] = max_age
+        session_opts["pointing_solution_max_dist"] = max_dist
 
     nr_obs_loops = len(obs_plan_params["observation_loop"])
     with start_session(kat.array, **vars(opts)) as session:
