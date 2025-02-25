@@ -170,7 +170,7 @@ def observe(session, ref_antenna, target_info, **kwargs):
             if obs_type not in kwargs.keys():
                 kwargs[obs_type] = {'duration': duration}
             else:
-                kwargs[obs_type]['duration'] = duration           
+                kwargs[obs_type]['duration'] = duration
         elif "return_scan" in obs_type:
             scan_func = scans.return_scan
             obs_type = "scan"
@@ -245,9 +245,7 @@ def above_horizon(target,
     # must be celestial target (ra, dec)
     # check that target is visible at start of track
     start_ = timestamp2datetime(time.time())
-    [azim, elev] = _horizontal_coordinates(target,
-                                              observer,
-                                              start_)
+    [azim, elev] = _horizontal_coordinates(target, observer, start_)
     user_logger.trace(
         "TRACE: target at start (az, el)= ({}, {})".format(azim, elev)
     )
@@ -257,9 +255,7 @@ def above_horizon(target,
     # check that target will be visible at end of track
     if duration:
         end_ = timestamp2datetime(time.time() + duration)
-        [azim, elev] = _horizontal_coordinates(target,
-                                                  observer,
-                                                  end_)
+        [azim, elev] = _horizontal_coordinates(target, observer, end_)
         user_logger.trace(
             "TRACE: target at end (az, el)= ({}, {})".format(azim, elev)
         )
@@ -394,8 +390,9 @@ def run_observation(opts, kat):
     obs_plan_params = opts.obs_plan_params
     # remove observation specific instructions housed in YAML file
     del opts.obs_plan_params
-    #TODO: rather pass obs_plan_params in observe.py in astrokat
-    #to save in telstate
+
+    # TODO: rather pass obs_plan_params in observe.py in astrokat
+    # to save in telstate
 
     # set up duration periods for observation control
     obs_duration = -1
@@ -418,13 +415,13 @@ def run_observation(opts, kat):
         if "proposal_description" in vars(opts):
             description = opts.proposal_description
         session_opts["description"] = description
-    
+
     if "adjust_pointing" not in vars(opts):
         session_opts = vars(opts)
         adjust_pointing = obs_plan_params["adjust_pointing"]
         max_age = obs_plan_params["max_age"]
         max_dist = obs_plan_params["max_dist"]
-        session_opts["adjust_pointing"] =  adjust_pointing
+        session_opts["adjust_pointing"] = adjust_pointing
         session_opts["pointing_solution_max_age"] = max_age
         session_opts["pointing_solution_max_dist"] = max_dist
 
