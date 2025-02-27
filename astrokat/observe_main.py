@@ -390,10 +390,6 @@ def run_observation(opts, kat):
     obs_plan_params = opts.obs_plan_params
     # remove observation specific instructions housed in YAML file
     del opts.obs_plan_params
-
-    # TODO: rather pass obs_plan_params in observe.py in astrokat
-    # to save in telstate
-
     # set up duration periods for observation control
     obs_duration = -1
     if "durations" in obs_plan_params:
@@ -418,12 +414,13 @@ def run_observation(opts, kat):
 
     if "adjust_pointing" not in vars(opts):
         session_opts = vars(opts)
-        adjust_pointing = obs_plan_params["adjust_pointing"]
-        max_age = obs_plan_params["max_age"]
-        max_dist = obs_plan_params["max_dist"]
-        session_opts["adjust_pointing"] = adjust_pointing
-        session_opts["pointing_solution_max_age"] = max_age
-        session_opts["pointing_solution_max_dist"] = max_dist
+        if 'adjust_pointing' in obs_plan_params:
+            adjust_pointing = obs_plan_params["adjust_pointing"]
+            max_age = obs_plan_params["pointing_solution_max_age"]
+            max_dist = obs_plan_params["pointing_solution_max_dist"]
+            session_opts["adjust_pointing"] = adjust_pointing
+            session_opts["pointing_solution_max_age"] = max_age
+            session_opts["pointing_solution_max_dist"] = max_dist
 
     nr_obs_loops = len(obs_plan_params["observation_loop"])
     with start_session(kat.array, **vars(opts)) as session:
