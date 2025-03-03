@@ -415,11 +415,12 @@ def run_observation(opts, kat):
 
     if "adjust_pointing" not in vars(opts):
         session_opts = vars(opts)
-        if 'adjust_pointing' in obs_plan_params:
+        if "reference_pointing" in obs_plan_params:
             user_logger.info("Adjust pointing selected")
-            adjust_pointing = obs_plan_params["adjust_pointing"]
-            max_age = obs_plan_params["pointing_solution_max_age"]
-            max_dist = obs_plan_params["pointing_solution_max_dist"]
+            refpoint_params = obs_plan_params["reference_pointing"]
+            adjust_pointing = refpoint_params["adjust_pointing"]
+            max_age = refpoint_params["pointing_solution_max_age"]
+            max_dist = refpoint_params["pointing_solution_max_dist"]
             session_opts["adjust_pointing"] = adjust_pointing
             session_opts["pointing_solution_max_age"] = max_age
             session_opts["pointing_solution_max_dist"] = max_dist
