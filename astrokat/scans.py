@@ -121,6 +121,75 @@ def scan(session, target, nd_period=None, lead_time=None, **kwargs):
     return session.scan(target, **kwargs)
 
 
+def scan_const_el(session, target, nd_period=None, lead_time=None, **kwargs):
+    """Run a scan at a constant elevation.
+
+    This is achieved by defining the scan in horizontal (azimuth-elevation)
+    coordinates. The center of the scan is the azimuth and elevation of the
+    celestial target at the start of the scan. This function reuses the
+    generic `scan()` function to perform the telescope movement.
+
+    Parameters
+    ----------
+    session: `CaptureSession`
+    target: katpoint.Target
+        The celestial target (e.g., in RA/Dec) to center the scan on.
+    nd_period: float
+        noisediode period
+    lead_time: float
+        noisediode trigger lead time
+    **kwargs: dict
+        Must contain 'scan_width_az' (in degrees) and
+        'scan_speed_az' (in degrees/sec).
+    """
+    if not all(k in kwargs for k in ['scan_width_az', 'scan_speed_az']):
+        raise ValueError("Constant elevation scan requires 'scan_width_az' and 'scan_speed_az' in YAML config")
+
+    scan_width_az = float(kwargs['scan_width_az'])
+    scan_speed_az = float(kwargs['scan_speed_az'])
+    scan_duration = scan_width_az / scan_speed_az
+
+    # Get current time from session if available, else use real time
+    try:
+        timestamp = session.time
+    except AttributeError:
+        timestamp = time.time()
+
+    # Predict target's position at the middle of the scan for better accuracy.
+    # This accounts for the target's drift during the scan itself.
+    scan_mid_ts = timestamp + scan_duration / 2.0
+    az_rad, el_rad = target.azel(timestamp=scan_mid_ts)
+
+    # Create a new, temporary target fixed in Az/El for the scan.
+    # This mirrors the technique used in `reversescan`.
+    azel_target = katpoint.construct_azel_target(az_rad, el_rad)
+    azel_target.name = target.name  # Keep the original name for logging
+    azel_target.antenna = target.antenna  # Ensure observer is consistent
+
+    user_logger.info("Scan center (Az, El): ({:.2f}, {:.2f}) deg".format(
+        np.degrees(az_rad), np.degrees(el_rad)))
+
+    # Calculate scan parameters for the session.scan() call
+    start_az_offset = -scan_width_az / 2.0
+    end_az_offset = scan_width_az / 2.0
+
+    # Construct arguments for the underlying scan function.
+    # Start with a copy of the input kwargs to preserve other scan options
+    # like 'projection' from the YAML file.
+    scan_kwargs = kwargs.copy()
+    scan_kwargs['duration'] = scan_duration
+    scan_kwargs['start'] = (start_az_offset, 0.0)  # (az_offset, el_offset)
+    scan_kwargs['end'] = (end_az_offset, 0.0)
+    # Clean up keys that are not meant for the core scan function
+    scan_kwargs.pop('scan_width_az', None)
+    scan_kwargs.pop('scan_speed_az', None)
+    user_logger.debug("DEBUG: Passing to session.scan: {}".format(scan_kwargs))
+
+    # Call the generic scan function with the new Az/El target and calculated parameters
+    return scan(session, azel_target, nd_period=nd_period, lead_time=lead_time, **scan_kwargs)
+
+
+
 def reference_pointing_scan(session, target, nd_period=None, lead_time=None, **kwargs):
     """Perform offset pointings on nearest pointing calibrator.
 
