@@ -145,6 +145,9 @@ def scan_const_el(session, target, nd_period=None, lead_time=None, **kwargs):
     if not all(k in kwargs for k in ['scan_width_az', 'scan_speed_az']):
         raise ValueError("Constant elevation scan requires 'scan_width_az' and 'scan_speed_az' in YAML config")
 
+    # trigger noise diode if set
+    trigger(session.kat, duration=nd_period, lead_time=lead_time)
+
     scan_width_az = float(kwargs['scan_width_az'])
     scan_speed_az = float(kwargs['scan_speed_az'])
     scan_duration = scan_width_az / scan_speed_az
@@ -172,6 +175,12 @@ def scan_const_el(session, target, nd_period=None, lead_time=None, **kwargs):
     # Calculate scan parameters for the session.scan() call
     start_az_offset = -scan_width_az / 2.0
     end_az_offset = scan_width_az / 2.0
+
+    # Log scan parameters for debugging and testing
+    user_logger.info("Scan duration is %.2f s and scan speed is %.2f deg/s", 
+                     scan_duration, scan_speed_az)
+    user_logger.info("Azimuth scan extent [%.1f, %.1f]", 
+                     start_az_offset, end_az_offset)
 
     # Construct arguments for the underlying scan function.
     # Start with a copy of the input kwargs to preserve other scan options

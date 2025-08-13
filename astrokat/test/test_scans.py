@@ -109,6 +109,28 @@ class TestAstrokatYAML(unittest.TestCase):
         self.assertIn("Scan completed - 48 scan lines", result)
         self.assertEqual(result.count('Scan target: scan_azel_with_nd_trigger,'), 48)
 
+    def test_scan_const_el_sim(self):
+        """
+        Test that `scan_const_el` is correctly called and executed
+        from a YAML file in a simulated environment.
+        """
+        execute_observe_main("test_scans/scan-const-el-sim-test.yaml")
+        # Verify the log output to confirm correct execution
+        result = LoggedTelescope.user_logger_stream.getvalue()
+        
+        # Check that scan center coordinates were calculated and logged
+        self.assertIn("Scan center (Az, El):", result)
+        
+        # Check scan parameters (with current YAML: scan_width_az=5.0, scan_speed_az=0.1)
+        self.assertIn("scan speed is 0.10 deg/s", result)
+        self.assertIn("Azimuth scan extent [-2.5, 2.5]", result)
+        
+        # Check that the scan was executed (converted to azel target)
+        self.assertIn("Scan target: PictorA, tags=azel", result)
+        
+        # Check that the target was slewed to 
+        self.assertIn("Slewed to PictorA at azel", result)
+
     def assert_started_target_track(self, target_string, duration, result):
         simulate_message = "Slewed to {} at azel".format(target_string)
         katcorelib_message = "Initiating {:g}-second track on target {!r}".format(
