@@ -1,0 +1,21 @@
+instrument:
+  integration_time: 2
+
+noise_diode:
+  antennas: all
+  cycle_len: 20.
+  on_frac: 0.015
+  lead_time: 12.
+
+durations:
+  start_time: 2025-08-23 03:10:00
+
+scan:
+  scan_width_radec: 4.0     # 1 degree width in RA/Dec coordinate system
+  scan_speed_radec: 4.0     # 2 arcmin/sec scanning speed in RA/Dec
+  num_scan_lines: 10         # Number of scan lines through target
+
+observation_loop:
+  - LST: 0:10-23:50
+    target_list:
+      - name=PictorA, radec=5:19:49.721 -45:46:43.7801, tags=target, type=multi_scan_target_el, duration=0.0
