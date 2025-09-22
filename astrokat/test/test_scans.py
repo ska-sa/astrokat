@@ -107,7 +107,9 @@ class TestAstrokatYAML(unittest.TestCase):
         self.assertIn("scan speed is 0.14 deg/s", result)
         self.assertIn("Azimuth scan extent [-8.3, 8.3]", result)
         self.assertIn("Scan completed - 48 scan lines", result)
+        # Check the an radec target is fixed and been scanned across
         self.assertEqual(result.count('Scan target: scan_azel_with_nd_trigger,'), 48)
+        self.assertEqual(result.count('Scanning across radec target : '), 48)
 
     def assert_started_target_track(self, target_string, duration, result):
         simulate_message = "Slewed to {} at azel".format(target_string)

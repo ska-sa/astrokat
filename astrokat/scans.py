@@ -110,6 +110,13 @@ def scan(session, target, nd_period=None, lead_time=None, **kwargs):
         noisediode trigger lead time
 
     """
+    if isinstance(target, dict):
+        scan_target = target.get('ants')
+        radec_target = target.get('cbf')
+    else:
+        scan_target = target
+        radec_target = target
+
     # trigger noise diode if set
     trigger(session.kat, duration=nd_period, lead_time=lead_time)
     try:
@@ -117,7 +124,9 @@ def scan(session, target, nd_period=None, lead_time=None, **kwargs):
     except AttributeError:
         timestamp = time.time()
     user_logger.debug("DEBUG: Starting scan across target: {}".format(timestamp))
-    user_logger.info("Scan target: {}".format(target))
+    user_logger.info("Scan target: {}".format(scan_target))
+    # pass through the cbf, similar to session
+    user_logger.info("Scanning across radec target : {}".format(radec_target))
     return session.scan(target, **kwargs)
 
 
@@ -303,9 +312,18 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
     # restore datetime before continuing
     scan_target.antenna = antenna
     scan_target.antenna.observer.date = obs_start_ts
-
     scan_start = np.degrees(az_min - (az_min + az_max) / 2.)
     scan_end = np.degrees(az_max - (az_min + az_max) / 2.)
+
+    # Determine the cbf targets
+    # use scan_target to the astrometric (ra, dec)
+    # the ants to scan across the the delay tracking source
+    # the antenna we use is from the target list
+    time_radec = (t_start + t_end) / 2
+    ra, dec = scan_target.radec(time_radec, antenna)
+    cbf_target = katpoint.construct_radec_target(ra, dec)
+    # Set target dictionary
+    target_dict = {'ants': scan_target, 'cbf': cbf_target}
 
     scanargs = {}
     if "projection" in kwargs:
@@ -332,7 +350,7 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
         user_logger.info("Azimuth scan extent [%.1f, %.1f]" %
                          (scanargs["start"][0], scanargs["end"][0]))
         target_visible = scan(session,
-                              scan_target,
+                              target_dict,
                               nd_period=nd_period,
                               lead_time=lead_time,
                               **scanargs)
