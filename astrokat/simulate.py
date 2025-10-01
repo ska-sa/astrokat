@@ -225,7 +225,9 @@ class SimSession(object):
             The target to be tracked
         duration: int
             Duration of track
-
+        announce : bool, optional
+            True if start of action should be announced, with details of
+            settings
         """
         self.track_ = True
         slew_time, az, el = self._fake_slew_(target)
