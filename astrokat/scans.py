@@ -315,16 +315,6 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
     scan_start = np.degrees(az_min - (az_min + az_max) / 2.)
     scan_end = np.degrees(az_max - (az_min + az_max) / 2.)
 
-    # Determine the cbf targets
-    # use scan_target to the astrometric (ra, dec)
-    # the ants to scan across the the delay tracking source
-    # the antenna we use is from the target list
-    time_radec = (t_start + t_end) / 2
-    ra, dec = scan_target.radec(time_radec, antenna)
-    cbf_target = katpoint.construct_radec_target(ra, dec)
-    # Set target dictionary
-    target_dict = {'ants': scan_target, 'cbf': cbf_target}
-
     scanargs = {}
     if "projection" in kwargs:
         scanargs["projection"] = kwargs["projection"]
@@ -332,10 +322,10 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
     # take into account projection effects of the sky and convert to degrees per second
     # E.g., 5 arcmin/s should translate to 5/60/cos(el) deg/s
     scan_speed = (scan_speed / 60.0) / np.cos(el)
-    scanargs["duration"] = abs(scan_start - scan_end) / scan_speed  # Duration in seconds
+    scan_duration = scanargs["duration"] = abs(scan_start - scan_end) / scan_speed  # Duration in seconds
     user_logger.info(
         "Scan duration is %.2f and scan speed is %.2f deg/s",
-        scanargs["duration"], scan_speed
+        scan_duration, scan_speed
     )
     user_logger.info("Start Time: %s", t_start)
     user_logger.info("End Time: %s", t_end)
@@ -349,6 +339,17 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
             scanargs["end"] = scan_start, 0.0
         user_logger.info("Azimuth scan extent [%.1f, %.1f]" %
                          (scanargs["start"][0], scanargs["end"][0]))
+
+        # Determine the cbf targets
+        # use scan_target to the astrometric (ra, dec)
+        # the ants to scan across the the delay tracking source
+        # the antenna we use is from the target list
+        time_radec = time.time() + scan_duration / 2.0
+        ra, dec = scan_target.radec(time_radec, antenna)
+        cbf_target = katpoint.construct_radec_target(ra, dec)
+        # Set target dictionary
+        target_dict = {'ants': scan_target, 'cbf': cbf_target}
+
         target_visible = scan(session,
                               target_dict,
                               nd_period=nd_period,
