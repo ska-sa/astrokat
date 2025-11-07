@@ -104,7 +104,7 @@ class TestAstrokatYAML(unittest.TestCase):
         # Check that calibration tracks can be done
         self.assertIn("PictorA_r0.5", result)
         # Check scan details
-        self.assertIn("scan speed is 0.14 deg/s", result)
+        self.assertIn("scan speed is 0.14 degrees per second", result)
         self.assertIn("Azimuth scan extent [-8.3, 8.3]", result)
         self.assertIn("Scan completed - 48 scan lines", result)
         # Check the an radec target is fixed and been scanned across
