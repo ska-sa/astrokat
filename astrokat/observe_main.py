@@ -158,23 +158,32 @@ def observe(session, ref_antenna, target_info, **kwargs):
             else:
                 kwargs['scan']['duration'] = duration
         # TODO: fix raster scan and remove this scan hack
-        if "forwardscan" in obs_type:
+        if obs_type == "forwardscan":
             scan_func = scans.forwardscan
             obs_type = "scan"
-        elif "reversescan" in obs_type:
+        elif obs_type == "reversescan":
             scan_func = scans.reversescan
             obs_type = "scan"
-        elif "reference_pointing_scan" in obs_type:
+        elif obs_type == "multi_scan_target_el":
+            scan_func = scans.multi_scan_target_el
+            obs_type = "scan"
+        elif obs_type == "multi_scan_const_el":
+            scan_func = scans.multi_scan_const_el
+            obs_type = "scan"
+        elif obs_type == "scan_const_el":
+            scan_func = scans.scan_const_el
+            obs_type = "scan"            
+        elif obs_type == "reference_pointing_scan":
             scan_func = scans.reference_pointing_scan
             obs_type = "reference_pointing_scan"
             if obs_type not in kwargs.keys():
                 kwargs[obs_type] = {'duration': duration}
             else:
                 kwargs[obs_type]['duration'] = duration
-        elif "return_scan" in obs_type:
+        elif obs_type == "return_scan":
             scan_func = scans.return_scan
             obs_type = "scan"
-        elif "raster_scan" in obs_type:
+        elif obs_type == "raster_scan":
             scan_func = scans.raster_scan
         else:
             scan_func = scans.scan
