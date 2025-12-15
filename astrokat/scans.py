@@ -111,11 +111,11 @@ def scan(session, target, nd_period=None, lead_time=None, **kwargs):
 
     """
     if isinstance(target, dict):
-        scan_target = target.get('ants')
-        radec_target = target.get('cbf')
+        ants_target = target.get('ants')
+        cbf_target = target.get('cbf')
     else:
-        scan_target = target
-        radec_target = target
+        ants_target = target
+        cbf_target = target
 
     # trigger noise diode if set
     trigger(session.kat, duration=nd_period, lead_time=lead_time)
@@ -124,9 +124,9 @@ def scan(session, target, nd_period=None, lead_time=None, **kwargs):
     except AttributeError:
         timestamp = time.time()
     user_logger.debug("DEBUG: Starting scan across target: {}".format(timestamp))
-    user_logger.info("Scan target: {}".format(scan_target))
+    user_logger.info("Scan target: {}".format(ants_target))
     # pass through the cbf, similar to session
-    user_logger.info("Scanning across radec target : {}".format(radec_target))
+    user_logger.info("Scanning across CBF target : {}".format(cbf_target))
     return session.scan(target, **kwargs)
 
 
@@ -340,10 +340,7 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
         user_logger.info("Azimuth scan extent [%.1f, %.1f]" %
                          (scanargs["start"][0], scanargs["end"][0]))
 
-        # Determine the cbf targets
-        # use scan_target to the astrometric (ra, dec)
-        # the ants to scan across the the delay tracking source
-        # the antenna we use is from the target list
+        # CBF target is (ra, dec) position of reference antenna in middle of next scan
         time_radec = time.time() + scan_duration / 2.0
         ra, dec = scan_target.radec(time_radec, antenna)
         cbf_target = katpoint.construct_radec_target(ra, dec)
