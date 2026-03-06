@@ -223,6 +223,7 @@ def scan_const_el(session, target, nd_period=None, lead_time=None, **kwargs):
     # Start with a copy of the input kwargs to preserve other scan options
     # like 'projection' from the YAML file.
     scan_kwargs = kwargs.copy()
+    scan_kwargs['projection'] = scan_kwargs.get('projection', 'plate-carree')
     scan_kwargs['duration'] = scan_duration
     scan_kwargs['start'] = (start_az_offset, 0.0)  # (az_offset, el_offset)
     scan_kwargs['end'] = (end_az_offset, 0.0)
@@ -496,6 +497,7 @@ def multi_scan_const_el(session, target, nd_period=None, lead_time=None, **kwarg
 
         # Prepare scan parameters
         scan_kwargs = kwargs.copy()
+        scan_kwargs['projection'] = scan_kwargs.get('projection', 'plate-carree')
         scan_kwargs['duration'] = scan_line_duration
         scan_kwargs['start'] = (start_az_offset, 0.0)
         scan_kwargs['end'] = (end_az_offset, 0.0)
