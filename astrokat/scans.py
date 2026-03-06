@@ -144,7 +144,7 @@ def scan_const_el(session, target, nd_period=None, lead_time=None, **kwargs):
     """
     required_params = ['scan_width_radec', 'scan_speed_radec']
     if not all(k in kwargs for k in required_params):
-        raise ValueError(f"Constant elevation scan requires {required_params} in YAML config")
+        raise ValueError("Constant elevation scan requires {} in YAML config".format(required_params))
 
     # trigger noise diode if set
     trigger(session.kat, duration=nd_period, lead_time=lead_time)
@@ -257,7 +257,7 @@ def multi_scan_target_el(session, target, nd_period=None, lead_time=None, **kwar
     """
     required_params = ['scan_width_radec', 'scan_speed_radec', 'num_scan_lines']
     if not all(k in kwargs for k in required_params):
-        raise ValueError(f"Multi-scan target elevation requires {required_params} in YAML config")
+        raise ValueError("Multi-scan target elevation requires {} in YAML config".format(required_params))
 
     # trigger noise diode if set
     trigger(session.kat, duration=nd_period, lead_time=lead_time)
@@ -387,7 +387,7 @@ def multi_scan_const_el(session, target, nd_period=None, lead_time=None, **kwarg
     """
     required_params = ['obs_duration', 'scan_width_radec', 'scan_speed_radec']
     if not all(k in kwargs for k in required_params):
-        raise ValueError(f"Multi-scan constant elevation requires {required_params} in YAML config")
+        raise ValueError("Multi-scan constant elevation requires {} in YAML config".format(required_params))
 
     # trigger noise diode if set
     trigger(session.kat, duration=nd_period, lead_time=lead_time)
