@@ -172,7 +172,7 @@ def observe(session, ref_antenna, target_info, **kwargs):
             obs_type = "scan"
         elif obs_type == "scan_const_el":
             scan_func = scans.scan_const_el
-            obs_type = "scan"            
+            obs_type = "scan"
         elif obs_type == "reference_pointing_scan":
             scan_func = scans.reference_pointing_scan
             obs_type = "reference_pointing_scan"

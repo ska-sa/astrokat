@@ -144,14 +144,16 @@ def scan_const_el(session, target, nd_period=None, lead_time=None, **kwargs):
     """
     required_params = ['scan_width_radec', 'scan_speed_radec']
     if not all(k in kwargs for k in required_params):
-        raise ValueError("Constant elevation scan requires {} in YAML config".format(required_params))
+        raise ValueError(
+            "Constant elevation scan requires {} in YAML config".format(required_params)
+        )
 
     # trigger noise diode if set
     trigger(session.kat, duration=nd_period, lead_time=lead_time)
 
     scan_width_radec = float(kwargs['scan_width_radec'])  # degrees in RA/Dec
     scan_speed_radec = float(kwargs['scan_speed_radec'])  # arcmin/sec in RA/Dec
-    
+
     # Calculate scan duration in seconds (no elevation conversion needed)
     scan_duration = scan_width_radec / scan_speed_radec * 60
 
@@ -166,40 +168,43 @@ def scan_const_el(session, target, nd_period=None, lead_time=None, **kwargs):
     scan_start_buffer = 3.0  # seconds
     scan_mid_ts = timestamp + scan_start_buffer + scan_duration / 2.0
     az_rad, el_rad = target.azel(timestamp=scan_mid_ts)
-        
+
     # Convert RA/Dec width to azimuth width for initial positioning (rough estimate)
     scan_width_az_initial = scan_width_radec / np.cos(el_rad)
-    
+
     # Calculate scan start position (offset from center)
     start_az_offset = -scan_width_az_initial / 2.0
     start_az_rad = katpoint.wrap_angle(az_rad + np.radians(start_az_offset))
-    
+
     # Create target at scan start position for pre-positioning
     scan_start_target = katpoint.construct_azel_target(start_az_rad, el_rad)
     scan_start_target.name = target.name
     scan_start_target.antenna = target.antenna
-    
-    user_logger.info("Pre-positioning to scan start (Az, El): ({:.2f}, {:.2f}) deg".format(
-        np.degrees(start_az_rad), np.degrees(el_rad)))
-    
+
+    user_logger.info(
+        "Pre-positioning to scan start (Az, El): ({:.2f}, {:.2f}) deg".format(
+            np.degrees(start_az_rad), np.degrees(el_rad)
+        )
+    )
+
     # Pre-position telescope to scan start with minimal slewing during scan
     target_visible = session.track(scan_start_target, duration=0.0, announce=False)
     if not target_visible:
         user_logger.warning("Scan start position not visible")
         return False
-    
+
     # After slewing, recalculate target position at scan center for actual scan
     try:
         current_timestamp = session.time
     except AttributeError:
         current_timestamp = time.time()
-    
+
     scan_mid_ts = current_timestamp + scan_start_buffer + scan_duration / 2.0
     az_rad, el_rad = target.azel(timestamp=scan_mid_ts)
 
     # Convert RA/Dec parameters to azimuth using accurate elevation
     scan_width_az = scan_width_radec / np.cos(el_rad)
-    scan_speed_az = (scan_speed_radec / 60.0) / np.cos(el_rad)  # Convert arcmin/sec to deg/s
+    scan_speed_az = (scan_speed_radec / 60.0) / np.cos(el_rad)  # arcmin/s to deg/s
 
     # Create a new, temporary target fixed in Az/El for the scan.
     azel_target = katpoint.construct_azel_target(az_rad, el_rad)
@@ -214,9 +219,9 @@ def scan_const_el(session, target, nd_period=None, lead_time=None, **kwargs):
     end_az_offset = scan_width_az / 2.0
 
     # Log scan parameters for debugging and testing
-    user_logger.info("Scan duration is %.2f s and scan speed is %.2f deg/s", 
+    user_logger.info("Scan duration is %.2f s and scan speed is %.2f deg/s",
                      scan_duration, scan_speed_az)
-    user_logger.info("Azimuth scan extent [%.1f, %.1f]", 
+    user_logger.info("Azimuth scan extent [%.1f, %.1f]",
                      start_az_offset, end_az_offset)
 
     # Construct arguments for the underlying scan function.
@@ -233,14 +238,16 @@ def scan_const_el(session, target, nd_period=None, lead_time=None, **kwargs):
     user_logger.debug("DEBUG: Passing to session.scan: {}".format(scan_kwargs))
 
     # Call the generic scan function with the new Az/El target and calculated parameters
-    return scan(session, azel_target, nd_period=nd_period, lead_time=lead_time, **scan_kwargs)
+    return scan(
+        session, azel_target, nd_period=nd_period, lead_time=lead_time, **scan_kwargs
+    )
 
 
 def multi_scan_target_el(session, target, nd_period=None, lead_time=None, **kwargs):
     """Run multiple scan lines through a target.
 
-    This function performs multiple back-and-forth scan lines, with each scan line
-    going through the target position as it moves across the sky. Unlike multi_scan_const_el,
+    This function performs multiple back-and-forth scan lines, with each scan line going
+    through the target position as it moves across the sky. Unlike multi_scan_const_el,
     each scan line will be at a different elevation as the target moves.
 
     Parameters
@@ -258,7 +265,11 @@ def multi_scan_target_el(session, target, nd_period=None, lead_time=None, **kwar
     """
     required_params = ['scan_width_radec', 'scan_speed_radec', 'num_scan_lines']
     if not all(k in kwargs for k in required_params):
-        raise ValueError("Multi-scan target elevation requires {} in YAML config".format(required_params))
+        raise ValueError(
+            "Multi-scan target elevation requires {} in YAML config".format(
+                required_params
+            )
+        )
 
     # trigger noise diode if set
     trigger(session.kat, duration=nd_period, lead_time=lead_time)
@@ -267,7 +278,7 @@ def multi_scan_target_el(session, target, nd_period=None, lead_time=None, **kwar
     scan_width_radec = float(kwargs['scan_width_radec'])  # degrees in RA/Dec
     scan_speed_radec = float(kwargs['scan_speed_radec'])  # arcmin/sec in RA/Dec
     num_scan_lines = int(kwargs['num_scan_lines'])
-    
+
     # Basic validation
     if num_scan_lines == 0:
         user_logger.warning("Number of scan lines is zero")
@@ -289,21 +300,28 @@ def multi_scan_target_el(session, target, nd_period=None, lead_time=None, **kwar
     scan_start_buffer = 3.0  # seconds
     initial_scan_mid_ts = initial_timestamp + scan_start_buffer + scan_duration / 2.0
     az_rad_initial, el_rad_initial = target.azel(timestamp=initial_scan_mid_ts)
-    
+
     # Convert RA/Dec width to azimuth width for initial positioning
     scan_width_az_initial = scan_width_radec / np.cos(el_rad_initial)
-    
+
     # Pre-position telescope to first scan line start position
     start_az_offset_initial = -scan_width_az_initial / 2.0  # Always start west->east
-    start_az_rad_initial = katpoint.wrap_angle(az_rad_initial + np.radians(start_az_offset_initial))
-    
-    scan_start_target = katpoint.construct_azel_target(start_az_rad_initial, el_rad_initial)
+    start_az_rad_initial = katpoint.wrap_angle(
+        az_rad_initial + np.radians(start_az_offset_initial)
+    )
+
+    scan_start_target = katpoint.construct_azel_target(
+        start_az_rad_initial, el_rad_initial
+    )
     scan_start_target.name = target.name
     scan_start_target.antenna = target.antenna
-    
-    user_logger.info("Pre-positioning to first scan start (Az, El): ({:.2f}, {:.2f}) deg".format(
-        np.degrees(start_az_rad_initial), np.degrees(el_rad_initial)))
-    
+
+    user_logger.info(
+        "Pre-positioning to first scan start (Az, El): ({:.2f}, {:.2f}) deg".format(
+            np.degrees(start_az_rad_initial), np.degrees(el_rad_initial)
+        )
+    )
+
     target_visible = session.track(scan_start_target, duration=0.0, announce=False)
     if not target_visible:
         user_logger.warning("First scan start position not visible")
@@ -319,7 +337,7 @@ def multi_scan_target_el(session, target, nd_period=None, lead_time=None, **kwar
             current_timestamp = session.time
         except AttributeError:
             current_timestamp = time.time()
-        
+
         # Calculate target position at this scan's middle time
         scan_mid_ts = current_timestamp + scan_start_buffer + scan_duration / 2.0
         az_rad, el_rad = target.azel(timestamp=scan_mid_ts)
@@ -333,28 +351,33 @@ def multi_scan_target_el(session, target, nd_period=None, lead_time=None, **kwar
         azel_target.antenna = target.antenna
 
         # Calculate scan direction for this line
-        start_az_offset = -scan_width_az / 2.0 if not scan_direction else scan_width_az / 2.0
-        end_az_offset = scan_width_az / 2.0 if not scan_direction else -scan_width_az / 2.0
+        offset_size = scan_width_az / 2.0
+        start_az_offset = -offset_size if not scan_direction else offset_size
+        end_az_offset = offset_size if not scan_direction else -offset_size
 
         # Log scan line info
         direction_str = "East->West" if scan_direction else "West->East"
         user_logger.info("Scan line {}: {} at (Az, El): ({:.2f}, {:.2f}) deg".format(
             completed_scans + 1, direction_str, np.degrees(az_rad), np.degrees(el_rad)))
-        user_logger.info("Azimuth scan extent [%.1f, %.1f]", start_az_offset, end_az_offset)
+        user_logger.info(
+            "Azimuth scan extent [%.1f, %.1f]", start_az_offset, end_az_offset
+        )
 
         # Prepare scan parameters
         scan_kwargs = kwargs.copy()
         scan_kwargs['duration'] = scan_duration
         scan_kwargs['start'] = (start_az_offset, 0.0)
         scan_kwargs['end'] = (end_az_offset, 0.0)
-        
+
         # Clean up parameters not meant for core scan function
         for param in required_params:
             scan_kwargs.pop(param, None)
 
         # Execute the scan line
-        line_success = scan(session, azel_target, nd_period=nd_period, lead_time=lead_time, **scan_kwargs)
-        
+        line_success = scan(
+            session, azel_target, nd_period=nd_period, lead_time=lead_time, **scan_kwargs
+        )
+
         if line_success:
             completed_scans += 1
             scan_direction = not scan_direction  # Alternate direction for next scan
@@ -362,7 +385,9 @@ def multi_scan_target_el(session, target, nd_period=None, lead_time=None, **kwar
             user_logger.warning("Scan line {} failed".format(completed_scans + 1))
             break
 
-    user_logger.info("Multi-scan target completed - {} scan lines executed".format(completed_scans))
+    user_logger.info(
+        "Multi-scan target completed - {} scan lines executed".format(completed_scans)
+    )
     return completed_scans > 0
 
 
@@ -371,7 +396,8 @@ def multi_scan_const_el(session, target, nd_period=None, lead_time=None, **kwarg
 
     This function performs multiple back-and-forth scan lines at the same elevation
     while the target naturally drifts through the scan pattern due to sky rotation.
-    The target will cross the scan line once when its elevation matches the scan elevation.
+    The target will cross the scan line once when its elevation matches the scan
+    elevation.
 
     Parameters
     ----------
@@ -388,7 +414,11 @@ def multi_scan_const_el(session, target, nd_period=None, lead_time=None, **kwarg
     """
     required_params = ['obs_duration', 'scan_width_radec', 'scan_speed_radec']
     if not all(k in kwargs for k in required_params):
-        raise ValueError("Multi-scan constant elevation requires {} in YAML config".format(required_params))
+        raise ValueError(
+            "Multi-scan constant elevation requires {} in YAML config".format(
+                required_params
+            )
+        )
 
     # trigger noise diode if set
     trigger(session.kat, duration=nd_period, lead_time=lead_time)
@@ -406,21 +436,24 @@ def multi_scan_const_el(session, target, nd_period=None, lead_time=None, **kwarg
 
     # Calculate how many scan lines we can fit in the observation time
     num_scan_lines = round(obs_duration_sec / scan_line_duration)
-    
+
     # Basic validation
     if num_scan_lines == 0:
         user_logger.warning("Observation duration too short for any complete scan lines")
         return False
-    
+
     # Calculate total scan duration and slew times
     actual_obs_duration_sec = num_scan_lines * scan_line_duration
     actual_obs_duration_min = actual_obs_duration_sec / 60.0
     slew_time_per_scan = 3.2  # seconds
     scans_slew_time = (num_scan_lines - 1) * slew_time_per_scan
     total_scans_duration = actual_obs_duration_sec + scans_slew_time
-    
-    user_logger.info("Planning {} scan lines over {:.1f} minutes (requested: {:.1f} min)".format(
-        num_scan_lines, actual_obs_duration_min, obs_duration_min))
+
+    user_logger.info(
+        "Planning {} scan lines over {:.1f} minutes (requested: {:.1f} min)".format(
+            num_scan_lines, actual_obs_duration_min, obs_duration_min
+        )
+    )
 
     # Get current time from session if available, else use real time
     try:
@@ -439,15 +472,20 @@ def multi_scan_const_el(session, target, nd_period=None, lead_time=None, **kwarg
 
     # Pre-position telescope to first scan line start position
     initial_start_az_offset = -azimuth_width_deg / 2.0  # Always start west->east
-    initial_start_az_rad = katpoint.wrap_angle(az_mid_rad + np.radians(initial_start_az_offset))
-    
+    initial_start_az_rad = katpoint.wrap_angle(
+        az_mid_rad + np.radians(initial_start_az_offset)
+    )
+
     scan_start_target = katpoint.construct_azel_target(initial_start_az_rad, el_mid_rad)
     scan_start_target.name = target.name
     scan_start_target.antenna = target.antenna
-    
-    user_logger.info("Pre-positioning to first scan start (Az, El): ({:.2f}, {:.2f}) deg".format(
-        np.degrees(initial_start_az_rad), np.degrees(el_mid_rad)))
-    
+
+    user_logger.info(
+        "Pre-positioning to first scan start (Az, El): ({:.2f}, {:.2f}) deg".format(
+            np.degrees(initial_start_az_rad), np.degrees(el_mid_rad)
+        )
+    )
+
     target_visible = session.track(scan_start_target, duration=0.0, announce=False)
     if not target_visible:
         user_logger.warning("First scan start position not visible")
@@ -458,9 +496,10 @@ def multi_scan_const_el(session, target, nd_period=None, lead_time=None, **kwarg
         current_timestamp = session.time
     except AttributeError:
         current_timestamp = time.time()
-    
-    # Recalculate target at actual observation middle (including slew times). Add 3 sec slew time for good measure
-    obs_mid_timestamp_recalc = 3 + current_timestamp + total_scans_duration / 2.0
+
+    # Recalculate target at actual observation middle (including slew times).
+    # Add 3 sec slew time for good measure.
+    obs_mid_timestamp_recalc = 3.0 + current_timestamp + total_scans_duration / 2.0
     az_mid_recalc, el_mid_recalc = target.azel(timestamp=obs_mid_timestamp_recalc)
 
     user_logger.info("Target at obs middle (Az, El): ({:.2f}, {:.2f}) deg".format(
@@ -471,9 +510,13 @@ def multi_scan_const_el(session, target, nd_period=None, lead_time=None, **kwarg
 
     # Convert RA/Dec speed to azimuth speed (arcmin/sec -> deg/s)
     azimuth_speed_deg_per_sec = (scan_speed_radec / 60.0) / np.cos(el_mid_recalc)
-    
-    user_logger.info("Converted scan width: {:.2f} deg in azimuth".format(azimuth_width_deg))
-    user_logger.info("Converted scan speed: {:.2f} deg/s in azimuth".format(azimuth_speed_deg_per_sec))    
+
+    user_logger.info(
+        "Converted scan width: {:.2f} deg in azimuth".format(azimuth_width_deg)
+    )
+    user_logger.info(
+        "Converted scan speed: {:.2f} deg/s in azimuth".format(azimuth_speed_deg_per_sec)
+    )
 
     # Create fixed Az/El target for all scan lines using recalculated position
     azel_target = katpoint.construct_azel_target(az_mid_recalc, el_mid_recalc)
@@ -486,14 +529,23 @@ def multi_scan_const_el(session, target, nd_period=None, lead_time=None, **kwarg
 
     while completed_scans < num_scan_lines:
         # Calculate scan direction for this line
-        start_az_offset = -azimuth_width_deg / 2.0 if not scan_direction else azimuth_width_deg / 2.0
-        end_az_offset = azimuth_width_deg / 2.0 if not scan_direction else -azimuth_width_deg / 2.0
+        offset_size = azimuth_width_deg / 2.0
+        start_az_offset = -offset_size if not scan_direction else offset_size
+        end_az_offset = offset_size if not scan_direction else -offset_size
 
         # Log scan line info
         direction_str = "East->West" if scan_direction else "West->East"
-        user_logger.info("Scan line {}: {} at (Az, El): ({:.2f}, {:.2f}) deg".format(
-            completed_scans + 1, direction_str, np.degrees(az_mid_recalc), np.degrees(el_mid_recalc)))
-        user_logger.info("Azimuth scan extent [%.1f, %.1f]", start_az_offset, end_az_offset)
+        user_logger.info(
+            "Scan line {}: {} at (Az, El): ({:.2f}, {:.2f}) deg".format(
+                completed_scans + 1,
+                direction_str,
+                np.degrees(az_mid_recalc),
+                np.degrees(el_mid_recalc),
+            )
+        )
+        user_logger.info(
+            "Azimuth scan extent [%.1f, %.1f]", start_az_offset, end_az_offset
+        )
 
         # Prepare scan parameters
         scan_kwargs = kwargs.copy()
@@ -501,14 +553,16 @@ def multi_scan_const_el(session, target, nd_period=None, lead_time=None, **kwarg
         scan_kwargs['duration'] = scan_line_duration
         scan_kwargs['start'] = (start_az_offset, 0.0)
         scan_kwargs['end'] = (end_az_offset, 0.0)
-        
+
         # Clean up parameters not meant for core scan function
         for param in required_params:
             scan_kwargs.pop(param, None)
 
         # Execute the scan line
-        line_success = scan(session, azel_target, nd_period=nd_period, lead_time=lead_time, **scan_kwargs)
-        
+        line_success = scan(
+            session, azel_target, nd_period=nd_period, lead_time=lead_time, **scan_kwargs
+        )
+
         if line_success:
             completed_scans += 1
             scan_direction = not scan_direction  # Alternate direction for next scan
@@ -516,7 +570,9 @@ def multi_scan_const_el(session, target, nd_period=None, lead_time=None, **kwarg
             user_logger.warning("Scan line {} failed".format(completed_scans + 1))
             break
 
-    user_logger.info("Multi-scan completed - {} scan lines executed".format(completed_scans))
+    user_logger.info(
+        "Multi-scan completed - {} scan lines executed".format(completed_scans)
+    )
     return completed_scans > 0
 
 

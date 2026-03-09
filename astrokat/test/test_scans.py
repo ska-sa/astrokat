@@ -117,19 +117,21 @@ class TestAstrokatYAML(unittest.TestCase):
         execute_observe_main("test_scans/scan-const-el-sim-test.yaml")
         # Verify the log output to confirm correct execution
         result = LoggedTelescope.user_logger_stream.getvalue()
-        
+
         # Check that scan center coordinates were calculated and logged
         self.assertIn("Scan center (Az, El):", result)
-        
-        # Check scan parameters (with current YAML: scan_width_radec=4.0, scan_speed_radec=4.0)
-        # Converted to azimuth at ~56° elevation: width≈7.2°, speed≈0.12 deg/s, extent≈[-3.6, 3.6]
+
+        # Check scan parameters
+        # (with current YAML: scan_width_radec=4.0, scan_speed_radec=4.0)
+        # Converted to azimuth at ~56° elevation:
+        # width≈7.2°, speed≈0.12 deg/s, extent≈[-3.6, 3.6]
         self.assertIn("scan speed is 0.12 deg/s", result)
         self.assertIn("Azimuth scan extent [-3.6, 3.6]", result)
-        
+
         # Check that the scan was executed (converted to azel target)
         self.assertIn("Scan target: PictorA, tags=azel", result)
-        
-        # Check that the target was slewed to 
+
+        # Check that the target was slewed to
         self.assertIn("Slewed to PictorA at azel", result)
 
     def test_multi_scan_target_el_sim(self):
@@ -140,27 +142,27 @@ class TestAstrokatYAML(unittest.TestCase):
         execute_observe_main("test_scans/multi_scan_target_el.yaml")
         # Verify the log output to confirm correct execution
         result = LoggedTelescope.user_logger_stream.getvalue()
-        
+
         # Check that multiple scan lines were planned
         self.assertIn("Planning 10 scan lines through target", result)
-        
+
         # Check that individual scan duration was logged
         self.assertIn("Individual scan line duration:", result)
-        
+
         # Check that pre-positioning occurred
         self.assertIn("Pre-positioning to first scan start", result)
-        
+
         # Check that multiple scan lines were executed with alternating directions
         self.assertIn("Scan line 1: West->East", result)
         self.assertIn("Scan line 2: East->West", result)
         self.assertIn("Scan line 3: West->East", result)
-        
+
         # Check that scan completion was logged
         self.assertIn("Multi-scan target completed", result)
-        
+
         # Check that scans were executed (converted to azel targets)
         self.assertIn("Scan target: PictorA, tags=azel", result)
-        
+
         # Check that the target was slewed to
         self.assertIn("Slewed to PictorA at azel", result)
 
@@ -172,31 +174,31 @@ class TestAstrokatYAML(unittest.TestCase):
         execute_observe_main("test_scans/multi_scan_const_el.yaml")
         # Verify the log output to confirm correct execution
         result = LoggedTelescope.user_logger_stream.getvalue()
-        
+
         # Check that scan planning occurred with duration information
         self.assertIn("Planning", result)
         self.assertIn("scan lines over", result)
-        
+
         # Check that target position calculation was logged
         self.assertIn("Target at obs middle (Az, El):", result)
-        
+
         # Check that coordinate conversion was logged
         self.assertIn("Converted scan width:", result)
         self.assertIn("deg in azimuth", result)
-        
+
         # Check that pre-positioning occurred
         self.assertIn("Pre-positioning to first scan start", result)
-        
+
         # Check that multiple scan lines were executed with alternating directions
         self.assertIn("Scan line 1: West->East", result)
         self.assertIn("Scan line 2: East->West", result)
-        
+
         # Check that scan completion was logged
         self.assertIn("Multi-scan completed", result)
-        
+
         # Check that scans were executed (converted to azel targets)
         self.assertIn("Scan target: PictorA, tags=azel", result)
-        
+
         # Check that the target was slewed to
         self.assertIn("Slewed to PictorA at azel", result)
 
