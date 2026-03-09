@@ -123,8 +123,8 @@ class TestAstrokatYAML(unittest.TestCase):
 
         # Check scan parameters
         # (with current YAML: scan_width_radec=4.0, scan_speed_radec=4.0)
-        # Converted to azimuth at ~56° elevation:
-        # width≈7.2°, speed≈0.12 deg/s, extent≈[-3.6, 3.6]
+        # Converted to azimuth at ~56 deg elevation:
+        # width ~7.2 deg, speed ~0.12 deg/s, extent ~ [-3.6, 3.6]
         self.assertIn("scan speed is 0.12 deg/s", result)
         self.assertIn("Azimuth scan extent [-3.6, 3.6]", result)
 
