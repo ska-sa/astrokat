@@ -97,6 +97,20 @@ def observe(session, ref_antenna, target_info, **kwargs):
         target.body._dec = dec_dms
 
     # simple way to get telescope to slew to target
+    #
+    # NOTE: This small bit of code has had a troubled history :-)
+    # - started off as a basic 0-second track
+    # - #92: Replaced with fancy slew function to accommodate FBFUSE
+    # - #93: Reverted back to 0-second track
+    # - #113: Used new "slew_only" functionality in session.track
+    # - #129: Stripped that out again since #114 was never released to site
+    #
+    # If you want to restore "slew_only" functionality with the new
+    # target dict approach, do the following:
+    #
+    #   session.track({"ants": target}, duration=0.0, announce=False)
+    #
+    # But this might not help the FBFUSE's cause...
     if "slewonly" in kwargs:
         return session.track(target, duration=0.0, announce=False)
 
