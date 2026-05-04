@@ -325,19 +325,20 @@ class SimSession(object):
         offset_end_times = numpy.zeros(len(offsets))
         middle_time = 0.0
         weather = {}
+        track_duration = duration / num_pointings
 
         user_logger.info(
             "Initiating interferometric pointing scan on target "
             "'%s' (%d pointings of %g seconds each)",
             target.name,
             len(offsets),
-            duration,
+            track_duration,
         )
         self.track(target, duration=0, announce=False)
         # Point to the requested offsets and collect extra data at middle time
         for n, offset in enumerate(offsets):
             user_logger.info("initiating track on offset of (%g, %g) degrees", *offset)
-            self.track(target, duration, announce=False)
+            self.track(target, track_duration, announce=False)
             offset_end_times[n] = time.time()
             if n == len(offsets) // 2 - 1:
                 middle_time = offset_end_times[n]
