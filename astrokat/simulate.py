@@ -323,7 +323,7 @@ class SimSession(object):
         num_pointings: int
             Number of offset pointings
         """
-        scan = numpy.linspace(-extent, extent, (num_pointings -1) // 2)
+        scan = numpy.linspace(-extent, extent, (num_pointings - 1) // 2)
         offsets_along_x = numpy.c_[scan, numpy.zeros_like(scan)]
         offsets_along_y = numpy.c_[numpy.zeros_like(scan), scan]
         offsets = numpy.r_[offsets_along_y, offsets_along_x, [(0.0, 0.0)]]
