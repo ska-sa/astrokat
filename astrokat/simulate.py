@@ -50,7 +50,7 @@ def setobserver(update):
 
     """
     global simobserver
-    simobserver = update
+    simobserver = update.copy()
 
 
 def sim_time(record, datefmt=None):
@@ -323,26 +323,27 @@ class SimSession(object):
         num_pointings: int
             Number of offset pointings
         """
-        scan = numpy.linspace(-extent, extent, num_pointings // 2)
+        scan = numpy.linspace(-extent, extent, (num_pointings -1) // 2)
         offsets_along_x = numpy.c_[scan, numpy.zeros_like(scan)]
         offsets_along_y = numpy.c_[numpy.zeros_like(scan), scan]
-        offsets = numpy.r_[offsets_along_y, offsets_along_x]
+        offsets = numpy.r_[offsets_along_y, offsets_along_x, [(0.0, 0.0)]]
         offset_end_times = numpy.zeros(len(offsets))
         middle_time = 0.0
         weather = {}
+        track_duration = duration / num_pointings
 
         user_logger.info(
             "Initiating interferometric pointing scan on target "
             "'%s' (%d pointings of %g seconds each)",
             target.name,
             len(offsets),
-            duration,
+            track_duration,
         )
         self.track(target, duration=0, announce=False)
         # Point to the requested offsets and collect extra data at middle time
         for n, offset in enumerate(offsets):
             user_logger.info("initiating track on offset of (%g, %g) degrees", *offset)
-            self.track(target, duration, announce=False)
+            self.track(target, track_duration, announce=False)
             offset_end_times[n] = time.time()
             if n == len(offsets) // 2 - 1:
                 middle_time = offset_end_times[n]
@@ -374,7 +375,9 @@ class SimSession(object):
             ants_target = target.get('ants')
         else:
             ants_target = target
+        observer_date = target.antenna.observer.date
         az, el = ants_target.azel(simobserver.date)
+        target.antenna.observer.date = observer_date
         az = katpoint.rad2deg(az)
         el = katpoint.rad2deg(el)
         return az, el
