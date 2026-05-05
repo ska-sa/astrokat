@@ -110,6 +110,13 @@ def scan(session, target, nd_period=None, lead_time=None, **kwargs):
         noisediode trigger lead time
 
     """
+    if isinstance(target, dict):
+        ants_target = target.get('ants')
+        cbf_target = target.get('cbf')
+    else:
+        ants_target = target
+        cbf_target = target
+
     # trigger noise diode if set
     trigger(session.kat, duration=nd_period, lead_time=lead_time)
     try:
@@ -117,7 +124,9 @@ def scan(session, target, nd_period=None, lead_time=None, **kwargs):
     except AttributeError:
         timestamp = time.time()
     user_logger.debug("DEBUG: Starting scan across target: {}".format(timestamp))
-    user_logger.info("Scan target: {}".format(target))
+    user_logger.info("Scan target: {}".format(ants_target))
+    # pass through the cbf, similar to session
+    user_logger.info("Scanning across CBF target : {}".format(cbf_target))
     return session.scan(target, **kwargs)
 
 
@@ -303,7 +312,6 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
     # restore datetime before continuing
     scan_target.antenna = antenna
     scan_target.antenna.observer.date = obs_start_ts
-
     scan_start = np.degrees(az_min - (az_min + az_max) / 2.)
     scan_end = np.degrees(az_max - (az_min + az_max) / 2.)
 
@@ -314,10 +322,10 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
     # take into account projection effects of the sky and convert to degrees per second
     # E.g., 5 arcmin/s should translate to 5/60/cos(el) deg/s
     scan_speed = (scan_speed / 60.0) / np.cos(el)
-    scanargs["duration"] = abs(scan_start - scan_end) / scan_speed  # Duration in seconds
+    scan_duration = scanargs["duration"] = abs(scan_start - scan_end) / scan_speed
     user_logger.info(
-        "Scan duration is %.2f and scan speed is %.2f deg/s",
-        scanargs["duration"], scan_speed
+        "Scan duration is %.2f seconds and scan speed is %.2f degrees per second",
+        scan_duration, scan_speed
     )
     user_logger.info("Start Time: %s", t_start)
     user_logger.info("End Time: %s", t_end)
@@ -331,8 +339,16 @@ def reversescan(session, target, nd_period=None, lead_time=None, **kwargs):
             scanargs["end"] = scan_start, 0.0
         user_logger.info("Azimuth scan extent [%.1f, %.1f]" %
                          (scanargs["start"][0], scanargs["end"][0]))
+
+        # CBF target is (ra, dec) position of reference antenna in middle of next scan
+        time_radec = time.time() + scan_duration / 2.0
+        ra, dec = scan_target.radec(time_radec, antenna)
+        cbf_target = katpoint.construct_radec_target(ra, dec)
+        # Set target dictionary
+        target_dict = {'ants': scan_target, 'cbf': cbf_target}
+
         target_visible = scan(session,
-                              scan_target,
+                              target_dict,
                               nd_period=nd_period,
                               lead_time=lead_time,
                               **scanargs)

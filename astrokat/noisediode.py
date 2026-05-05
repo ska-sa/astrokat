@@ -179,6 +179,7 @@ def nd_reset(kat,
              timestamp="now",
              switch=0):
     """Reset noise-source on or off.
+
     Parameters
     ----------
     kat : session kat container-like object

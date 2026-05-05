@@ -225,7 +225,9 @@ class SimSession(object):
             The target to be tracked
         duration: int
             Duration of track
-
+        announce : bool, optional
+            True if start of action should be announced, with details of
+            settings
         """
         self.track_ = True
         slew_time, az, el = self._fake_slew_(target)
@@ -291,9 +293,15 @@ class SimSession(object):
         announce:
 
         """
-        slew_time, az, el = self._fake_slew_(target)
+        if isinstance(target, dict):
+            ants_target = target.get('ants')
+        else:
+            ants_target = target
+
+        slew_time, az, el = self._fake_slew_(ants_target)
         time.sleep(slew_time)
-        user_logger.info("Slewed to %s at azel (%.1f, %.1f) deg", target.name, az, el)
+        user_logger.info("Slewed to %s at azel (%.1f, %.1f) deg",
+                         ants_target.name, az, el)
         time.sleep(duration)
         return True
 
@@ -362,21 +370,29 @@ class SimSession(object):
             The elevation co-ordinate of the target in degrees.
 
         """
-        az, el = target.azel(simobserver.date)
+        if isinstance(target, dict):
+            ants_target = target.get('ants')
+        else:
+            ants_target = target
+        az, el = ants_target.azel(simobserver.date)
         az = katpoint.rad2deg(az)
         el = katpoint.rad2deg(el)
         return az, el
 
     def _fake_slew_(self, target):
+        if isinstance(target, dict):
+            ants_target = target.get('ants')
+        else:
+            ants_target = target
         slew_time = 0
-        az, el = self._target_azel(target)
+        az, el = self._target_azel(ants_target)
         if target != self.katpt_current:
             if self.katpt_current is None:
                 slew_time = _DEFAULT_SLEW_TIME_SEC
             else:
-                user_logger.debug("Slewing to {}".format(target.name))
+                user_logger.debug("Slewing to {}".format(ants_target.name))
                 slew_time = self._slew_time(az, el)
-            self.katpt_current = target
+            self.katpt_current = ants_target
         return slew_time, az, el
 
     def _slew_time(self, new_az, new_el):
@@ -395,6 +411,7 @@ class SimSession(object):
             The number of seconds it takes to slew.
 
         """
+
         current_az, current_el = self._target_azel(self.katpt_current)
 
         az_dist = numpy.abs(new_az - current_az)
