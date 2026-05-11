@@ -50,7 +50,7 @@ def setobserver(update):
 
     """
     global simobserver
-    simobserver = update.copy()
+    simobserver = update
 
 
 def sim_time(record, datefmt=None):
@@ -375,9 +375,7 @@ class SimSession(object):
             ants_target = target.get('ants')
         else:
             ants_target = target
-        observer_date = target.antenna.observer.date
         az, el = ants_target.azel(simobserver.date)
-        target.antenna.observer.date = observer_date
         az = katpoint.rad2deg(az)
         el = katpoint.rad2deg(el)
         return az, el
