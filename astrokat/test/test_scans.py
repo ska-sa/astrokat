@@ -35,7 +35,7 @@ class TestAstrokatYAML(unittest.TestCase):
         self.assertIn("Drift_scan observation for 180.0 sec", result)
 
         # use running session to determine suitable target values
-        if os.getenv("SESSION_NAME") == "mkat_session":
+        if os.getenv("SESSION_TYPE") == "mkat_session":
             target_string = "Az: -159:01:46.8 El: 52:05:00.6"
         else:
             target_string = "Az: -158:55:32.5 El: 52:01:18.0"
