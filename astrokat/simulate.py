@@ -337,7 +337,6 @@ class SimSession(object):
             len(offsets),
             track_duration,
         )
-        #self.track(target, duration=0, announce=False)
         for offset in offsets:
             user_logger.info("initiating track on offset of (%g, %g) degrees", *offset)
             self.track(target, track_duration, announce=False)
