@@ -327,8 +327,6 @@ class SimSession(object):
         offsets_along_x = numpy.c_[scan, numpy.zeros_like(scan)]
         offsets_along_y = numpy.c_[numpy.zeros_like(scan), scan]
         offsets = numpy.r_[offsets_along_y, offsets_along_x, [(0.0, 0.0)]]
-        offset_end_times = numpy.zeros(len(offsets))
-        middle_time = 0.0
         weather = {}
         track_duration = duration / num_pointings
 
@@ -340,19 +338,15 @@ class SimSession(object):
             track_duration,
         )
         self.track(target, duration=0, announce=False)
-        # Point to the requested offsets and collect extra data at middle time
-        for n, offset in enumerate(offsets):
+        for offset in offsets:
             user_logger.info("initiating track on offset of (%g, %g) degrees", *offset)
             self.track(target, track_duration, announce=False)
-            offset_end_times[n] = time.time()
-            if n == len(offsets) // 2 - 1:
-                middle_time = offset_end_times[n]
-                user_logger.info(
-                    "reference time = %.1f, weather = %r", middle_time, weather)
-        user_logger.info("returning to target to complete the scan")
-        self.track(target, duration=0, announce=False)
-        user_logger.info("Waiting for gains to materialise in cal pipeline")
-        user_logger.info("Retrieving gains, fitting beams, storing offsets")
+        user_logger.info("Waiting for fitted beams to materialise in cal pipeline")
+        user_logger.info(
+            "reference time = %.1f, weather = %.1f deg C | %.1f hPa | %.1f %%",
+            # make these up...
+        )
+        user_logger.info("Calculating and storing pointing offsets")
         return True
 
     def _target_azel(self, target):
