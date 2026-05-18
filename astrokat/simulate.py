@@ -341,10 +341,6 @@ class SimSession(object):
             user_logger.info("initiating track on offset of (%g, %g) degrees", *offset)
             self.track(target, track_duration, announce=False)
         user_logger.info("Waiting for fitted beams to materialise in cal pipeline")
-        user_logger.info(
-            "reference time = %.1f, weather = %.1f deg C | %.1f hPa | %.1f %%",
-            # make these up...
-        )
         user_logger.info("Calculating and storing pointing offsets")
         return True
 
