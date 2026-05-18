@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import os
 import unittest
 
 import katpoint
@@ -32,7 +33,13 @@ class TestAstrokatYAML(unittest.TestCase):
         result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn("Initialising Drift_scan target 1934-638 for 180.0 sec", result)
         self.assertIn("Drift_scan observation for 180.0 sec", result)
-        target_string = "Az: -158:55:32.5 El: 52:01:18.0"
+
+        # use running session to determine suitable target values
+        if os.getenv("SESSION_TYPE") == "mkat_session":
+            target_string = "Az: -159:01:46.8 El: 52:05:00.6"
+        else:
+            target_string = "Az: -158:55:32.5 El: 52:01:18.0"
+
         self.assert_started_target_track(target_string, 180.0, result)
         self.assert_completed_target_track(target_string, 180.0, result)
 
@@ -59,7 +66,7 @@ class TestAstrokatYAML(unittest.TestCase):
         result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn("Initialising Reference_pointing_scan pointingcal "
                       "1934-638 for 144.0 sec", result)
-        self.assertIn("1934-638 observed for 144.0 sec", result)
+        self.assertIn("1934-638 observed for 288.0 sec", result)
         self.assertIn("Adjust pointing selected", result)
 
     def test_get_scan_area_extents_for_setting_target(self):
