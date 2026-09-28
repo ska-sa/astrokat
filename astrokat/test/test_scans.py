@@ -1,4 +1,4 @@
-"""Test astrokat observe.py script in a simulated environment."""
+"""Test basic methods in astrokat.scans module"""
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -13,9 +13,8 @@ from astrokat import scans
 from .testutils import LoggedTelescope, execute_observe_main
 
 
-@patch("astrokat.observe_main.Telescope", LoggedTelescope)
-class TestAstrokatYAML(unittest.TestCase):
-    """Tests astrokat yaml."""
+class TestScanAreaExtents(unittest.TestCase):
+    """Tests astrokat.scan yaml."""
 
     def setUp(self):
         """Before each test is ran.
@@ -59,7 +58,6 @@ class TestAstrokatYAML(unittest.TestCase):
                                                                           antenna,
                                                                           test_date)
         return el, az_min, az_max, t_start, t_end
-
 
     def assert_started_target_track(self, target_string, duration, result):
         simulate_message = "Slewed to {} at azel".format(target_string)
