@@ -58,26 +58,3 @@ class TestScanAreaExtents(unittest.TestCase):
                                                                           antenna,
                                                                           test_date)
         return el, az_min, az_max, t_start, t_end
-
-    def assert_started_target_track(self, target_string, duration, result):
-        simulate_message = "Slewed to {} at azel".format(target_string)
-        katcorelib_message = "Initiating {:g}-second track on target {!r}".format(
-            duration, target_string)
-        simulated_message_found = simulate_message in result
-        katcorelib_message_found = katcorelib_message in result
-        self.assertTrue(
-            simulated_message_found or katcorelib_message_found,
-            "Neither simulate {!r} nor katcorelib {!r} message found.".format(
-                simulate_message, katcorelib_message)
-        )
-
-    def assert_completed_target_track(self, target_string, duration, result):
-        simulate_message = "Tracked {} for {:g} seconds".format(target_string, duration)
-        katcorelib_message = "target tracked for {:g} seconds".format(duration)
-        simulated_message_found = simulate_message in result
-        katcorelib_message_found = katcorelib_message in result
-        self.assertTrue(
-            simulated_message_found or katcorelib_message_found,
-            "Neither simulate {!r} nor katcorelib {!r} message found.".format(
-                simulate_message, katcorelib_message)
-        )
