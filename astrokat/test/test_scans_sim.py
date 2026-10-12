@@ -1,15 +1,13 @@
 """Test astrokat observe.py script in a simulated environment."""
+
 from __future__ import absolute_import
 from __future__ import print_function
 
 import os
 import unittest
 
-import katpoint
-
 from mock import patch
 
-from astrokat import scans
 from .testutils import LoggedTelescope, execute_observe_main
 
 
@@ -48,8 +46,9 @@ class TestAstrokatYAML(unittest.TestCase):
         execute_observe_main("test_scans/raster-scan-sim-test.yaml")
         # get result and make sure everything ran properly
         result = LoggedTelescope.user_logger_stream.getvalue()
-        self.assertIn("Initialising Raster_scan target raster_1934-638 for 90.0 sec",
-                      result)
+        self.assertIn(
+            "Initialising Raster_scan target raster_1934-638 for 90.0 sec", result
+        )
 
     def test_scan_basic_sim(self):
         """Not much to do: check scan initiate log msg"""
@@ -64,8 +63,10 @@ class TestAstrokatYAML(unittest.TestCase):
         execute_observe_main("test_scans/reference-pointing-scan-test.yaml")
         # get result and make sure everything ran properly
         result = LoggedTelescope.user_logger_stream.getvalue()
-        self.assertIn("Initialising Reference_pointing_scan pointingcal "
-                      "1934-638 for 144.0 sec", result)
+        self.assertIn(
+            "Initialising Reference_pointing_scan pointingcal " "1934-638 for 144.0 sec",
+            result,
+        )
         self.assertIn("1934-638 observed for 288.0 sec", result)
         self.assertIn("Adjust pointing selected", result)
 
@@ -81,5 +82,34 @@ class TestAstrokatYAML(unittest.TestCase):
         self.assertIn("Azimuth scan extent [-8.3, 8.3]", result)
         self.assertIn("Scan completed - 48 scan lines", result)
         # Check the an radec target is fixed and been scanned across
-        self.assertEqual(result.count('Scan target: scan_azel_with_nd_trigger,'), 48)
-        self.assertEqual(result.count('Scanning across CBF target : '), 48)
+        self.assertEqual(result.count("Scan target: scan_azel_with_nd_trigger,"), 48)
+        self.assertEqual(result.count("Scanning across CBF target : "), 48)
+
+    # -----------------------------------------------------
+    # Helper functions
+    # -----------------------------------------------------
+    def assert_started_target_track(self, target_string, duration, result):
+        simulate_message = "Slewed to {} at azel".format(target_string)
+        katcorelib_message = "Initiating {:g}-second track on target {!r}".format(
+            duration, target_string
+        )
+        simulated_message_found = simulate_message in result
+        katcorelib_message_found = katcorelib_message in result
+        self.assertTrue(
+            simulated_message_found or katcorelib_message_found,
+            "Neither simulate {!r} nor katcorelib {!r} message found.".format(
+                simulate_message, katcorelib_message
+            ),
+        )
+
+    def assert_completed_target_track(self, target_string, duration, result):
+        simulate_message = "Tracked {} for {:g} seconds".format(target_string, duration)
+        katcorelib_message = "target tracked for {:g} seconds".format(duration)
+        simulated_message_found = simulate_message in result
+        katcorelib_message_found = katcorelib_message in result
+        self.assertTrue(
+            simulated_message_found or katcorelib_message_found,
+            "Neither simulate {!r} nor katcorelib {!r} message found.".format(
+                simulate_message, katcorelib_message
+            ),
+        )
