@@ -64,7 +64,7 @@ class TestAstrokatYAML(unittest.TestCase):
         # get result and make sure everything ran properly
         result = LoggedTelescope.user_logger_stream.getvalue()
         self.assertIn(
-            "Initialising Reference_pointing_scan pointingcal " "1934-638 for 144.0 sec",
+            "Initialising Reference_pointing_scan pointingcal 1934-638 for 144.0 sec",
             result,
         )
         self.assertIn("1934-638 observed for 288.0 sec", result)
